@@ -239,7 +239,7 @@ function ProductCard({
         />
       </div>
       <div className="p-3 flex flex-col flex-1">
-        <h3 className="text-[18px] font-bold text-neutral-900 leading-snug">
+        <h3 className="text-[18px] font-semibold text-neutral-900 leading-snug [font-family:var(--font-space-grotesk)]">
           {name}
         </h3>
         <p className="mt-1 text-[15px] text-neutral-700 leading-relaxed flex-grow">
@@ -247,7 +247,8 @@ function ProductCard({
         </p>
         <a
           href={url}
-          className="inline-block mt-2 text-[13px] text-orange-500 hover:text-orange-700 transition-colors"
+          className="inline-block mt-2 text-[13px] hover:opacity-70 transition-opacity"
+          style={{ color: "#C0392B" }}
         >
           View Product →
         </a>
@@ -279,7 +280,7 @@ function ArchiveCard({
         />
       </div>
       <div className="p-3 space-y-1.5">
-        <h3 className="text-[18px] font-bold text-neutral-900 leading-snug">
+        <h3 className="text-[18px] font-semibold text-neutral-900 leading-snug [font-family:var(--font-space-grotesk)]">
           {name}
         </h3>
         <div className="flex items-center gap-2 flex-wrap">
@@ -324,11 +325,12 @@ export default function ProfilePage() {
     "bg-teal-100 text-teal-700",
   ];
 
-  const tabs: { tab: Tab; label: string; activeClass: string }[] = [
+  const tabs: { tab: Tab; label: string; activeClass: string; activeStyle?: React.CSSProperties }[] = [
     {
       tab: { kind: "favorites" },
       label: "Top 5",
-      activeClass: "bg-orange-100 text-orange-700",
+      activeClass: "",
+      activeStyle: { backgroundColor: "#FDECEA", color: "#C0392B" },
     },
     ...collections.map((c, i) => ({
       tab: { kind: "collection" as const, collectionId: c.id },
@@ -394,51 +396,56 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-10 sm:py-16">
-      {/* ── Profile header ── */}
-      <header className="flex items-center gap-4 mb-10">
-        <img
-          src={user.avatarUrl}
-          alt={user.name}
-          className="h-20 w-20 rounded-full object-cover flex-shrink-0"
-        />
-        <div className="min-w-0">
-          <h1 className="text-2xl font-medium text-neutral-900 leading-tight">
-            {user.name}
-          </h1>
-          <p className="text-[16px] text-neutral-600 mt-1 leading-relaxed">
-            {user.bio}
-          </p>
-          <div className="flex items-center gap-3 mt-3">
-            {user.socials.x && (
-              <a href={user.socials.x} target="_blank" rel="noopener noreferrer"
-                className="text-neutral-400 hover:text-neutral-700 transition-colors">
-                <IconX />
-              </a>
-            )}
-            {user.socials.instagram && (
-              <a href={user.socials.instagram} target="_blank" rel="noopener noreferrer"
-                className="text-neutral-400 hover:text-neutral-700 transition-colors">
-                <IconInstagram />
-              </a>
-            )}
-            {user.socials.youtube && (
-              <a href={user.socials.youtube} target="_blank" rel="noopener noreferrer"
-                className="text-neutral-400 hover:text-neutral-700 transition-colors">
-                <IconYouTube />
-              </a>
-            )}
+    <>
+      {/* ── Profile header — full-bleed warm zone ── */}
+      <div className="w-full bg-gradient-to-b from-[#E4D9D1] to-transparent">
+        <header className="mx-auto max-w-2xl px-4 pt-10 sm:pt-16 pb-8">
+          <div className="flex items-center gap-5">
+            <img
+              src={user.avatarUrl}
+              alt={user.name}
+              className="h-24 w-24 rounded-full object-cover flex-shrink-0 ring-4 ring-white/80 shadow-sm"
+            />
+            <div className="min-w-0">
+              <h1 className="text-2xl font-semibold text-neutral-900 leading-tight [font-family:var(--font-space-grotesk)]">
+                {user.name}
+              </h1>
+              <p className="text-[16px] text-neutral-600 mt-1 leading-relaxed">
+                {user.bio}
+              </p>
+              <div className="flex items-center gap-3 mt-3">
+                {user.socials.x && (
+                  <a href={user.socials.x} target="_blank" rel="noopener noreferrer"
+                    className="text-neutral-400 hover:text-neutral-700 transition-colors">
+                    <IconX />
+                  </a>
+                )}
+                {user.socials.instagram && (
+                  <a href={user.socials.instagram} target="_blank" rel="noopener noreferrer"
+                    className="text-neutral-400 hover:text-neutral-700 transition-colors">
+                    <IconInstagram />
+                  </a>
+                )}
+                {user.socials.youtube && (
+                  <a href={user.socials.youtube} target="_blank" rel="noopener noreferrer"
+                    className="text-neutral-400 hover:text-neutral-700 transition-colors">
+                    <IconYouTube />
+                  </a>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      </div>
 
+    <main className="mx-auto w-full max-w-2xl px-4 pb-10 sm:pb-16">
       {/* ── Tab bar ── */}
       <div className="relative mb-8 -mx-4">
         {/* Right fade gradient — scroll hint */}
         <div className="pointer-events-none absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-[#F0F4F8] to-transparent z-10" />
         <nav className="flex overflow-x-auto tab-scrollbar px-4">
           <div className="flex items-center gap-1.5 pb-2 mx-auto">
-            {tabs.map(({ tab, label, activeClass }, i) => {
+            {tabs.map(({ tab, label, activeClass, activeStyle }, i) => {
               const isArchive = tab.kind === "archive";
               const active = isActive(tab);
 
@@ -446,8 +453,9 @@ export default function ProfilePage() {
                 <button
                   key={i}
                   onClick={() => setActiveTab(tab)}
+                  style={active && activeStyle ? activeStyle : undefined}
                   className={`
-                    whitespace-nowrap rounded-full px-4 py-1.5 text-[15px] font-medium transition-all duration-150
+                    whitespace-nowrap rounded-full px-4 py-1.5 text-[15px] font-semibold [font-family:var(--font-space-grotesk)] transition-all duration-150
                     ${isArchive ? "ml-4" : ""}
                     ${active
                       ? activeClass
@@ -471,5 +479,6 @@ export default function ProfilePage() {
       {/* ── Content grid ── */}
       <section>{content}</section>
     </main>
+    </>
   );
 }

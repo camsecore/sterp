@@ -38,9 +38,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase.auth]);
 
   return (
-    <AuthContext value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading }}>
       {children}
-    </AuthContext>
+    </AuthContext.Provider>
   );
 }
 

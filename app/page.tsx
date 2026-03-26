@@ -89,28 +89,29 @@ export default function HomePage() {
       <section className="relative z-10 w-full py-16 sm:py-20">
         <div className="max-w-3xl mx-auto px-5">
           <div className="flex flex-col sm:flex-row sm:items-start gap-12 sm:gap-0">
-            <div className="flex-1 flex flex-col items-center text-center px-4">
+            <div className="flex-1 flex flex-col items-start text-left px-4">
               <Camera size={24} className="text-white/90 mb-4" strokeWidth={1.5} />
-              <p className="text-[18px] sm:text-[20px] text-white font-medium leading-[1.4]">
-                Real photos, not stock images. Your stuff in your life.
+              <p className="text-[18px] sm:text-[20px] text-white leading-[1.4]">
+                <span className="font-semibold">Real photos, not stock images.</span>{" "}
+                <span className="font-normal">Your stuff in your life.</span>
               </p>
             </div>
 
-            <div className="hidden sm:block w-px self-stretch bg-white/30" />
 
-            <div className="flex-1 flex flex-col items-center text-center px-4">
+            <div className="flex-1 flex flex-col items-start text-left px-4">
               <MessageCircle size={24} className="text-white/90 mb-4" strokeWidth={1.5} />
-              <p className="text-[18px] sm:text-[20px] text-white font-medium leading-[1.4]">
-                Honest takes, not sponsored reviews. Say what you'd say to a friend.
+              <p className="text-[18px] sm:text-[20px] text-white leading-[1.4]">
+                <span className="font-semibold">Honest takes, not sponsored reviews.</span>{" "}
+                <span className="font-normal">Say what you'd say to a friend.</span>
               </p>
             </div>
 
-            <div className="hidden sm:block w-px self-stretch bg-white/30" />
 
-            <div className="flex-1 flex flex-col items-center text-center px-4">
+            <div className="flex-1 flex flex-col items-start text-left px-4">
               <Share2 size={24} className="text-white/90 mb-4" strokeWidth={1.5} />
-              <p className="text-[18px] sm:text-[20px] text-white font-medium leading-[1.4]">
-                Drop it in your bio, text it to a friend. Your page works everywhere.
+              <p className="text-[18px] sm:text-[20px] text-white leading-[1.4]">
+                <span className="font-semibold">Drop it in your bio, text it to a friend.</span>{" "}
+                <span className="font-normal">Your page works everywhere.</span>
               </p>
             </div>
           </div>

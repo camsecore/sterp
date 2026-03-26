@@ -245,16 +245,13 @@ function ProductCard({
         <p className="mt-1 text-[15px] text-neutral-700 leading-relaxed flex-grow">
           {oneLiner}
         </p>
-        <div className="flex items-center justify-between mt-2">
-          <a
-            href={url}
-            className="text-[13px] hover:opacity-70 transition-opacity"
-            style={{ color: "#C0392B" }}
-          >
-            View Product →
-          </a>
-          <span className="text-[14px] font-bold opacity-30 [font-family:var(--font-space-grotesk)]" style={{ color: "#C0392B" }}>S</span>
-        </div>
+        <a
+          href={url}
+          className="inline-block mt-2 text-[13px] hover:opacity-70 transition-opacity"
+          style={{ color: "#C0392B" }}
+        >
+          View Product →
+        </a>
       </div>
     </div>
   );

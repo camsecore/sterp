@@ -399,9 +399,9 @@ export default function ProfilePage() {
   }
 
   return (
-    <>
-      {/* ── Profile header — full-bleed warm zone ── */}
-      <div className="w-full bg-gradient-to-b from-[#E4D9D1] to-transparent">
+    <div className="min-h-screen bg-[#EEF2F7]">
+      {/* ── Profile header — white zone ── */}
+      <div className="w-full">
         <header className="mx-auto max-w-2xl px-4 pt-10 sm:pt-16 pb-8">
           <div className="flex items-center gap-5">
             <img
@@ -445,7 +445,7 @@ export default function ProfilePage() {
       {/* ── Tab bar ── */}
       <div className="relative mb-8 -mx-4">
         {/* Right fade gradient — scroll hint */}
-        <div className="pointer-events-none absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-[#F0F4F8] to-transparent z-10" />
+        <div className="pointer-events-none absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-[#EEF2F7] to-transparent z-10" />
         <nav className="flex overflow-x-auto tab-scrollbar px-4">
           <div className="flex items-center gap-1.5 pb-2 mx-auto">
             {tabs.map(({ tab, label, activeClass, activeStyle }, i) => {
@@ -482,6 +482,6 @@ export default function ProfilePage() {
       {/* ── Content grid ── */}
       <section>{content}</section>
     </main>
-    </>
+    </div>
   );
 }

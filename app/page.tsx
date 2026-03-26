@@ -17,7 +17,7 @@ export default function HomePage() {
       {/* ── Nav ── */}
       <nav className="relative z-10 w-full max-w-5xl mx-auto px-5 py-5 flex items-center justify-between">
         <span
-          className="text-[22px] font-semibold tracking-tight"
+          className="text-[30px] font-semibold tracking-tight"
           style={{ fontFamily: "var(--font-space-grotesk)" }}
         >
           sterp
@@ -36,7 +36,7 @@ export default function HomePage() {
       </nav>
 
       {/* ── Hero ── */}
-      <main className="relative z-10 flex-1 w-full max-w-5xl mx-auto px-5 pt-6 sm:pt-10 pb-10">
+      <main className="relative z-10 flex-1 flex items-center w-full max-w-5xl mx-auto px-5 py-4 sm:py-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:gap-12">
           {/* Left — copy */}
           <div className="flex-1 max-w-xl">
@@ -92,19 +92,19 @@ export default function HomePage() {
             <div className="flex-1 flex flex-col items-start text-left px-4">
               <Camera size={24} className="text-white/90 mb-4" strokeWidth={1.5} />
               <p className="text-[18px] sm:text-[20px] text-white font-semibold leading-snug mb-1">Real photos, not stock images.</p>
-              <p className="text-[18px] sm:text-[20px] text-white/75 font-normal leading-snug">Your stuff in your life.</p>
+              <p className="text-[18px] sm:text-[20px] text-white/80 font-normal leading-snug">Your stuff in your life.</p>
             </div>
 
             <div className="flex-1 flex flex-col items-start text-left px-4">
               <MessageCircle size={24} className="text-white/90 mb-4" strokeWidth={1.5} />
               <p className="text-[18px] sm:text-[20px] text-white font-semibold leading-snug mb-1">Honest takes, not sponsored reviews.</p>
-              <p className="text-[18px] sm:text-[20px] text-white/75 font-normal leading-snug">Say what you'd say to a friend.</p>
+              <p className="text-[18px] sm:text-[20px] text-white/80 font-normal leading-snug">Say what you'd say to a friend.</p>
             </div>
 
             <div className="flex-1 flex flex-col items-start text-left px-4">
               <Share2 size={24} className="text-white/90 mb-4" strokeWidth={1.5} />
               <p className="text-[18px] sm:text-[20px] text-white font-semibold leading-snug mb-1">Drop it in your bio, text it to a friend.</p>
-              <p className="text-[18px] sm:text-[20px] text-white/75 font-normal leading-snug">Your page works everywhere.</p>
+              <p className="text-[18px] sm:text-[20px] text-white/80 font-normal leading-snug">Your page works everywhere.</p>
             </div>
           </div>
         </div>

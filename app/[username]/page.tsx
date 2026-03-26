@@ -239,22 +239,22 @@ function ProductCard({
         />
       </div>
       <div className="p-3 flex flex-col flex-1">
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: "#C0392B" }} />
-          <h3 className="text-[18px] font-semibold text-neutral-900 leading-snug [font-family:var(--font-space-grotesk)]">
-            {name}
-          </h3>
-        </div>
+        <h3 className="text-[18px] font-semibold text-neutral-900 leading-snug [font-family:var(--font-space-grotesk)]">
+          {name}
+        </h3>
         <p className="mt-1 text-[15px] text-neutral-700 leading-relaxed flex-grow">
           {oneLiner}
         </p>
-        <a
-          href={url}
-          className="inline-block mt-2 text-[13px] hover:opacity-70 transition-opacity"
-          style={{ color: "#C0392B" }}
-        >
-          View Product →
-        </a>
+        <div className="flex items-center justify-between mt-2">
+          <a
+            href={url}
+            className="text-[13px] hover:opacity-70 transition-opacity"
+            style={{ color: "#C0392B" }}
+          >
+            View Product →
+          </a>
+          <span className="text-[14px] font-bold opacity-30 [font-family:var(--font-space-grotesk)]" style={{ color: "#C0392B" }}>S</span>
+        </div>
       </div>
     </div>
   );

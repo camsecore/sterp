@@ -6,7 +6,7 @@ export default function HomePage() {
     <div className="min-h-screen flex flex-col bg-[#C0392B] text-white relative overflow-hidden">
       {/* Grain texture overlay */}
       <div
-        className="pointer-events-none fixed inset-0 z-0 opacity-[0.15]"
+        className="pointer-events-none fixed inset-0 z-0 opacity-[0.22]"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
           backgroundRepeat: "repeat",
@@ -73,7 +73,7 @@ export default function HomePage() {
                   {/* Dynamic Island */}
                   <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[72px] h-[22px] bg-[#1a1a1a] rounded-full z-20" />
                   <img
-                    src="/cam-phone-final.png"
+                    src="/cam-phone-real.png"
                     alt="Sterp profile page"
                     className="w-full block"
                   />
@@ -91,28 +91,20 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row sm:items-start gap-12 sm:gap-0">
             <div className="flex-1 flex flex-col items-start text-left px-4">
               <Camera size={24} className="text-white/90 mb-4" strokeWidth={1.5} />
-              <p className="text-[18px] sm:text-[20px] text-white leading-[1.4]">
-                <span className="font-semibold">Real photos, not stock images.</span>{" "}
-                <span className="font-normal">Your stuff in your life.</span>
-              </p>
+              <p className="text-[18px] sm:text-[20px] text-white font-semibold leading-snug mb-1">Real photos, not stock images.</p>
+              <p className="text-[18px] sm:text-[20px] text-white/75 font-normal leading-snug">Your stuff in your life.</p>
             </div>
-
 
             <div className="flex-1 flex flex-col items-start text-left px-4">
               <MessageCircle size={24} className="text-white/90 mb-4" strokeWidth={1.5} />
-              <p className="text-[18px] sm:text-[20px] text-white leading-[1.4]">
-                <span className="font-semibold">Honest takes, not sponsored reviews.</span>{" "}
-                <span className="font-normal">Say what you'd say to a friend.</span>
-              </p>
+              <p className="text-[18px] sm:text-[20px] text-white font-semibold leading-snug mb-1">Honest takes, not sponsored reviews.</p>
+              <p className="text-[18px] sm:text-[20px] text-white/75 font-normal leading-snug">Say what you'd say to a friend.</p>
             </div>
-
 
             <div className="flex-1 flex flex-col items-start text-left px-4">
               <Share2 size={24} className="text-white/90 mb-4" strokeWidth={1.5} />
-              <p className="text-[18px] sm:text-[20px] text-white leading-[1.4]">
-                <span className="font-semibold">Drop it in your bio, text it to a friend.</span>{" "}
-                <span className="font-normal">Your page works everywhere.</span>
-              </p>
+              <p className="text-[18px] sm:text-[20px] text-white font-semibold leading-snug mb-1">Drop it in your bio, text it to a friend.</p>
+              <p className="text-[18px] sm:text-[20px] text-white/75 font-normal leading-snug">Your page works everywhere.</p>
             </div>
           </div>
         </div>

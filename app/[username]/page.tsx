@@ -8,7 +8,7 @@ import { Clock } from "lucide-react";
 const user = {
   name: "Cam Secore",
   username: "cam",
-  bio: "The friend everyone texts before buying anything. If I own it, it's here.",
+  bio: "I spend an unreasonable amount of time researching everything I buy. My wife is tired of hearing about it. This is the result.",
   avatarUrl: "/cam/cam.jpg",
   socials: {
     x: "https://x.com/camsecore",
@@ -230,18 +230,21 @@ function ProductCard({
   url: string;
 }) {
   return (
-    <div className="group flex flex-col rounded-sm overflow-hidden border border-gray-200 bg-[#F0F4F8]">
+    <div className="group flex flex-col rounded-md overflow-hidden border border-gray-200 bg-[#F0F4F8] transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
       <div className="aspect-[4/3] overflow-hidden bg-neutral-100">
         <img
           src={photo}
           alt={name}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+          className="h-full w-full object-cover"
         />
       </div>
       <div className="p-3 flex flex-col flex-1">
-        <h3 className="text-[18px] font-semibold text-neutral-900 leading-snug [font-family:var(--font-space-grotesk)]">
-          {name}
-        </h3>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: "#C0392B" }} />
+          <h3 className="text-[18px] font-semibold text-neutral-900 leading-snug [font-family:var(--font-space-grotesk)]">
+            {name}
+          </h3>
+        </div>
         <p className="mt-1 text-[15px] text-neutral-700 leading-relaxed flex-grow">
           {oneLiner}
         </p>
@@ -271,7 +274,7 @@ function ArchiveCard({
   archiveNote: string | null;
 }) {
   return (
-    <div className="group flex flex-col rounded-sm overflow-hidden border border-gray-200 bg-[#F0F4F8]">
+    <div className="group flex flex-col rounded-md overflow-hidden border border-gray-200 bg-[#F0F4F8] transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
       <div className="aspect-[4/3] overflow-hidden bg-neutral-100 grayscale-[20%]">
         <img
           src={photo}
@@ -349,7 +352,7 @@ export default function ProfilePage() {
 
   if (activeTab.kind === "favorites") {
     content = (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-10 items-stretch [&>*:last-child:nth-child(odd)]:sm:col-span-2 [&>*:last-child:nth-child(odd)]:sm:justify-self-center [&>*:last-child:nth-child(odd)]:sm:w-1/2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-5 items-stretch [&>*:last-child:nth-child(odd)]:sm:col-span-2 [&>*:last-child:nth-child(odd)]:sm:justify-self-center [&>*:last-child:nth-child(odd)]:sm:w-1/2">
         {favorites.map((f) => (
           <ProductCard
             key={f.id}
@@ -364,7 +367,7 @@ export default function ProfilePage() {
   } else if (activeTab.kind === "collection") {
     const col = collections.find((c) => c.id === activeTab.collectionId);
     content = col && col.products.length > 0 ? (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-10 items-stretch [&>*:last-child:nth-child(odd)]:sm:col-span-2 [&>*:last-child:nth-child(odd)]:sm:justify-self-center [&>*:last-child:nth-child(odd)]:sm:w-1/2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-5 items-stretch [&>*:last-child:nth-child(odd)]:sm:col-span-2 [&>*:last-child:nth-child(odd)]:sm:justify-self-center [&>*:last-child:nth-child(odd)]:sm:w-1/2">
         {col.products.map((p) => (
           <ProductCard
             key={p.id}
@@ -380,7 +383,7 @@ export default function ProfilePage() {
     );
   } else {
     content = (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-10 items-stretch [&>*:last-child:nth-child(odd)]:sm:col-span-2 [&>*:last-child:nth-child(odd)]:sm:justify-self-center [&>*:last-child:nth-child(odd)]:sm:w-1/2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-5 items-stretch [&>*:last-child:nth-child(odd)]:sm:col-span-2 [&>*:last-child:nth-child(odd)]:sm:justify-self-center [&>*:last-child:nth-child(odd)]:sm:w-1/2">
         {archivedProducts.map((a) => (
           <ArchiveCard
             key={a.id}

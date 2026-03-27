@@ -683,7 +683,7 @@ function ProductModal({
                   setOneLiner(e.target.value);
                 }
               }}
-              rows={2}
+              rows={4}
               className={`${inputClass} resize-none`}
               placeholder="What would you tell a friend about this?"
             />
@@ -1432,7 +1432,7 @@ export default function DashboardPage() {
                         value={profileBio}
                         onChange={(e) => setProfileBio(e.target.value)}
                         onBlur={() => saveProfileField("bio", profileBio)}
-                        rows={2}
+                        rows={4}
                         className={`${inputClass} resize-none`}
                         placeholder="A short bio"
                       />

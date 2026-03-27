@@ -101,7 +101,6 @@ async function convertToWebP(file: File): Promise<Blob> {
 
 async function uploadProductPhoto(file: File, userId: string, productId: string): Promise<string> {
   const webpBlob = await convertToWebP(file);
-  console.log(`Upload: ${Math.round(webpBlob.size / 1024)}KB webp → ${userId}/${productId}.webp`);
   const supabase = createClient();
   const filePath = `${userId}/${productId}.webp`;
 
@@ -112,10 +111,7 @@ async function uploadProductPhoto(file: File, userId: string, productId: string)
       upsert: true,
     });
 
-  if (error) {
-    console.error("Storage error:", JSON.stringify(error));
-    throw new Error(error.message);
-  }
+  if (error) throw new Error(error.message);
 
   const { data } = supabase.storage
     .from("product-photos")

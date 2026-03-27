@@ -980,6 +980,8 @@ export default function DashboardPage() {
 
   // ─── Profile actions ─────────────────────────────────────────────
 
+  const [profileSaved, setProfileSaved] = useState(false);
+
   async function saveProfileField(field: string, value: string) {
     if (!user) return;
     const supabase = createClient();
@@ -989,6 +991,27 @@ export default function DashboardPage() {
       .eq("id", user.id);
     if (!error) {
       setProfile((prev) => prev ? { ...prev, [field]: value.trim() || null } : prev);
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 2000);
+    }
+  }
+
+  async function saveAllProfileFields() {
+    if (!user) return;
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("users")
+      .update({
+        name: profileName.trim() || null,
+        bio: profileBio.trim() || null,
+        twitter_url: profileTwitter.trim() || null,
+        instagram_url: profileInstagram.trim() || null,
+        youtube_url: profileYoutube.trim() || null,
+      })
+      .eq("id", user.id);
+    if (!error) {
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 2000);
     }
   }
 
@@ -1473,8 +1496,20 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* View My Page link */}
-                <div className="mt-4 pt-3 border-t border-gray-100">
+                {/* Save + View My Page */}
+                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={saveAllProfileFields}
+                      className="text-[14px] font-medium text-white px-4 py-2 rounded-md hover:opacity-90 transition-opacity"
+                      style={{ backgroundColor: "#C0392B" }}
+                    >
+                      Save Profile
+                    </button>
+                    {profileSaved && (
+                      <span className="text-[13px] text-emerald-600 font-medium">Saved</span>
+                    )}
+                  </div>
                   <a
                     href={`/${profile.username}`}
                     target="_blank"

@@ -543,6 +543,56 @@ export default function DashboardPage() {
     });
   }
 
+  // ─── Collection + Product drag state ────────────────────────────
+
+  const [collapsedCollections, setCollapsedCollections] = useState<Set<string>>(new Set());
+  const [collectionMenuOpen, setCollectionMenuOpen] = useState<string | null>(null);
+  const [dragCollectionIdx, setDragCollectionIdx] = useState<number | null>(null);
+  const [dragProductInfo, setDragProductInfo] = useState<{ collectionId: string; idx: number } | null>(null);
+
+  function toggleCollapsed(id: string) {
+    setCollapsedCollections((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleReorderCollections(fromIdx: number, toIdx: number) {
+    const sorted = [...collections].sort((a, b) => a.sort_order - b.sort_order);
+    const [moved] = sorted.splice(fromIdx, 1);
+    sorted.splice(toIdx, 0, moved);
+    const reordered = sorted.map((c, i) => ({ ...c, sort_order: i }));
+    setCollections(reordered);
+    await fetch("/api/collections/reorder", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order: reordered.map((c) => c.id) }),
+    });
+  }
+
+  async function handleReorderProducts(collectionId: string, fromIdx: number, toIdx: number) {
+    const colProducts = products
+      .filter((p) => p.collection_id === collectionId && p.status === "current")
+      .sort((a, b) => a.sort_order - b.sort_order);
+    const [moved] = colProducts.splice(fromIdx, 1);
+    colProducts.splice(toIdx, 0, moved);
+    // Optimistic: update sort_order in local state
+    const updatedIds = new Set(colProducts.map((p) => p.id));
+    const newProducts = products.map((p) => {
+      if (!updatedIds.has(p.id)) return p;
+      const newIdx = colProducts.findIndex((cp) => cp.id === p.id);
+      return { ...p, sort_order: newIdx };
+    });
+    setProducts(newProducts);
+    await fetch("/api/products/reorder", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ collection_id: collectionId, order: colProducts.map((p) => p.id) }),
+    });
+  }
+
   // ─── Collection actions ─────────────────────────────────────────
 
   async function handleAddCollection(e: React.FormEvent) {
@@ -940,260 +990,7 @@ export default function DashboardPage() {
               )}
             </section>
 
-            {/* ─── Section 4: Products ───────────────────────── */}
-            <section>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-[17px] font-medium text-neutral-900">
-                  Products
-                </h2>
-                <button
-                  onClick={() => {
-                    setShowAddProduct(!showAddProduct);
-                    setAddProductError("");
-                    if (!showAddProduct && collections.length > 0) {
-                      setNewProduct((prev) => ({
-                        ...prev,
-                        collection_id: prev.collection_id || collections[0].id,
-                      }));
-                    }
-                  }}
-                  className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
-                >
-                  {showAddProduct ? "Cancel" : "+ Add Product"}
-                </button>
-              </div>
-
-              {/* Add product form */}
-              {showAddProduct && (
-                <form
-                  onSubmit={handleAddProduct}
-                  className="bg-white rounded-lg border border-gray-200 p-4 mb-4 space-y-3"
-                >
-                  <div>
-                    <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-                      Name *
-                    </label>
-                    <input
-                      type="text"
-                      value={newProduct.name}
-                      onChange={(e) =>
-                        setNewProduct({ ...newProduct, name: e.target.value })
-                      }
-                      className={inputClass}
-                      placeholder="Product name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-                      Collection *
-                    </label>
-                    <select
-                      value={newProduct.collection_id}
-                      onChange={(e) =>
-                        setNewProduct({ ...newProduct, collection_id: e.target.value })
-                      }
-                      className={selectClass}
-                    >
-                      <option value="">Select collection</option>
-                      {collections.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-                      One-liner{" "}
-                      <span className="text-neutral-400 font-normal">
-                        ({newProduct.one_liner.length}/160)
-                      </span>
-                    </label>
-                    <textarea
-                      value={newProduct.one_liner}
-                      onChange={(e) => {
-                        if (e.target.value.length <= 160) {
-                          setNewProduct({ ...newProduct, one_liner: e.target.value });
-                        }
-                      }}
-                      rows={2}
-                      className={`${inputClass} resize-none`}
-                      placeholder="Short description"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-                      Product URL
-                    </label>
-                    <input
-                      type="url"
-                      value={newProduct.original_url}
-                      onChange={(e) =>
-                        setNewProduct({ ...newProduct, original_url: e.target.value })
-                      }
-                      className={inputClass}
-                      placeholder="https://..."
-                    />
-                  </div>
-                  <PhotoUpload
-                    currentUrl={newProduct.photo_url || null}
-                    onUpload={(url) => setNewProduct({ ...newProduct, photo_url: url })}
-                    userId={user.id}
-                  />
-                  {addProductError && (
-                    <p className="text-[13px] text-[#C0392B]">{addProductError}</p>
-                  )}
-                  <button
-                    type="submit"
-                    className="bg-[#C0392B] text-white text-[14px] font-medium px-4 py-2 rounded-md hover:opacity-90 transition-opacity"
-                  >
-                    Add Product
-                  </button>
-                </form>
-              )}
-
-              {/* Product list */}
-              {currentProducts.length === 0 && !showAddProduct ? (
-                <p className="text-[15px] text-neutral-400">No products yet.</p>
-              ) : (
-                <div className="space-y-2">
-                  {currentProducts.map((p) => (
-                    <div key={p.id}>
-                      {editingProductId === p.id ? (
-                        /* Inline edit form */
-                        <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
-                          <div>
-                            <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-                              Name
-                            </label>
-                            <input
-                              type="text"
-                              value={editFields.name}
-                              onChange={(e) =>
-                                setEditFields({ ...editFields, name: e.target.value })
-                              }
-                              className={inputClass}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-                              One-liner{" "}
-                              <span className="text-neutral-400 font-normal">
-                                ({editFields.one_liner.length}/160)
-                              </span>
-                            </label>
-                            <textarea
-                              value={editFields.one_liner}
-                              onChange={(e) => {
-                                if (e.target.value.length <= 160) {
-                                  setEditFields({ ...editFields, one_liner: e.target.value });
-                                }
-                              }}
-                              rows={2}
-                              className={`${inputClass} resize-none`}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-                              Product URL
-                            </label>
-                            <input
-                              type="url"
-                              value={editFields.original_url}
-                              onChange={(e) =>
-                                setEditFields({ ...editFields, original_url: e.target.value })
-                              }
-                              className={inputClass}
-                            />
-                          </div>
-                          <PhotoUpload
-                            currentUrl={editFields.photo_url || null}
-                            onUpload={(url) => setEditFields({ ...editFields, photo_url: url })}
-                            userId={user.id}
-                            productId={p.id}
-                          />
-                          <div>
-                            <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-                              Collection
-                            </label>
-                            <select
-                              value={editFields.collection_id}
-                              onChange={(e) =>
-                                setEditFields({ ...editFields, collection_id: e.target.value })
-                              }
-                              className={selectClass}
-                            >
-                              {collections.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                  {c.name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          {editError && (
-                            <p className="text-[13px] text-[#C0392B]">{editError}</p>
-                          )}
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => handleSaveEdit(p.id)}
-                              className="bg-[#C0392B] text-white text-[14px] font-medium px-4 py-2 rounded-md hover:opacity-90 transition-opacity"
-                            >
-                              Save
-                            </button>
-                            <button
-                              onClick={() => setEditingProductId(null)}
-                              className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        /* Product row */
-                        <div className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-gray-200">
-                          <Thumbnail src={p.photo_url} alt={p.name} />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[15px] font-medium text-neutral-900 truncate">
-                                {p.name}
-                              </span>
-                              <StatusBadge status={p.status} />
-                            </div>
-                            <span className="text-[13px] text-neutral-400">
-                              {collectionMap.get(p.collection_id)?.name ?? "\u2014"}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <button
-                              onClick={() => startEdit(p)}
-                              className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors"
-                            >
-                              Edit
-                            </button>
-                            <span className="text-neutral-200">|</span>
-                            <button
-                              onClick={() => handleArchive(p.id)}
-                              className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors"
-                            >
-                              Archive
-                            </button>
-                            <span className="text-neutral-200">|</span>
-                            <button
-                              onClick={() => handleDeleteProduct(p.id)}
-                              className="text-[13px] text-neutral-400 hover:text-[#C0392B] transition-colors"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            {/* ─── Section 5: Collections ────────────────────── */}
+            {/* ─── Section 4: Collections ─────────────────── */}
             <section>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[17px] font-medium text-neutral-900">
@@ -1247,75 +1044,447 @@ export default function DashboardPage() {
               {collections.length === 0 && !showAddCollection ? (
                 <p className="text-[15px] text-neutral-400">No collections yet.</p>
               ) : (
-                <div className="space-y-2">
-                  {collections.map((c) => (
-                    <div
-                      key={c.id}
-                      className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-gray-200"
-                    >
-                      {renamingCollectionId === c.id ? (
-                        <div className="flex-1 flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={renameValue}
-                            onChange={(e) => setRenameValue(e.target.value)}
-                            className="flex-1 rounded-md border border-gray-200 px-3 py-1.5 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40"
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                handleRenameCollection(c.id);
-                              }
-                              if (e.key === "Escape") setRenamingCollectionId(null);
+                <div className="space-y-3">
+                  {[...collections]
+                    .sort((a, b) => a.sort_order - b.sort_order)
+                    .map((c, cIdx) => {
+                      const isCollapsed = collapsedCollections.has(c.id);
+                      const colProducts = products
+                        .filter((p) => p.collection_id === c.id && p.status === "current")
+                        .sort((a, b) => a.sort_order - b.sort_order);
+                      const productCount = productCountByCollection.get(c.id) || 0;
+
+                      return (
+                        <div
+                          key={c.id}
+                          className={`bg-white rounded-lg border border-gray-200 overflow-hidden transition-all ${
+                            dragCollectionIdx === cIdx ? "opacity-50" : ""
+                          }`}
+                        >
+                          {/* ── Collection header row ── */}
+                          <div
+                            draggable
+                            onDragStart={() => {
+                              setDragCollectionIdx(cIdx);
+                              setDragProductInfo(null);
                             }}
-                          />
-                          <button
-                            onClick={() => handleRenameCollection(c.id)}
-                            className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
+                            onDragOver={(e) => {
+                              if (dragProductInfo) return;
+                              e.preventDefault();
+                              e.currentTarget.classList.add("bg-neutral-50");
+                            }}
+                            onDragLeave={(e) => {
+                              e.currentTarget.classList.remove("bg-neutral-50");
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              e.currentTarget.classList.remove("bg-neutral-50");
+                              if (dragCollectionIdx !== null && dragCollectionIdx !== cIdx) {
+                                handleReorderCollections(dragCollectionIdx, cIdx);
+                              }
+                              setDragCollectionIdx(null);
+                            }}
+                            onDragEnd={() => setDragCollectionIdx(null)}
+                            className="flex items-center gap-2 px-4 py-3 cursor-grab active:cursor-grabbing"
                           >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => setRenamingCollectionId(null)}
-                            className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors"
-                          >
-                            Cancel
-                          </button>
-                          {renameError && (
-                            <span className="text-[13px] text-[#C0392B]">{renameError}</span>
+                            {/* Drag handle */}
+                            <svg className="w-4 h-4 text-neutral-300 flex-shrink-0" viewBox="0 0 16 16" fill="currentColor">
+                              <circle cx="5" cy="3" r="1.5" /><circle cx="11" cy="3" r="1.5" />
+                              <circle cx="5" cy="8" r="1.5" /><circle cx="11" cy="8" r="1.5" />
+                              <circle cx="5" cy="13" r="1.5" /><circle cx="11" cy="13" r="1.5" />
+                            </svg>
+
+                            {/* Collapse chevron */}
+                            <button
+                              type="button"
+                              onClick={() => toggleCollapsed(c.id)}
+                              className="flex-shrink-0 p-0.5 hover:bg-neutral-100 rounded transition-colors"
+                            >
+                              <svg className={`w-4 h-4 transition-transform ${isCollapsed ? "" : "rotate-90"}`} viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M6 3l5 5-5 5V3z" />
+                              </svg>
+                            </button>
+
+                            {/* Collection name or rename input */}
+                            {renamingCollectionId === c.id ? (
+                              <div className="flex-1 flex items-center gap-2 min-w-0">
+                                <input
+                                  type="text"
+                                  value={renameValue}
+                                  onChange={(e) => setRenameValue(e.target.value)}
+                                  className="flex-1 rounded-md border border-gray-200 px-3 py-1.5 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40"
+                                  autoFocus
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      handleRenameCollection(c.id);
+                                    }
+                                    if (e.key === "Escape") setRenamingCollectionId(null);
+                                  }}
+                                />
+                                <button
+                                  onClick={() => handleRenameCollection(c.id)}
+                                  className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  onClick={() => setRenamingCollectionId(null)}
+                                  className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                                {renameError && (
+                                  <span className="text-[13px] text-[#C0392B]">{renameError}</span>
+                                )}
+                              </div>
+                            ) : (
+                              <>
+                                <span className="text-[15px] font-medium text-neutral-900 flex-1 min-w-0 truncate">
+                                  {c.name}
+                                </span>
+                                <span className="text-[13px] text-neutral-400 flex-shrink-0">
+                                  {productCount} {productCount === 1 ? "product" : "products"}
+                                </span>
+                              </>
+                            )}
+
+                            {/* Three-dot menu */}
+                            {renamingCollectionId !== c.id && (
+                              <div className="relative flex-shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => setCollectionMenuOpen(collectionMenuOpen === c.id ? null : c.id)}
+                                  className="p-1 hover:bg-neutral-100 rounded transition-colors"
+                                >
+                                  <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
+                                    <circle cx="8" cy="3" r="1.5" />
+                                    <circle cx="8" cy="8" r="1.5" />
+                                    <circle cx="8" cy="13" r="1.5" />
+                                  </svg>
+                                </button>
+                                {collectionMenuOpen === c.id && (
+                                  <>
+                                    {/* Backdrop to close menu */}
+                                    <div
+                                      className="fixed inset-0 z-10"
+                                      onClick={() => setCollectionMenuOpen(null)}
+                                    />
+                                    <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-52">
+                                      <button
+                                        onClick={() => {
+                                          setRenamingCollectionId(c.id);
+                                          setRenameValue(c.name);
+                                          setRenameError("");
+                                          setCollectionMenuOpen(null);
+                                        }}
+                                        className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                      >
+                                        Rename
+                                      </button>
+                                      {productCount > 0 ? (
+                                        <div className="px-4 py-2 text-[14px] text-neutral-300 cursor-not-allowed">
+                                          Delete collection
+                                          <span className="block text-[12px] text-neutral-400 mt-0.5">
+                                            Move or archive products first
+                                          </span>
+                                        </div>
+                                      ) : (
+                                        <button
+                                          onClick={() => {
+                                            setCollectionMenuOpen(null);
+                                            handleDeleteCollection(c.id);
+                                          }}
+                                          className="w-full text-left px-4 py-2 text-[14px] text-[#C0392B] hover:bg-neutral-50 transition-colors"
+                                        >
+                                          Delete collection
+                                        </button>
+                                      )}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* ── Collapsible product list ── */}
+                          {!isCollapsed && (
+                            <div className="border-t border-gray-100 px-4 py-3 space-y-2">
+                              {/* Add Product button */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowAddProduct(true);
+                                  setNewProduct((prev) => ({ ...prev, collection_id: c.id }));
+                                  setAddProductError("");
+                                }}
+                                className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
+                              >
+                                + Add Product
+                              </button>
+
+                              {/* Inline add product form */}
+                              {showAddProduct && newProduct.collection_id === c.id && (
+                                <form
+                                  onSubmit={handleAddProduct}
+                                  className="bg-neutral-50 rounded-lg border border-gray-200 p-4 space-y-3"
+                                >
+                                  <div>
+                                    <label className="block text-[13px] font-medium text-neutral-600 mb-1">
+                                      Name *
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={newProduct.name}
+                                      onChange={(e) =>
+                                        setNewProduct({ ...newProduct, name: e.target.value })
+                                      }
+                                      className={inputClass}
+                                      placeholder="Product name"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[13px] font-medium text-neutral-600 mb-1">
+                                      One-liner{" "}
+                                      <span className="text-neutral-400 font-normal">
+                                        ({newProduct.one_liner.length}/160)
+                                      </span>
+                                    </label>
+                                    <textarea
+                                      value={newProduct.one_liner}
+                                      onChange={(e) => {
+                                        if (e.target.value.length <= 160) {
+                                          setNewProduct({ ...newProduct, one_liner: e.target.value });
+                                        }
+                                      }}
+                                      rows={2}
+                                      className={`${inputClass} resize-none`}
+                                      placeholder="Short description"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[13px] font-medium text-neutral-600 mb-1">
+                                      Product URL
+                                    </label>
+                                    <input
+                                      type="url"
+                                      value={newProduct.original_url}
+                                      onChange={(e) =>
+                                        setNewProduct({ ...newProduct, original_url: e.target.value })
+                                      }
+                                      className={inputClass}
+                                      placeholder="https://..."
+                                    />
+                                  </div>
+                                  <PhotoUpload
+                                    currentUrl={newProduct.photo_url || null}
+                                    onUpload={(url) => setNewProduct({ ...newProduct, photo_url: url })}
+                                    userId={user.id}
+                                  />
+                                  {addProductError && (
+                                    <p className="text-[13px] text-[#C0392B]">{addProductError}</p>
+                                  )}
+                                  <div className="flex items-center gap-3">
+                                    <button
+                                      type="submit"
+                                      className="bg-[#C0392B] text-white text-[14px] font-medium px-4 py-2 rounded-md hover:opacity-90 transition-opacity"
+                                    >
+                                      Add Product
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setShowAddProduct(false);
+                                        setNewProduct({ name: "", collection_id: "", one_liner: "", original_url: "", photo_url: "" });
+                                        setAddProductError("");
+                                      }}
+                                      className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </form>
+                              )}
+
+                              {/* Product rows */}
+                              {colProducts.length === 0 && !(showAddProduct && newProduct.collection_id === c.id) && (
+                                <p className="text-[13px] text-neutral-400 py-1">No products in this collection.</p>
+                              )}
+                              {colProducts.map((p, pIdx) => (
+                                <div key={p.id}>
+                                  {editingProductId === p.id ? (
+                                    /* Inline edit form */
+                                    <div className="bg-neutral-50 rounded-lg border border-gray-200 p-4 space-y-3">
+                                      <div>
+                                        <label className="block text-[13px] font-medium text-neutral-600 mb-1">
+                                          Name
+                                        </label>
+                                        <input
+                                          type="text"
+                                          value={editFields.name}
+                                          onChange={(e) =>
+                                            setEditFields({ ...editFields, name: e.target.value })
+                                          }
+                                          className={inputClass}
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-[13px] font-medium text-neutral-600 mb-1">
+                                          One-liner{" "}
+                                          <span className="text-neutral-400 font-normal">
+                                            ({editFields.one_liner.length}/160)
+                                          </span>
+                                        </label>
+                                        <textarea
+                                          value={editFields.one_liner}
+                                          onChange={(e) => {
+                                            if (e.target.value.length <= 160) {
+                                              setEditFields({ ...editFields, one_liner: e.target.value });
+                                            }
+                                          }}
+                                          rows={2}
+                                          className={`${inputClass} resize-none`}
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-[13px] font-medium text-neutral-600 mb-1">
+                                          Product URL
+                                        </label>
+                                        <input
+                                          type="url"
+                                          value={editFields.original_url}
+                                          onChange={(e) =>
+                                            setEditFields({ ...editFields, original_url: e.target.value })
+                                          }
+                                          className={inputClass}
+                                        />
+                                      </div>
+                                      <PhotoUpload
+                                        currentUrl={editFields.photo_url || null}
+                                        onUpload={(url) => setEditFields({ ...editFields, photo_url: url })}
+                                        userId={user.id}
+                                        productId={p.id}
+                                      />
+                                      <div>
+                                        <label className="block text-[13px] font-medium text-neutral-600 mb-1">
+                                          Collection
+                                        </label>
+                                        <select
+                                          value={editFields.collection_id}
+                                          onChange={(e) =>
+                                            setEditFields({ ...editFields, collection_id: e.target.value })
+                                          }
+                                          className={selectClass}
+                                        >
+                                          {collections.map((col) => (
+                                            <option key={col.id} value={col.id}>
+                                              {col.name}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </div>
+                                      {editError && (
+                                        <p className="text-[13px] text-[#C0392B]">{editError}</p>
+                                      )}
+                                      <div className="flex items-center gap-3">
+                                        <button
+                                          onClick={() => handleSaveEdit(p.id)}
+                                          className="bg-[#C0392B] text-white text-[14px] font-medium px-4 py-2 rounded-md hover:opacity-90 transition-opacity"
+                                        >
+                                          Save
+                                        </button>
+                                        <button
+                                          onClick={() => setEditingProductId(null)}
+                                          className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    /* Product row */
+                                    <div
+                                      draggable
+                                      onDragStart={() => {
+                                        setDragProductInfo({ collectionId: c.id, idx: pIdx });
+                                        setDragCollectionIdx(null);
+                                      }}
+                                      onDragOver={(e) => {
+                                        if (!dragProductInfo || dragProductInfo.collectionId !== c.id) return;
+                                        e.preventDefault();
+                                        e.currentTarget.classList.add("ring-2", "ring-[#C0392B]/20");
+                                      }}
+                                      onDragLeave={(e) => {
+                                        e.currentTarget.classList.remove("ring-2", "ring-[#C0392B]/20");
+                                      }}
+                                      onDrop={(e) => {
+                                        e.preventDefault();
+                                        e.currentTarget.classList.remove("ring-2", "ring-[#C0392B]/20");
+                                        if (
+                                          dragProductInfo &&
+                                          dragProductInfo.collectionId === c.id &&
+                                          dragProductInfo.idx !== pIdx
+                                        ) {
+                                          handleReorderProducts(c.id, dragProductInfo.idx, pIdx);
+                                        }
+                                        setDragProductInfo(null);
+                                      }}
+                                      onDragEnd={() => setDragProductInfo(null)}
+                                      className={`flex items-center gap-3 rounded-md px-3 py-2 hover:bg-neutral-50 transition-colors cursor-grab active:cursor-grabbing ${
+                                        dragProductInfo?.collectionId === c.id && dragProductInfo?.idx === pIdx
+                                          ? "opacity-50"
+                                          : ""
+                                      }`}
+                                    >
+                                      {/* Product drag handle */}
+                                      <svg className="w-3.5 h-3.5 text-neutral-300 flex-shrink-0" viewBox="0 0 16 16" fill="currentColor">
+                                        <circle cx="5" cy="3" r="1.5" /><circle cx="11" cy="3" r="1.5" />
+                                        <circle cx="5" cy="8" r="1.5" /><circle cx="11" cy="8" r="1.5" />
+                                        <circle cx="5" cy="13" r="1.5" /><circle cx="11" cy="13" r="1.5" />
+                                      </svg>
+                                      <Thumbnail src={p.photo_url} alt={p.name} />
+                                      <div className="flex-1 min-w-0">
+                                        <span className="text-[15px] font-medium text-neutral-900 truncate block">
+                                          {p.name}
+                                        </span>
+                                        {p.one_liner && (
+                                          <span className="text-[13px] text-neutral-400 truncate block">
+                                            {p.one_liner}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <StatusBadge status={p.status} />
+                                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                                        <button
+                                          onClick={() => startEdit(p)}
+                                          className="text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors"
+                                        >
+                                          Edit
+                                        </button>
+                                        <span className="text-neutral-200">|</span>
+                                        <button
+                                          onClick={() => handleArchive(p.id)}
+                                          className="text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors"
+                                        >
+                                          Archive
+                                        </button>
+                                        <span className="text-neutral-200">|</span>
+                                        <button
+                                          onClick={() => handleDeleteProduct(p.id)}
+                                          className="text-[12px] text-neutral-400 hover:text-[#C0392B] transition-colors"
+                                        >
+                                          Delete
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
                           )}
                         </div>
-                      ) : (
-                        <>
-                          <span className="text-[15px] font-medium text-neutral-900 flex-1 min-w-0 truncate">
-                            {c.name}
-                          </span>
-                          <span className="text-[13px] text-neutral-400 flex-shrink-0">
-                            {productCountByCollection.get(c.id) || 0} products
-                          </span>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <button
-                              onClick={() => {
-                                setRenamingCollectionId(c.id);
-                                setRenameValue(c.name);
-                                setRenameError("");
-                              }}
-                              className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors"
-                            >
-                              Rename
-                            </button>
-                            <span className="text-neutral-200">|</span>
-                            <button
-                              onClick={() => handleDeleteCollection(c.id)}
-                              className="text-[13px] text-neutral-400 hover:text-[#C0392B] transition-colors"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ))}
+                      );
+                    })}
                 </div>
               )}
             </section>

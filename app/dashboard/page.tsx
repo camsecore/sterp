@@ -72,15 +72,22 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 async function convertToWebP(file: File): Promise<Blob> {
+  const MAX_WIDTH = 1200;
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
+      let w = img.width;
+      let h = img.height;
+      if (w > MAX_WIDTH) {
+        h = Math.round(h * (MAX_WIDTH / w));
+        w = MAX_WIDTH;
+      }
       const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
+      canvas.width = w;
+      canvas.height = h;
       const ctx = canvas.getContext("2d");
       if (!ctx) return reject(new Error("Canvas not supported"));
-      ctx.drawImage(img, 0, 0);
+      ctx.drawImage(img, 0, 0, w, h);
       canvas.toBlob(
         (blob) => (blob ? resolve(blob) : reject(new Error("Conversion failed"))),
         "image/webp",

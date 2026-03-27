@@ -5,6 +5,21 @@ import { useUser } from "@/app/contexts/auth";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Clock, Camera } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  TouchSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 
@@ -814,6 +829,51 @@ function ProductModal({
   );
 }
 
+// ─── Sortable wrappers ──────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function DragHandle({ attributes, listeners }: { attributes: any; listeners: any }) {
+  return (
+    <div {...attributes} {...listeners} className="w-6 h-6 flex items-center justify-center touch-none cursor-grab active:cursor-grabbing">
+      <svg className="w-4 h-4 text-neutral-300" viewBox="0 0 16 16" fill="currentColor">
+        <circle cx="5" cy="3" r="1.5" /><circle cx="11" cy="3" r="1.5" />
+        <circle cx="5" cy="8" r="1.5" /><circle cx="11" cy="8" r="1.5" />
+        <circle cx="5" cy="13" r="1.5" /><circle cx="11" cy="13" r="1.5" />
+      </svg>
+    </div>
+  );
+}
+
+function SortableTopPick({ id, children }: { id: string; children: (props: { handle: React.ReactNode; isDragging: boolean }) => React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition };
+  return (
+    <div ref={setNodeRef} style={style} className={isDragging ? "opacity-50" : ""}>
+      {children({ handle: <DragHandle attributes={attributes} listeners={listeners} />, isDragging })}
+    </div>
+  );
+}
+
+function SortableCollection({ id, children }: { id: string; children: (props: { handle: React.ReactNode; isDragging: boolean }) => React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition };
+  return (
+    <div ref={setNodeRef} style={style} className={isDragging ? "opacity-50" : ""}>
+      {children({ handle: <DragHandle attributes={attributes} listeners={listeners} />, isDragging })}
+    </div>
+  );
+}
+
+function SortableProduct({ id, children }: { id: string; children: (props: { handle: React.ReactNode; isDragging: boolean }) => React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition };
+  return (
+    <div ref={setNodeRef} style={style} className={isDragging ? "opacity-50" : ""}>
+      {children({ handle: <DragHandle attributes={attributes} listeners={listeners} />, isDragging })}
+    </div>
+  );
+}
+
 // ─── Main component ─────────────────────────────────────────────────
 
 export default function DashboardPage() {
@@ -1023,7 +1083,6 @@ export default function DashboardPage() {
   const [showAddTopPick, setShowAddTopPick] = useState(false);
   const [topPickSearch, setTopPickSearch] = useState("");
   const [topPickFilter, setTopPickFilter] = useState("");
-  const [dragIdx, setDragIdx] = useState<number | null>(null);
 
   async function handleRemoveTopPick(productId: string) {
     const res = await fetch(`/api/top-picks/${productId}`, { method: "DELETE" });
@@ -1052,19 +1111,18 @@ export default function DashboardPage() {
     const reordered = sorted.map((tp, i) => ({ ...tp, sort_order: i + 1 }));
     setTopPicks(reordered);
     // Persist
-    await fetch("/api/top-picks/reorder", {
+    const res = await fetch("/api/top-picks/reorder", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ order: reordered.map((tp) => tp.product_id) }),
     });
+    if (!res.ok) await fetchTopPicks();
   }
 
   // ─── Collection + Product drag state ────────────────────────────
 
   const [collapsedCollections, setCollapsedCollections] = useState<Set<string>>(new Set());
   const [collectionMenuOpen, setCollectionMenuOpen] = useState<string | null>(null);
-  const [dragCollectionIdx, setDragCollectionIdx] = useState<number | null>(null);
-  const [dragProductInfo, setDragProductInfo] = useState<{ collectionId: string; idx: number } | null>(null);
 
   function toggleCollapsed(id: string) {
     setCollapsedCollections((prev) => {
@@ -1081,11 +1139,12 @@ export default function DashboardPage() {
     sorted.splice(toIdx, 0, moved);
     const reordered = sorted.map((c, i) => ({ ...c, sort_order: i }));
     setCollections(reordered);
-    await fetch("/api/collections/reorder", {
+    const res = await fetch("/api/collections/reorder", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ order: reordered.map((c) => c.id) }),
     });
+    if (!res.ok) await fetchCollections();
   }
 
   async function handleReorderProducts(collectionId: string, fromIdx: number, toIdx: number) {
@@ -1102,11 +1161,56 @@ export default function DashboardPage() {
       return { ...p, sort_order: newIdx };
     });
     setProducts(newProducts);
-    await fetch("/api/products/reorder", {
+    const res = await fetch("/api/products/reorder", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ collection_id: collectionId, order: colProducts.map((p) => p.id) }),
     });
+    if (!res.ok) await fetchProducts();
+  }
+
+  // ─── dnd-kit sensors & handlers ─────────────────────────────────
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
+  );
+
+  function handleTopPickDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const sorted = [...topPicks].sort((a, b) => a.sort_order - b.sort_order);
+    const oldIndex = sorted.findIndex((tp) => tp.product_id === active.id);
+    const newIndex = sorted.findIndex((tp) => tp.product_id === over.id);
+    if (oldIndex !== -1 && newIndex !== -1) {
+      handleReorderTopPicks(oldIndex, newIndex);
+    }
+  }
+
+  function handleCollectionDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const sorted = [...collections].sort((a, b) => a.sort_order - b.sort_order);
+    const oldIndex = sorted.findIndex((c) => c.id === active.id);
+    const newIndex = sorted.findIndex((c) => c.id === over.id);
+    if (oldIndex !== -1 && newIndex !== -1) {
+      handleReorderCollections(oldIndex, newIndex);
+    }
+  }
+
+  function handleProductDragEnd(collectionId: string) {
+    return (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+      const colProducts = products
+        .filter((p) => p.collection_id === collectionId && p.status === "current")
+        .sort((a, b) => a.sort_order - b.sort_order);
+      const oldIndex = colProducts.findIndex((p) => p.id === active.id);
+      const newIndex = colProducts.findIndex((p) => p.id === over.id);
+      if (oldIndex !== -1 && newIndex !== -1) {
+        handleReorderProducts(collectionId, oldIndex, newIndex);
+      }
+    };
   }
 
   // ─── Collection actions ─────────────────────────────────────────
@@ -1465,72 +1569,49 @@ export default function DashboardPage() {
                   No top picks yet. Add your favorite products here.
                 </p>
               ) : (
-                <div className="space-y-2">
-                  {[...topPicks]
-                    .sort((a, b) => a.sort_order - b.sort_order)
-                    .slice(0, 5)
-                    .map((tp, i) => (
-                      <div
-                        key={tp.id}
-                        draggable
-                        onDragStart={() => setDragIdx(i)}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          e.currentTarget.classList.add("ring-2", "ring-[#C0392B]/20");
-                        }}
-                        onDragLeave={(e) => {
-                          e.currentTarget.classList.remove("ring-2", "ring-[#C0392B]/20");
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          e.currentTarget.classList.remove("ring-2", "ring-[#C0392B]/20");
-                          if (dragIdx !== null && dragIdx !== i) {
-                            handleReorderTopPicks(dragIdx, i);
-                          }
-                          setDragIdx(null);
-                        }}
-                        onDragEnd={() => setDragIdx(null)}
-                        className={`flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-gray-200 cursor-grab active:cursor-grabbing transition-all ${
-                          dragIdx === i ? "opacity-50" : ""
-                        }`}
-                      >
-                        {/* Drag handle */}
-                        <svg className="w-4 h-4 text-neutral-300 flex-shrink-0" viewBox="0 0 16 16" fill="currentColor">
-                          <circle cx="5" cy="3" r="1.5" />
-                          <circle cx="11" cy="3" r="1.5" />
-                          <circle cx="5" cy="8" r="1.5" />
-                          <circle cx="11" cy="8" r="1.5" />
-                          <circle cx="5" cy="13" r="1.5" />
-                          <circle cx="11" cy="13" r="1.5" />
-                        </svg>
-                        <span className="text-[15px] font-semibold text-neutral-300 w-5 text-center flex-shrink-0">
-                          {i + 1}
-                        </span>
-                        <Thumbnail
-                          src={tp.products?.photo_url ?? null}
-                          alt={tp.products?.name ?? ""}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <span className="text-[15px] font-medium text-neutral-900 truncate block">
-                            {tp.products?.name ?? "Unknown product"}
-                          </span>
-                          {(() => {
-                            const product = products.find((p) => p.id === tp.product_id);
-                            const col = product ? collectionMap.get(product.collection_id) : null;
-                            return col ? (
-                              <span className="text-[12px] text-neutral-400">{col.name}</span>
-                            ) : null;
-                          })()}
-                        </div>
-                        <button
-                          onClick={() => handleRemoveTopPick(tp.product_id)}
-                          className="text-[13px] text-neutral-400 hover:text-[#C0392B] transition-colors flex-shrink-0"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
-                </div>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleTopPickDragEnd}>
+                  <SortableContext items={[...topPicks].sort((a, b) => a.sort_order - b.sort_order).slice(0, 5).map((tp) => tp.product_id)} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-2">
+                      {[...topPicks]
+                        .sort((a, b) => a.sort_order - b.sort_order)
+                        .slice(0, 5)
+                        .map((tp, i) => (
+                          <SortableTopPick key={tp.product_id} id={tp.product_id}>
+                            {({ handle }) => (
+                              <div className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-gray-200 transition-all">
+                                {handle}
+                                <span className="text-[15px] font-semibold text-neutral-300 w-5 text-center flex-shrink-0">
+                                  {i + 1}
+                                </span>
+                                <Thumbnail
+                                  src={tp.products?.photo_url ?? null}
+                                  alt={tp.products?.name ?? ""}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <span className="text-[15px] font-medium text-neutral-900 truncate block">
+                                    {tp.products?.name ?? "Unknown product"}
+                                  </span>
+                                  {(() => {
+                                    const product = products.find((p) => p.id === tp.product_id);
+                                    const col = product ? collectionMap.get(product.collection_id) : null;
+                                    return col ? (
+                                      <span className="text-[12px] text-neutral-400">{col.name}</span>
+                                    ) : null;
+                                  })()}
+                                </div>
+                                <button
+                                  onClick={() => handleRemoveTopPick(tp.product_id)}
+                                  className="text-[13px] text-neutral-400 hover:text-[#C0392B] transition-colors flex-shrink-0"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            )}
+                          </SortableTopPick>
+                        ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               )}
             </section>
 
@@ -1588,271 +1669,214 @@ export default function DashboardPage() {
               {collections.length === 0 && !showAddCollection ? (
                 <p className="text-[15px] text-neutral-400">No collections yet.</p>
               ) : (
-                <div className="space-y-3">
-                  {[...collections]
-                    .sort((a, b) => a.sort_order - b.sort_order)
-                    .map((c, cIdx) => {
-                      const isCollapsed = collapsedCollections.has(c.id);
-                      const colProducts = products
-                        .filter((p) => p.collection_id === c.id && p.status === "current")
-                        .sort((a, b) => a.sort_order - b.sort_order);
-                      const productCount = productCountByCollection.get(c.id) || 0;
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCollectionDragEnd}>
+                  <SortableContext items={[...collections].sort((a, b) => a.sort_order - b.sort_order).map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-3">
+                      {[...collections]
+                        .sort((a, b) => a.sort_order - b.sort_order)
+                        .map((c) => {
+                          const isCollapsed = collapsedCollections.has(c.id);
+                          const colProducts = products
+                            .filter((p) => p.collection_id === c.id && p.status === "current")
+                            .sort((a, b) => a.sort_order - b.sort_order);
+                          const productCount = productCountByCollection.get(c.id) || 0;
 
-                      return (
-                        <div
-                          key={c.id}
-                          className={`bg-white rounded-lg border border-gray-200 overflow-hidden transition-all ${
-                            dragCollectionIdx === cIdx ? "opacity-50" : ""
-                          }`}
-                        >
-                          {/* ── Collection header row ── */}
-                          <div
-                            draggable
-                            onDragStart={() => {
-                              setDragCollectionIdx(cIdx);
-                              setDragProductInfo(null);
-                            }}
-                            onDragOver={(e) => {
-                              if (dragProductInfo) return;
-                              e.preventDefault();
-                              e.currentTarget.classList.add("bg-neutral-50");
-                            }}
-                            onDragLeave={(e) => {
-                              e.currentTarget.classList.remove("bg-neutral-50");
-                            }}
-                            onDrop={(e) => {
-                              e.preventDefault();
-                              e.currentTarget.classList.remove("bg-neutral-50");
-                              if (dragCollectionIdx !== null && dragCollectionIdx !== cIdx) {
-                                handleReorderCollections(dragCollectionIdx, cIdx);
-                              }
-                              setDragCollectionIdx(null);
-                            }}
-                            onDragEnd={() => setDragCollectionIdx(null)}
-                            className="flex items-center gap-2 px-4 py-3 cursor-grab active:cursor-grabbing"
-                          >
-                            {/* Drag handle */}
-                            <svg className="w-4 h-4 text-neutral-300 flex-shrink-0" viewBox="0 0 16 16" fill="currentColor">
-                              <circle cx="5" cy="3" r="1.5" /><circle cx="11" cy="3" r="1.5" />
-                              <circle cx="5" cy="8" r="1.5" /><circle cx="11" cy="8" r="1.5" />
-                              <circle cx="5" cy="13" r="1.5" /><circle cx="11" cy="13" r="1.5" />
-                            </svg>
+                          return (
+                            <SortableCollection key={c.id} id={c.id}>
+                              {({ handle }) => (
+                                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden transition-all">
+                                  {/* ── Collection header row ── */}
+                                  <div className="flex items-center gap-2 px-4 py-3">
+                                    {handle}
 
-                            {/* Collapse chevron */}
-                            <button
-                              type="button"
-                              onClick={() => toggleCollapsed(c.id)}
-                              className="flex-shrink-0 p-0.5 hover:bg-neutral-100 rounded transition-colors"
-                            >
-                              <svg className={`w-4 h-4 transition-transform ${isCollapsed ? "" : "rotate-90"}`} viewBox="0 0 16 16" fill="currentColor">
-                                <path d="M6 3l5 5-5 5V3z" />
-                              </svg>
-                            </button>
-
-                            {/* Collection name or rename input */}
-                            {renamingCollectionId === c.id ? (
-                              <div className="flex-1 flex items-center gap-2 min-w-0">
-                                <input
-                                  type="text"
-                                  value={renameValue}
-                                  onChange={(e) => setRenameValue(e.target.value)}
-                                  className="flex-1 rounded-md border border-gray-200 px-3 py-1.5 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40"
-                                  autoFocus
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      e.preventDefault();
-                                      handleRenameCollection(c.id);
-                                    }
-                                    if (e.key === "Escape") setRenamingCollectionId(null);
-                                  }}
-                                />
-                                <button
-                                  onClick={() => handleRenameCollection(c.id)}
-                                  className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
-                                >
-                                  Save
-                                </button>
-                                <button
-                                  onClick={() => setRenamingCollectionId(null)}
-                                  className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors"
-                                >
-                                  Cancel
-                                </button>
-                                {renameError && (
-                                  <span className="text-[13px] text-[#C0392B]">{renameError}</span>
-                                )}
-                              </div>
-                            ) : (
-                              <>
-                                <span className="text-[15px] font-medium text-neutral-900 flex-1 min-w-0 truncate">
-                                  {c.name}
-                                </span>
-                                <span className="text-[13px] text-neutral-400 flex-shrink-0">
-                                  {productCount} {productCount === 1 ? "product" : "products"}
-                                </span>
-                              </>
-                            )}
-
-                            {/* Three-dot menu */}
-                            {renamingCollectionId !== c.id && (
-                              <div className="relative flex-shrink-0">
-                                <button
-                                  type="button"
-                                  onClick={() => setCollectionMenuOpen(collectionMenuOpen === c.id ? null : c.id)}
-                                  className="p-1 hover:bg-neutral-100 rounded transition-colors"
-                                >
-                                  <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
-                                    <circle cx="8" cy="3" r="1.5" />
-                                    <circle cx="8" cy="8" r="1.5" />
-                                    <circle cx="8" cy="13" r="1.5" />
-                                  </svg>
-                                </button>
-                                {collectionMenuOpen === c.id && (
-                                  <>
-                                    {/* Backdrop to close menu */}
-                                    <div
-                                      className="fixed inset-0 z-10"
-                                      onClick={() => setCollectionMenuOpen(null)}
-                                    />
-                                    <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-52">
-                                      <button
-                                        onClick={() => {
-                                          setRenamingCollectionId(c.id);
-                                          setRenameValue(c.name);
-                                          setRenameError("");
-                                          setCollectionMenuOpen(null);
-                                        }}
-                                        className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
-                                      >
-                                        Rename
-                                      </button>
-                                      {productCount > 0 ? (
-                                        <div className="px-4 py-2 text-[14px] text-neutral-300 cursor-not-allowed">
-                                          Delete collection
-                                          <span className="block text-[12px] text-neutral-400 mt-0.5">
-                                            Move or archive products first
-                                          </span>
-                                        </div>
-                                      ) : (
-                                        <button
-                                          onClick={() => {
-                                            setCollectionMenuOpen(null);
-                                            setDeleteTarget({ id: c.id, name: c.name, type: "collection" });
-                                          }}
-                                          className="w-full text-left px-4 py-2 text-[14px] text-[#C0392B] hover:bg-neutral-50 transition-colors"
-                                        >
-                                          Delete collection
-                                        </button>
-                                      )}
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* ── Collapsible product list ── */}
-                          {!isCollapsed && (
-                            <div className="border-t border-gray-100 px-4 py-3 space-y-2">
-                              {/* Add Product button */}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setProductModal({ mode: "add", collectionId: c.id })
-                                }
-                                className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
-                              >
-                                + Add Product
-                              </button>
-
-                              {/* Product rows */}
-                              {colProducts.length === 0 && (
-                                <p className="text-[13px] text-neutral-400 py-1">No products in this collection.</p>
-                              )}
-                              {colProducts.map((p, pIdx) => (
-                                <div key={p.id}>
-                                    <div
-                                      draggable
-                                      onDragStart={() => {
-                                        setDragProductInfo({ collectionId: c.id, idx: pIdx });
-                                        setDragCollectionIdx(null);
-                                      }}
-                                      onDragOver={(e) => {
-                                        if (!dragProductInfo || dragProductInfo.collectionId !== c.id) return;
-                                        e.preventDefault();
-                                        e.currentTarget.classList.add("ring-2", "ring-[#C0392B]/20");
-                                      }}
-                                      onDragLeave={(e) => {
-                                        e.currentTarget.classList.remove("ring-2", "ring-[#C0392B]/20");
-                                      }}
-                                      onDrop={(e) => {
-                                        e.preventDefault();
-                                        e.currentTarget.classList.remove("ring-2", "ring-[#C0392B]/20");
-                                        if (
-                                          dragProductInfo &&
-                                          dragProductInfo.collectionId === c.id &&
-                                          dragProductInfo.idx !== pIdx
-                                        ) {
-                                          handleReorderProducts(c.id, dragProductInfo.idx, pIdx);
-                                        }
-                                        setDragProductInfo(null);
-                                      }}
-                                      onDragEnd={() => setDragProductInfo(null)}
-                                      className={`flex items-center gap-3 rounded-md px-3 py-2 hover:bg-neutral-50 transition-colors cursor-grab active:cursor-grabbing ${
-                                        dragProductInfo?.collectionId === c.id && dragProductInfo?.idx === pIdx
-                                          ? "opacity-50"
-                                          : ""
-                                      }`}
+                                    {/* Collapse chevron */}
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleCollapsed(c.id)}
+                                      className="flex-shrink-0 p-0.5 hover:bg-neutral-100 rounded transition-colors"
                                     >
-                                      {/* Product drag handle */}
-                                      <svg className="w-3.5 h-3.5 text-neutral-300 flex-shrink-0" viewBox="0 0 16 16" fill="currentColor">
-                                        <circle cx="5" cy="3" r="1.5" /><circle cx="11" cy="3" r="1.5" />
-                                        <circle cx="5" cy="8" r="1.5" /><circle cx="11" cy="8" r="1.5" />
-                                        <circle cx="5" cy="13" r="1.5" /><circle cx="11" cy="13" r="1.5" />
+                                      <svg className={`w-4 h-4 transition-transform ${isCollapsed ? "" : "rotate-90"}`} viewBox="0 0 16 16" fill="currentColor">
+                                        <path d="M6 3l5 5-5 5V3z" />
                                       </svg>
-                                      <Thumbnail src={p.photo_url} alt={p.name} />
-                                      <div className="flex-1 min-w-0">
-                                        <span className="text-[15px] font-medium text-neutral-900 truncate block">
-                                          {p.name}
-                                        </span>
-                                        {p.one_liner && (
-                                          <span className="text-[13px] text-neutral-400 truncate block">
-                                            {p.one_liner}
-                                          </span>
+                                    </button>
+
+                                    {/* Collection name or rename input */}
+                                    {renamingCollectionId === c.id ? (
+                                      <div className="flex-1 flex items-center gap-2 min-w-0">
+                                        <input
+                                          type="text"
+                                          value={renameValue}
+                                          onChange={(e) => setRenameValue(e.target.value)}
+                                          className="flex-1 rounded-md border border-gray-200 px-3 py-1.5 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40"
+                                          autoFocus
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                              e.preventDefault();
+                                              handleRenameCollection(c.id);
+                                            }
+                                            if (e.key === "Escape") setRenamingCollectionId(null);
+                                          }}
+                                        />
+                                        <button
+                                          onClick={() => handleRenameCollection(c.id)}
+                                          className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
+                                        >
+                                          Save
+                                        </button>
+                                        <button
+                                          onClick={() => setRenamingCollectionId(null)}
+                                          className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors"
+                                        >
+                                          Cancel
+                                        </button>
+                                        {renameError && (
+                                          <span className="text-[13px] text-[#C0392B]">{renameError}</span>
                                         )}
                                       </div>
-                                      <StatusBadge status={p.status} />
-                                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                                    ) : (
+                                      <>
+                                        <span className="text-[15px] font-medium text-neutral-900 flex-1 min-w-0 truncate">
+                                          {c.name}
+                                        </span>
+                                        <span className="text-[13px] text-neutral-400 flex-shrink-0">
+                                          {productCount} {productCount === 1 ? "product" : "products"}
+                                        </span>
+                                      </>
+                                    )}
+
+                                    {/* Three-dot menu */}
+                                    {renamingCollectionId !== c.id && (
+                                      <div className="relative flex-shrink-0">
                                         <button
-                                          onClick={() => setProductModal({ mode: "edit", product: p })}
-                                          className="text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors"
+                                          type="button"
+                                          onClick={() => setCollectionMenuOpen(collectionMenuOpen === c.id ? null : c.id)}
+                                          className="p-1 hover:bg-neutral-100 rounded transition-colors"
                                         >
-                                          Edit
+                                          <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
+                                            <circle cx="8" cy="3" r="1.5" />
+                                            <circle cx="8" cy="8" r="1.5" />
+                                            <circle cx="8" cy="13" r="1.5" />
+                                          </svg>
                                         </button>
-                                        <span className="text-neutral-200">|</span>
-                                        <button
-                                          onClick={() => setArchiveTarget(p)}
-                                          className="text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors"
-                                        >
-                                          Archive
-                                        </button>
-                                        <span className="text-neutral-200">|</span>
-                                        <button
-                                          onClick={() => setDeleteTarget({ id: p.id, name: p.name, type: "product" })}
-                                          className="text-[12px] text-neutral-400 hover:text-[#C0392B] transition-colors"
-                                        >
-                                          Delete
-                                        </button>
+                                        {collectionMenuOpen === c.id && (
+                                          <>
+                                            {/* Backdrop to close menu */}
+                                            <div
+                                              className="fixed inset-0 z-10"
+                                              onClick={() => setCollectionMenuOpen(null)}
+                                            />
+                                            <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-52">
+                                              <button
+                                                onClick={() => {
+                                                  setRenamingCollectionId(c.id);
+                                                  setRenameValue(c.name);
+                                                  setRenameError("");
+                                                  setCollectionMenuOpen(null);
+                                                }}
+                                                className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                              >
+                                                Rename
+                                              </button>
+                                              {productCount > 0 ? (
+                                                <div className="px-4 py-2 text-[14px] text-neutral-300 cursor-not-allowed">
+                                                  Delete collection
+                                                  <span className="block text-[12px] text-neutral-400 mt-0.5">
+                                                    Move or archive products first
+                                                  </span>
+                                                </div>
+                                              ) : (
+                                                <button
+                                                  onClick={() => {
+                                                    setCollectionMenuOpen(null);
+                                                    setDeleteTarget({ id: c.id, name: c.name, type: "collection" });
+                                                  }}
+                                                  className="w-full text-left px-4 py-2 text-[14px] text-[#C0392B] hover:bg-neutral-50 transition-colors"
+                                                >
+                                                  Delete collection
+                                                </button>
+                                              )}
+                                            </div>
+                                          </>
+                                        )}
                                       </div>
+                                    )}
+                                  </div>
+
+                                  {/* ── Collapsible product list ── */}
+                                  {!isCollapsed && (
+                                    <div className="border-t border-gray-100 px-4 py-3 space-y-2">
+                                      {/* Add Product button */}
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setProductModal({ mode: "add", collectionId: c.id })
+                                        }
+                                        className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
+                                      >
+                                        + Add Product
+                                      </button>
+
+                                      {/* Product rows */}
+                                      {colProducts.length === 0 && (
+                                        <p className="text-[13px] text-neutral-400 py-1">No products in this collection.</p>
+                                      )}
+                                      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleProductDragEnd(c.id)}>
+                                        <SortableContext items={colProducts.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+                                          {colProducts.map((p) => (
+                                            <SortableProduct key={p.id} id={p.id}>
+                                              {({ handle }) => (
+                                                <div className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-neutral-50 transition-colors">
+                                                  {handle}
+                                                  <Thumbnail src={p.photo_url} alt={p.name} />
+                                                  <div className="flex-1 min-w-0">
+                                                    <span className="text-[15px] font-medium text-neutral-900 truncate block">
+                                                      {p.name}
+                                                    </span>
+                                                    {p.one_liner && (
+                                                      <span className="text-[13px] text-neutral-400 truncate block">
+                                                        {p.one_liner}
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                  <StatusBadge status={p.status} />
+                                                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                                                    <button
+                                                      onClick={() => setProductModal({ mode: "edit", product: p })}
+                                                      className="text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors"
+                                                    >
+                                                      Edit
+                                                    </button>
+                                                    <span className="text-neutral-200">|</span>
+                                                    <button
+                                                      onClick={() => setArchiveTarget(p)}
+                                                      className="text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors"
+                                                    >
+                                                      Archive
+                                                    </button>
+                                                    <span className="text-neutral-200">|</span>
+                                                    <button
+                                                      onClick={() => setDeleteTarget({ id: p.id, name: p.name, type: "product" })}
+                                                      className="text-[12px] text-neutral-400 hover:text-[#C0392B] transition-colors"
+                                                    >
+                                                      Delete
+                                                    </button>
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </SortableProduct>
+                                          ))}
+                                        </SortableContext>
+                                      </DndContext>
                                     </div>
+                                  )}
                                 </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                </div>
+                              )}
+                            </SortableCollection>
+                          );
+                        })}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               )}
             </section>
 

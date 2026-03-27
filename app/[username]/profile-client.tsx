@@ -135,35 +135,28 @@ function ProductCard({
 function ArchiveCard({
   name,
   photo,
-  collectionName,
   archiveNote,
 }: {
   name: string;
   photo: string;
-  collectionName: string;
   archiveNote: string | null;
 }) {
   return (
     <div className="group flex flex-col rounded-md overflow-hidden border border-gray-200 bg-[#F0F4F8] transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
-      <div className="aspect-[4/3] overflow-hidden bg-neutral-100 grayscale-[20%]">
+      <div className="aspect-[4/3] overflow-hidden bg-neutral-100">
         <img
           src={photo}
           alt={name}
           className="h-full w-full object-cover"
         />
       </div>
-      <div className="p-3 space-y-1.5">
+      <div className="p-3 flex flex-col flex-1">
         <h3 className="text-[18px] font-semibold text-neutral-900 leading-snug [font-family:var(--font-space-grotesk)]">
           {name}
         </h3>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[13px] text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-full">
-            {collectionName}
-          </span>
-        </div>
         {archiveNote && (
-          <p className="text-[15px] text-neutral-500 italic leading-relaxed">
-            &ldquo;{archiveNote}&rdquo;
+          <p className="mt-1 text-[15px] text-neutral-700 leading-relaxed flex-grow">
+            {archiveNote}
           </p>
         )}
       </div>
@@ -291,7 +284,6 @@ export default function ProfileClient({
             key={p.id}
             name={p.name}
             photo={p.photo_url ?? ""}
-            collectionName={collectionMap.get(p.collection_id)?.name ?? ""}
             archiveNote={p.archive_note}
           />
         ))}

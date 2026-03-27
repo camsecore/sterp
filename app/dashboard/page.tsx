@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useUser } from "@/app/contexts/auth";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Clock } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -17,6 +18,7 @@ interface Product {
   original_url: string | null;
   status: string;
   sort_order: number;
+  created_at: string;
   archive_note: string | null;
   archived_at: string | null;
 }
@@ -649,10 +651,52 @@ export default function DashboardPage() {
     await fetchCollections();
   }
 
+  // ─── Archive actions ───────────────────────────────────────────
+
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editNoteValue, setEditNoteValue] = useState("");
+
+  async function handleSaveArchiveNote(id: string) {
+    const res = await fetch(`/api/products/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ archive_note: editNoteValue.trim() || null }),
+    });
+    if (res.ok) {
+      setEditingNoteId(null);
+      await fetchProducts();
+    }
+  }
+
+  async function handleDeleteArchived(id: string) {
+    if (!confirm("Are you sure? This can't be undone.")) return;
+    const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
+    if (res.ok) await fetchProducts();
+  }
+
+  function formatDuration(createdAt: string, archivedAt: string): string {
+    const start = new Date(createdAt);
+    const end = new Date(archivedAt);
+    const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+    if (months < 1) return "< 1 month";
+    if (months < 12) return `${months} month${months === 1 ? "" : "s"}`;
+    const years = Math.floor(months / 12);
+    const rem = months % 12;
+    if (rem === 0) return `${years} year${years === 1 ? "" : "s"}`;
+    return `${years} year${years === 1 ? "" : "s"}, ${rem} month${rem === 1 ? "" : "s"}`;
+  }
+
   // ─── Lookups ────────────────────────────────────────────────────
 
   const collectionMap = new Map(collections.map((c) => [c.id, c]));
   const currentProducts = products.filter((p) => p.status === "current");
+  const archivedProducts = products
+    .filter((p) => p.status === "archived")
+    .sort((a, b) => {
+      const aDate = a.archived_at ? new Date(a.archived_at).getTime() : 0;
+      const bDate = b.archived_at ? new Date(b.archived_at).getTime() : 0;
+      return bDate - aDate;
+    });
 
   // Count products per collection
   const productCountByCollection = new Map<string, number>();
@@ -1488,6 +1532,100 @@ export default function DashboardPage() {
                 </div>
               )}
             </section>
+
+            {/* ─── Section 5: Archive ──────────────────────────── */}
+            {archivedProducts.length > 0 && (
+              <section>
+                <div className="flex items-center gap-2 mb-3 pt-4 border-t border-gray-200">
+                  <Clock size={16} className="text-neutral-400" />
+                  <h2 className="text-[17px] font-medium text-neutral-900">
+                    Archive
+                  </h2>
+                  <span className="text-[13px] text-neutral-400 font-medium">
+                    {archivedProducts.length}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {archivedProducts.map((p) => (
+                    <div key={p.id} className="bg-white rounded-lg border border-gray-200">
+                      {editingNoteId === p.id ? (
+                        <div className="p-4 space-y-3">
+                          <div className="flex items-center gap-3">
+                            <Thumbnail src={p.photo_url} alt={p.name} />
+                            <span className="text-[15px] font-medium text-neutral-900">{p.name}</span>
+                          </div>
+                          <textarea
+                            value={editNoteValue}
+                            onChange={(e) => setEditNoteValue(e.target.value)}
+                            rows={3}
+                            className="w-full rounded-md border border-gray-200 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40 resize-none"
+                            placeholder="Archive note..."
+                            autoFocus
+                          />
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => handleSaveArchiveNote(p.id)}
+                              className="text-[13px] font-medium text-white px-3 py-1.5 rounded-md hover:opacity-90"
+                              style={{ backgroundColor: "#C0392B" }}
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingNoteId(null)}
+                              className="text-[13px] text-neutral-500 hover:text-neutral-800"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3 px-4 py-3">
+                          <Thumbnail src={p.photo_url} alt={p.name} />
+                          <div className="flex-1 min-w-0">
+                            <span className="text-[14px] font-medium text-neutral-900 truncate block">
+                              {p.name}
+                            </span>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {p.created_at && p.archived_at && (
+                                <span className="text-[12px] text-neutral-400">
+                                  Owned {formatDuration(p.created_at, p.archived_at)}
+                                </span>
+                              )}
+                              {p.archive_note && (
+                                <>
+                                  <span className="text-neutral-200">·</span>
+                                  <span className="text-[12px] text-neutral-400 truncate">
+                                    {p.archive_note}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <button
+                              onClick={() => {
+                                setEditingNoteId(p.id);
+                                setEditNoteValue(p.archive_note || "");
+                              }}
+                              className="text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors"
+                            >
+                              Edit Note
+                            </button>
+                            <span className="text-neutral-200">|</span>
+                            <button
+                              onClick={() => handleDeleteArchived(p.id)}
+                              className="text-[12px] text-neutral-400 hover:text-[#C0392B] transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
         )}
       </div>

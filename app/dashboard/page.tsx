@@ -1565,9 +1565,11 @@ export default function DashboardPage() {
               )}
 
               {topPicks.length === 0 ? (
-                <p className="text-[15px] text-neutral-400">
-                  No top picks yet. Add your favorite products here.
-                </p>
+                <div className="bg-white rounded-lg border border-gray-200 px-4 py-6 text-center">
+                  <p className="text-[15px] text-neutral-500">
+                    Add products to your Top picks — these are the first thing visitors see.
+                  </p>
+                </div>
               ) : (
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleTopPickDragEnd}>
                   <SortableContext items={[...topPicks].sort((a, b) => a.sort_order - b.sort_order).slice(0, 5).map((tp) => tp.product_id)} strategy={verticalListSortingStrategy}>
@@ -1667,7 +1669,18 @@ export default function DashboardPage() {
               )}
 
               {collections.length === 0 && !showAddCollection ? (
-                <p className="text-[15px] text-neutral-400">No collections yet.</p>
+                <div className="bg-white rounded-lg border border-gray-200 px-4 py-6 text-center space-y-3">
+                  <p className="text-[15px] text-neutral-500">
+                    Create your first collection to start adding products.
+                  </p>
+                  <button
+                    onClick={() => { setShowAddCollection(true); setAddCollectionError(""); }}
+                    className="text-[14px] font-medium text-white px-4 py-2 rounded-md hover:opacity-90"
+                    style={{ backgroundColor: "#C0392B" }}
+                  >
+                    Create Collection
+                  </button>
+                </div>
               ) : (
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCollectionDragEnd}>
                   <SortableContext items={[...collections].sort((a, b) => a.sort_order - b.sort_order).map((c) => c.id)} strategy={verticalListSortingStrategy}>
@@ -1818,7 +1831,11 @@ export default function DashboardPage() {
 
                                       {/* Product rows */}
                                       {colProducts.length === 0 && (
-                                        <p className="text-[13px] text-neutral-400 py-1">No products in this collection.</p>
+                                        <div className="py-3 text-center">
+                                          <p className="text-[13px] text-neutral-400">
+                                            No products in {c.name} yet.
+                                          </p>
+                                        </div>
                                       )}
                                       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleProductDragEnd(c.id)}>
                                         <SortableContext items={colProducts.map((p) => p.id)} strategy={verticalListSortingStrategy}>

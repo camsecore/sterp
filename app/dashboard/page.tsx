@@ -40,6 +40,16 @@ interface TopPick {
   };
 }
 
+interface Profile {
+  username: string;
+  name: string | null;
+  bio: string | null;
+  avatar_url: string | null;
+  twitter_url: string | null;
+  instagram_url: string | null;
+  youtube_url: string | null;
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────
 
 function Thumbnail({ src, alt }: { src: string | null; alt: string }) {
@@ -88,6 +98,31 @@ async function convertToWebP(file: File): Promise<Blob> {
       const ctx = canvas.getContext("2d");
       if (!ctx) return reject(new Error("Canvas not supported"));
       ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error("Conversion failed"))),
+        "image/webp",
+        0.85
+      );
+    };
+    img.onerror = () => reject(new Error("Failed to load image"));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+async function convertToSquareWebP(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const size = Math.min(img.width, img.height);
+      const sx = (img.width - size) / 2;
+      const sy = (img.height - size) / 2;
+      const outSize = Math.min(size, 400);
+      const canvas = document.createElement("canvas");
+      canvas.width = outSize;
+      canvas.height = outSize;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("Canvas not supported"));
+      ctx.drawImage(img, sx, sy, size, size, 0, 0, outSize, outSize);
       canvas.toBlob(
         (blob) => (blob ? resolve(blob) : reject(new Error("Conversion failed"))),
         "image/webp",
@@ -174,7 +209,7 @@ function PhotoUpload({
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={uploading}
-            className="text-[13px] font-medium px-3 py-1.5 rounded-md border border-gray-300 hover:bg-neutral-50 disabled:opacity-50 transition-colors"
+            className="text-[13px] font-medium px-3 py-1.5 rounded-md border border-gray-200 hover:bg-neutral-50 disabled:opacity-50 transition-colors"
           >
             {uploading ? "Uploading..." : currentUrl ? "Change photo" : "Upload photo"}
           </button>
@@ -192,6 +227,14 @@ function PhotoUpload({
   );
 }
 
+// ─── Shared input classes ────────────────────────────────────────────
+
+const inputClass =
+  "w-full rounded-md border border-gray-200 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40";
+
+const selectClass =
+  "w-full rounded-md border border-gray-200 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40";
+
 // ─── Main component ─────────────────────────────────────────────────
 
 export default function DashboardPage() {
@@ -201,7 +244,22 @@ export default function DashboardPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [topPicks, setTopPicks] = useState<TopPick[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Copy link feedback
+  const [copied, setCopied] = useState(false);
+
+  // Avatar upload
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
+  // Profile inline editing
+  const [profileName, setProfileName] = useState("");
+  const [profileBio, setProfileBio] = useState("");
+  const [profileTwitter, setProfileTwitter] = useState("");
+  const [profileInstagram, setProfileInstagram] = useState("");
+  const [profileYoutube, setProfileYoutube] = useState("");
 
   // Add product form
   const [showAddProduct, setShowAddProduct] = useState(false);
@@ -255,11 +313,29 @@ export default function DashboardPage() {
     if (res.ok) setTopPicks(await res.json());
   }, []);
 
+  const fetchProfile = useCallback(async () => {
+    if (!user) return;
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("users")
+      .select("username, name, bio, avatar_url, twitter_url, instagram_url, youtube_url")
+      .eq("id", user.id)
+      .single();
+    if (data) {
+      setProfile(data);
+      setProfileName(data.name || "");
+      setProfileBio(data.bio || "");
+      setProfileTwitter(data.twitter_url || "");
+      setProfileInstagram(data.instagram_url || "");
+      setProfileYoutube(data.youtube_url || "");
+    }
+  }, [user]);
+
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    await Promise.all([fetchProducts(), fetchCollections(), fetchTopPicks()]);
+    await Promise.all([fetchProducts(), fetchCollections(), fetchTopPicks(), fetchProfile()]);
     setLoading(false);
-  }, [fetchProducts, fetchCollections, fetchTopPicks]);
+  }, [fetchProducts, fetchCollections, fetchTopPicks, fetchProfile]);
 
   // Auth redirect
   useEffect(() => {
@@ -272,6 +348,66 @@ export default function DashboardPage() {
   useEffect(() => {
     if (user) fetchAll();
   }, [user, fetchAll]);
+
+  // ─── Profile actions ─────────────────────────────────────────────
+
+  async function saveProfileField(field: string, value: string) {
+    if (!user) return;
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("users")
+      .update({ [field]: value.trim() || null })
+      .eq("id", user.id);
+    if (!error) {
+      setProfile((prev) => prev ? { ...prev, [field]: value.trim() || null } : prev);
+    }
+  }
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (file.size > 10 * 1024 * 1024) return;
+
+    setAvatarUploading(true);
+    try {
+      const webpBlob = await convertToSquareWebP(file);
+      const supabase = createClient();
+      const filePath = `${user.id}/avatar.webp`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("product-photos")
+        .upload(filePath, webpBlob, {
+          contentType: "image/webp",
+          upsert: true,
+        });
+
+      if (uploadError) throw new Error(uploadError.message);
+
+      const avatar_url = `https://images.sterp.com/${filePath}?t=${Date.now()}`;
+
+      const { error: updateError } = await supabase
+        .from("users")
+        .update({ avatar_url })
+        .eq("id", user.id);
+
+      if (!updateError) {
+        setProfile((prev) => prev ? { ...prev, avatar_url } : prev);
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setAvatarUploading(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  }
+
+  function handleCopyLink() {
+    if (!profile?.username) return;
+    navigator.clipboard.writeText(`sterp.com/${profile.username}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   // ─── Product actions ────────────────────────────────────────────
 
@@ -368,9 +504,43 @@ export default function DashboardPage() {
 
   // ─── Top Picks actions ─────────────────────────────────────────
 
+  const [showAddTopPick, setShowAddTopPick] = useState(false);
+  const [topPickSearch, setTopPickSearch] = useState("");
+  const [topPickFilter, setTopPickFilter] = useState("");
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+
   async function handleRemoveTopPick(productId: string) {
     const res = await fetch(`/api/top-picks/${productId}`, { method: "DELETE" });
     if (res.ok) await fetchTopPicks();
+  }
+
+  async function handleAddTopPick(productId: string) {
+    const res = await fetch("/api/top-picks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ product_id: productId }),
+    });
+    if (res.ok) {
+      await fetchTopPicks();
+      setShowAddTopPick(false);
+      setTopPickSearch("");
+      setTopPickFilter("");
+    }
+  }
+
+  async function handleReorderTopPicks(fromIdx: number, toIdx: number) {
+    const sorted = [...topPicks].sort((a, b) => a.sort_order - b.sort_order);
+    const [moved] = sorted.splice(fromIdx, 1);
+    sorted.splice(toIdx, 0, moved);
+    // Optimistic update
+    const reordered = sorted.map((tp, i) => ({ ...tp, sort_order: i + 1 }));
+    setTopPicks(reordered);
+    // Persist
+    await fetch("/api/top-picks/reorder", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order: reordered.map((tp) => tp.product_id) }),
+    });
   }
 
   // ─── Collection actions ─────────────────────────────────────────
@@ -455,44 +625,309 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#EEF2F7]">
-      <div className="mx-auto max-w-2xl px-4 pt-10 sm:pt-16 pb-16">
-        <h1 className="text-2xl font-semibold text-neutral-900 [font-family:var(--font-space-grotesk)] mb-10">
+      <div className="mx-auto max-w-2xl px-4 pt-8 sm:pt-14 pb-16">
+        <h1 className="text-[22px] font-semibold text-neutral-900 mb-6">
           Dashboard
         </h1>
 
         {loading ? (
           <p className="text-neutral-400 text-[15px]">Loading data...</p>
         ) : (
-          <div className="space-y-12">
-            {/* ─── Top Picks ─────────────────────────────────────── */}
+          <div className="space-y-6">
+            {/* ─── Section 1: Page Status Banner ──────────────── */}
+            {profile?.username && (
+              <>
+                {currentProducts.length < 2 ? (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-5 py-4">
+                    <p className="text-[15px] text-amber-800">
+                      Add at least 2 products to make your page live at{" "}
+                      <span className="font-medium">sterp.com/{profile.username}</span>
+                    </p>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+                    <p className="text-[15px] text-emerald-800 font-medium">
+                      Your page is live
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <a
+                        href={`/${profile.username}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[13px] text-[#C0392B] font-medium hover:opacity-70 transition-opacity"
+                      >
+                        View page
+                      </a>
+                      <button
+                        onClick={handleCopyLink}
+                        className="text-[13px] text-[#C0392B] font-medium hover:opacity-70 transition-opacity"
+                      >
+                        {copied ? "Copied!" : "Copy link"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* ─── Section 2: Profile Card ────────────────────── */}
+            {profile && (
+              <section className="bg-white rounded-lg border border-gray-200 p-5">
+                <h2 className="text-[17px] font-medium text-neutral-900 mb-4">
+                  Profile
+                </h2>
+
+                {/* Avatar + Name + Bio */}
+                <div className="flex items-start gap-4">
+                  {/* Avatar */}
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={avatarUploading}
+                    className="relative h-20 w-20 rounded-full overflow-hidden bg-neutral-200 flex-shrink-0 group cursor-pointer"
+                  >
+                    {profile.avatar_url ? (
+                      <img
+                        src={profile.avatar_url}
+                        alt={profile.name || profile.username}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-neutral-400 text-sm">
+                        Add
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-white text-[11px] font-medium">
+                        {avatarUploading ? "..." : "Edit"}
+                      </span>
+                    </div>
+                  </button>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/heic"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                  />
+
+                  {/* Name + Bio */}
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <div>
+                      <label className="block text-[13px] font-medium text-neutral-600 mb-1">
+                        Name
+                      </label>
+                      <input
+                        type="text"
+                        value={profileName}
+                        onChange={(e) => setProfileName(e.target.value)}
+                        onBlur={() => saveProfileField("name", profileName)}
+                        className={inputClass}
+                        placeholder="Your name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[13px] font-medium text-neutral-600 mb-1">
+                        Bio
+                      </label>
+                      <textarea
+                        value={profileBio}
+                        onChange={(e) => setProfileBio(e.target.value)}
+                        onBlur={() => saveProfileField("bio", profileBio)}
+                        rows={2}
+                        className={`${inputClass} resize-none`}
+                        placeholder="A short bio"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Social links */}
+                <div className="mt-4 space-y-2">
+                  <label className="block text-[13px] font-medium text-neutral-600">
+                    Social links
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <input
+                      type="text"
+                      value={profileTwitter}
+                      onChange={(e) => setProfileTwitter(e.target.value)}
+                      onBlur={() => saveProfileField("twitter_url", profileTwitter)}
+                      className={inputClass}
+                      placeholder="x.com/username"
+                    />
+                    <input
+                      type="text"
+                      value={profileInstagram}
+                      onChange={(e) => setProfileInstagram(e.target.value)}
+                      onBlur={() => saveProfileField("instagram_url", profileInstagram)}
+                      className={inputClass}
+                      placeholder="instagram.com/username"
+                    />
+                    <input
+                      type="text"
+                      value={profileYoutube}
+                      onChange={(e) => setProfileYoutube(e.target.value)}
+                      onBlur={() => saveProfileField("youtube_url", profileYoutube)}
+                      className={inputClass}
+                      placeholder="youtube.com/@username"
+                    />
+                  </div>
+                </div>
+
+                {/* View My Page link */}
+                <div className="mt-4 pt-3 border-t border-gray-100">
+                  <a
+                    href={`/${profile.username}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[13px] text-[#C0392B] hover:opacity-70 transition-opacity"
+                  >
+                    View My Page →
+                  </a>
+                </div>
+              </section>
+            )}
+
+            {/* ─── Section 3: Top Picks ──────────────────────── */}
             <section>
-              <h2 className="text-lg font-semibold text-neutral-900 [font-family:var(--font-space-grotesk)] mb-4">
-                Top Picks
-              </h2>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-[17px] font-medium text-neutral-900">
+                    Top Picks
+                  </h2>
+                  <span className="text-[13px] text-neutral-400 font-medium">
+                    {topPicks.length}/5
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    if (topPicks.length < 5) {
+                      setShowAddTopPick(!showAddTopPick);
+                      setTopPickSearch("");
+                      setTopPickFilter("");
+                    }
+                  }}
+                  disabled={topPicks.length >= 5}
+                  className="text-[13px] font-medium transition-opacity disabled:opacity-30 disabled:cursor-not-allowed"
+                  style={{ color: "#C0392B" }}
+                  title={topPicks.length >= 5 ? "Maximum 5 top picks" : undefined}
+                >
+                  {showAddTopPick ? "Cancel" : "+ Add to Top"}
+                </button>
+              </div>
+
+              {/* Add to Top dropdown */}
+              {showAddTopPick && (
+                <div className="bg-white rounded-lg border border-gray-200 p-3 mb-3">
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={topPickSearch}
+                      onChange={(e) => setTopPickSearch(e.target.value)}
+                      placeholder="Search products..."
+                      className="flex-1 rounded-md border border-gray-200 px-3 py-2 text-[14px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40"
+                    />
+                    <select
+                      value={topPickFilter}
+                      onChange={(e) => setTopPickFilter(e.target.value)}
+                      className="rounded-md border border-gray-200 px-2 py-2 text-[14px] text-neutral-600 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40"
+                    >
+                      <option value="">All collections</option>
+                      {collections.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto space-y-1">
+                    {(() => {
+                      const topPickProductIds = new Set(topPicks.map((tp) => tp.product_id));
+                      const eligible = currentProducts
+                        .filter((p) => !topPickProductIds.has(p.id))
+                        .filter((p) => !topPickSearch || p.name.toLowerCase().includes(topPickSearch.toLowerCase()))
+                        .filter((p) => !topPickFilter || p.collection_id === topPickFilter);
+                      return eligible.length === 0 ? (
+                        <p className="text-[13px] text-neutral-400 py-2 text-center">No matching products</p>
+                      ) : (
+                        eligible.map((p) => (
+                          <button
+                            key={p.id}
+                            onClick={() => handleAddTopPick(p.id)}
+                            className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-neutral-50 transition-colors text-left"
+                          >
+                            <Thumbnail src={p.photo_url} alt={p.name} />
+                            <span className="text-[14px] font-medium text-neutral-900 flex-1 min-w-0 truncate">{p.name}</span>
+                            <span className="text-[12px] text-neutral-400 flex-shrink-0">{collectionMap.get(p.collection_id)?.name}</span>
+                          </button>
+                        ))
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
+
               {topPicks.length === 0 ? (
                 <p className="text-[15px] text-neutral-400">
-                  No top picks yet. Add products and they will appear here.
+                  No top picks yet. Add your favorite products here.
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {topPicks
+                  {[...topPicks]
                     .sort((a, b) => a.sort_order - b.sort_order)
                     .slice(0, 5)
                     .map((tp, i) => (
                       <div
                         key={tp.id}
-                        className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-gray-200"
+                        draggable
+                        onDragStart={() => setDragIdx(i)}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.currentTarget.classList.add("ring-2", "ring-[#C0392B]/20");
+                        }}
+                        onDragLeave={(e) => {
+                          e.currentTarget.classList.remove("ring-2", "ring-[#C0392B]/20");
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          e.currentTarget.classList.remove("ring-2", "ring-[#C0392B]/20");
+                          if (dragIdx !== null && dragIdx !== i) {
+                            handleReorderTopPicks(dragIdx, i);
+                          }
+                          setDragIdx(null);
+                        }}
+                        onDragEnd={() => setDragIdx(null)}
+                        className={`flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-gray-200 cursor-grab active:cursor-grabbing transition-all ${
+                          dragIdx === i ? "opacity-50" : ""
+                        }`}
                       >
-                        <span className="text-[15px] font-semibold text-neutral-400 w-5 text-center flex-shrink-0">
+                        {/* Drag handle */}
+                        <svg className="w-4 h-4 text-neutral-300 flex-shrink-0" viewBox="0 0 16 16" fill="currentColor">
+                          <circle cx="5" cy="3" r="1.5" />
+                          <circle cx="11" cy="3" r="1.5" />
+                          <circle cx="5" cy="8" r="1.5" />
+                          <circle cx="11" cy="8" r="1.5" />
+                          <circle cx="5" cy="13" r="1.5" />
+                          <circle cx="11" cy="13" r="1.5" />
+                        </svg>
+                        <span className="text-[15px] font-semibold text-neutral-300 w-5 text-center flex-shrink-0">
                           {i + 1}
                         </span>
                         <Thumbnail
                           src={tp.products?.photo_url ?? null}
                           alt={tp.products?.name ?? ""}
                         />
-                        <span className="text-[15px] font-medium text-neutral-900 flex-1 min-w-0 truncate">
-                          {tp.products?.name ?? "Unknown product"}
-                        </span>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-[15px] font-medium text-neutral-900 truncate block">
+                            {tp.products?.name ?? "Unknown product"}
+                          </span>
+                          {(() => {
+                            const product = products.find((p) => p.id === tp.product_id);
+                            const col = product ? collectionMap.get(product.collection_id) : null;
+                            return col ? (
+                              <span className="text-[12px] text-neutral-400">{col.name}</span>
+                            ) : null;
+                          })()}
+                        </div>
                         <button
                           onClick={() => handleRemoveTopPick(tp.product_id)}
                           className="text-[13px] text-neutral-400 hover:text-[#C0392B] transition-colors flex-shrink-0"
@@ -505,10 +940,10 @@ export default function DashboardPage() {
               )}
             </section>
 
-            {/* ─── Products ──────────────────────────────────────── */}
+            {/* ─── Section 4: Products ───────────────────────── */}
             <section>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-neutral-900 [font-family:var(--font-space-grotesk)]">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-[17px] font-medium text-neutral-900">
                   Products
                 </h2>
                 <button
@@ -522,8 +957,7 @@ export default function DashboardPage() {
                       }));
                     }
                   }}
-                  className="text-[13px] font-medium hover:opacity-70 transition-opacity"
-                  style={{ color: "#C0392B" }}
+                  className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
                 >
                   {showAddProduct ? "Cancel" : "+ Add Product"}
                 </button>
@@ -545,7 +979,7 @@ export default function DashboardPage() {
                       onChange={(e) =>
                         setNewProduct({ ...newProduct, name: e.target.value })
                       }
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/30 focus:border-[#C0392B]"
+                      className={inputClass}
                       placeholder="Product name"
                     />
                   </div>
@@ -558,7 +992,7 @@ export default function DashboardPage() {
                       onChange={(e) =>
                         setNewProduct({ ...newProduct, collection_id: e.target.value })
                       }
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/30 focus:border-[#C0392B]"
+                      className={selectClass}
                     >
                       <option value="">Select collection</option>
                       {collections.map((c) => (
@@ -583,7 +1017,7 @@ export default function DashboardPage() {
                         }
                       }}
                       rows={2}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/30 focus:border-[#C0392B] resize-none"
+                      className={`${inputClass} resize-none`}
                       placeholder="Short description"
                     />
                   </div>
@@ -597,7 +1031,7 @@ export default function DashboardPage() {
                       onChange={(e) =>
                         setNewProduct({ ...newProduct, original_url: e.target.value })
                       }
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/30 focus:border-[#C0392B]"
+                      className={inputClass}
                       placeholder="https://..."
                     />
                   </div>
@@ -611,8 +1045,7 @@ export default function DashboardPage() {
                   )}
                   <button
                     type="submit"
-                    className="text-[14px] font-medium text-white px-4 py-2 rounded-md transition-opacity hover:opacity-90"
-                    style={{ backgroundColor: "#C0392B" }}
+                    className="bg-[#C0392B] text-white text-[14px] font-medium px-4 py-2 rounded-md hover:opacity-90 transition-opacity"
                   >
                     Add Product
                   </button>
@@ -639,7 +1072,7 @@ export default function DashboardPage() {
                               onChange={(e) =>
                                 setEditFields({ ...editFields, name: e.target.value })
                               }
-                              className="w-full rounded-md border border-gray-300 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/30 focus:border-[#C0392B]"
+                              className={inputClass}
                             />
                           </div>
                           <div>
@@ -657,7 +1090,7 @@ export default function DashboardPage() {
                                 }
                               }}
                               rows={2}
-                              className="w-full rounded-md border border-gray-300 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/30 focus:border-[#C0392B] resize-none"
+                              className={`${inputClass} resize-none`}
                             />
                           </div>
                           <div>
@@ -670,7 +1103,7 @@ export default function DashboardPage() {
                               onChange={(e) =>
                                 setEditFields({ ...editFields, original_url: e.target.value })
                               }
-                              className="w-full rounded-md border border-gray-300 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/30 focus:border-[#C0392B]"
+                              className={inputClass}
                             />
                           </div>
                           <PhotoUpload
@@ -688,7 +1121,7 @@ export default function DashboardPage() {
                               onChange={(e) =>
                                 setEditFields({ ...editFields, collection_id: e.target.value })
                               }
-                              className="w-full rounded-md border border-gray-300 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/30 focus:border-[#C0392B]"
+                              className={selectClass}
                             >
                               {collections.map((c) => (
                                 <option key={c.id} value={c.id}>
@@ -703,8 +1136,7 @@ export default function DashboardPage() {
                           <div className="flex items-center gap-3">
                             <button
                               onClick={() => handleSaveEdit(p.id)}
-                              className="text-[13px] font-medium text-white px-3 py-1.5 rounded-md transition-opacity hover:opacity-90"
-                              style={{ backgroundColor: "#C0392B" }}
+                              className="bg-[#C0392B] text-white text-[14px] font-medium px-4 py-2 rounded-md hover:opacity-90 transition-opacity"
                             >
                               Save
                             </button>
@@ -728,7 +1160,7 @@ export default function DashboardPage() {
                               <StatusBadge status={p.status} />
                             </div>
                             <span className="text-[13px] text-neutral-400">
-                              {collectionMap.get(p.collection_id)?.name ?? "—"}
+                              {collectionMap.get(p.collection_id)?.name ?? "\u2014"}
                             </span>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
@@ -761,10 +1193,10 @@ export default function DashboardPage() {
               )}
             </section>
 
-            {/* ─── Collections ───────────────────────────────────── */}
+            {/* ─── Section 5: Collections ────────────────────── */}
             <section>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-neutral-900 [font-family:var(--font-space-grotesk)]">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-[17px] font-medium text-neutral-900">
                   Collections
                 </h2>
                 <button
@@ -772,8 +1204,7 @@ export default function DashboardPage() {
                     setShowAddCollection(!showAddCollection);
                     setAddCollectionError("");
                   }}
-                  className="text-[13px] font-medium hover:opacity-70 transition-opacity"
-                  style={{ color: "#C0392B" }}
+                  className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
                 >
                   {showAddCollection ? "Cancel" : "+ Add Collection"}
                 </button>
@@ -793,7 +1224,7 @@ export default function DashboardPage() {
                       type="text"
                       value={newCollectionName}
                       onChange={(e) => setNewCollectionName(e.target.value)}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/30 focus:border-[#C0392B]"
+                      className={inputClass}
                       placeholder="e.g. Kitchen, Tech, Travel"
                     />
                     {addCollectionError && (
@@ -802,8 +1233,7 @@ export default function DashboardPage() {
                   </div>
                   <button
                     type="submit"
-                    className="text-[14px] font-medium text-white px-4 py-2 rounded-md transition-opacity hover:opacity-90 flex-shrink-0"
-                    style={{ backgroundColor: "#C0392B" }}
+                    className="bg-[#C0392B] text-white text-[14px] font-medium px-4 py-2 rounded-md hover:opacity-90 transition-opacity flex-shrink-0"
                   >
                     Add
                   </button>
@@ -829,7 +1259,7 @@ export default function DashboardPage() {
                             type="text"
                             value={renameValue}
                             onChange={(e) => setRenameValue(e.target.value)}
-                            className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/30 focus:border-[#C0392B]"
+                            className="flex-1 rounded-md border border-gray-200 px-3 py-1.5 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40"
                             autoFocus
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
@@ -841,8 +1271,7 @@ export default function DashboardPage() {
                           />
                           <button
                             onClick={() => handleRenameCollection(c.id)}
-                            className="text-[13px] font-medium hover:opacity-70 transition-opacity"
-                            style={{ color: "#C0392B" }}
+                            className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
                           >
                             Save
                           </button>

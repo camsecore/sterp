@@ -113,11 +113,7 @@ async function uploadProductPhoto(file: File, userId: string, productId: string)
 
   if (error) throw new Error(error.message);
 
-  const { data } = supabase.storage
-    .from("product-photos")
-    .getPublicUrl(filePath);
-
-  return data.publicUrl;
+  return `https://images.sterp.com/${filePath}`;
 }
 
 function PhotoUpload({

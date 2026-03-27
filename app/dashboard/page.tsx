@@ -4,7 +4,9 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useUser } from "@/app/contexts/auth";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Clock } from "lucide-react";
+import { Clock, Camera } from "lucide-react";
+import Cropper from "react-easy-crop";
+import type { Area } from "react-easy-crop";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -111,28 +113,28 @@ async function convertToWebP(file: File): Promise<Blob> {
   });
 }
 
-async function convertToSquareWebP(file: File): Promise<Blob> {
+async function getCroppedBlob(imageSrc: string, cropArea: Area): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const size = Math.min(img.width, img.height);
-      const sx = (img.width - size) / 2;
-      const sy = (img.height - size) / 2;
-      const outSize = Math.min(size, 400);
       const canvas = document.createElement("canvas");
-      canvas.width = outSize;
-      canvas.height = outSize;
+      canvas.width = cropArea.width;
+      canvas.height = cropArea.height;
       const ctx = canvas.getContext("2d");
       if (!ctx) return reject(new Error("Canvas not supported"));
-      ctx.drawImage(img, sx, sy, size, size, 0, 0, outSize, outSize);
+      ctx.drawImage(
+        img,
+        cropArea.x, cropArea.y, cropArea.width, cropArea.height,
+        0, 0, cropArea.width, cropArea.height
+      );
       canvas.toBlob(
-        (blob) => (blob ? resolve(blob) : reject(new Error("Conversion failed"))),
-        "image/webp",
-        0.85
+        (blob) => (blob ? resolve(blob) : reject(new Error("Crop failed"))),
+        "image/jpeg",
+        0.95
       );
     };
     img.onerror = () => reject(new Error("Failed to load image"));
-    img.src = URL.createObjectURL(file);
+    img.src = imageSrc;
   });
 }
 
@@ -153,78 +155,187 @@ async function uploadProductPhoto(file: File, userId: string, productId: string)
   return `https://images.sterp.com/${filePath}`;
 }
 
-function PhotoUpload({
-  currentUrl,
-  onUpload,
-  userId,
-  productId,
-}: {
-  currentUrl: string | null;
-  onUpload: (url: string) => void;
-  userId: string;
-  productId?: string;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState("");
+// ─── Crop Modal ──────────────────────────────────────────────────────
 
-  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+interface CropModalProps {
+  imageSrc: string;
+  aspect: number;
+  onDone: (croppedBlob: Blob) => void;
+  onCancel: () => void;
+}
 
-    if (file.size > 10 * 1024 * 1024) {
-      setError("Max 10MB");
-      return;
-    }
+function CropModal({ imageSrc, aspect, onDone, onCancel }: CropModalProps) {
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedArea, setCroppedArea] = useState<Area | null>(null);
 
-    setError("");
-    setUploading(true);
-    try {
-      const id = productId || crypto.randomUUID();
-      const url = await uploadProductPhoto(file, userId, id);
-      onUpload(url);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
-    } finally {
-      setUploading(false);
-      if (inputRef.current) inputRef.current.value = "";
-    }
+  const handleCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
+    setCroppedArea(croppedAreaPixels);
+  }, []);
+
+  async function handleDone() {
+    if (!croppedArea) return;
+    const blob = await getCroppedBlob(imageSrc, croppedArea);
+    onDone(blob);
   }
 
   return (
-    <div>
-      <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-        Photo
-      </label>
-      <div className="flex items-center gap-3">
-        {currentUrl ? (
-          <div className="h-16 w-16 rounded bg-neutral-200 overflow-hidden flex-shrink-0">
-            <img src={currentUrl} alt="" className="h-full w-full object-cover" />
+    <div className="fixed inset-0 z-[60] bg-black flex flex-col">
+      <div className="relative flex-1">
+        <Cropper
+          image={imageSrc}
+          crop={crop}
+          zoom={zoom}
+          aspect={aspect}
+          onCropChange={setCrop}
+          onZoomChange={setZoom}
+          onCropComplete={handleCropComplete}
+          showGrid={true}
+        />
+      </div>
+      <div className="flex items-center gap-4 px-6 py-4 bg-black">
+        <input
+          type="range"
+          min={1}
+          max={3}
+          step={0.1}
+          value={zoom}
+          onChange={(e) => setZoom(Number(e.target.value))}
+          className="flex-1 accent-white"
+        />
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-[15px] text-white/70 hover:text-white"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleDone}
+          className="text-[15px] font-medium text-white bg-[#C0392B] px-6 py-2 rounded-md hover:opacity-90"
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Archive Modal ──────────────────────────────────────────────────
+
+function ArchiveModal({
+  product,
+  onConfirm,
+  onCancel,
+}: {
+  product: Product;
+  onConfirm: (note: string | null) => void;
+  onCancel: () => void;
+}) {
+  const [note, setNote] = useState("");
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") onCancel(); }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onCancel}>
+      <div className="fixed inset-0 bg-black/50" />
+      <div
+        className="relative z-10 w-full sm:max-w-md bg-white rounded-t-xl sm:rounded-xl p-5 space-y-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-3">
+          {product.photo_url && (
+            <div className="h-12 w-12 rounded bg-neutral-200 overflow-hidden flex-shrink-0">
+              <img src={product.photo_url} alt="" className="h-full w-full object-cover" />
+            </div>
+          )}
+          <div>
+            <p className="text-[15px] font-medium text-neutral-900">{product.name}</p>
+            <p className="text-[13px] text-neutral-400">Archive this product</p>
           </div>
-        ) : (
-          <div className="h-16 w-16 rounded bg-neutral-100 flex items-center justify-center text-neutral-400 text-xs flex-shrink-0">
-            No photo
-          </div>
-        )}
-        <div className="flex flex-col gap-1">
+        </div>
+        <div>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={3}
+            className="w-full rounded-md border border-gray-200 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40 resize-none"
+            placeholder="Any memories with this one? (optional)"
+            autoFocus
+          />
+          <p className="text-[12px] text-neutral-400 mt-1">
+            This isn&apos;t a review — it&apos;s a personal note. &quot;Sold this when we moved.&quot; &quot;My first real upgrade.&quot;
+          </p>
+        </div>
+        <div className="flex items-center gap-3 pt-1">
           <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={uploading}
-            className="text-[13px] font-medium px-3 py-1.5 rounded-md border border-gray-200 hover:bg-neutral-50 disabled:opacity-50 transition-colors"
+            onClick={() => onConfirm(note.trim() || null)}
+            className="text-[14px] font-medium text-white px-5 py-2 rounded-md hover:opacity-90"
+            style={{ backgroundColor: "#C0392B" }}
           >
-            {uploading ? "Uploading..." : currentUrl ? "Change photo" : "Upload photo"}
+            Archive
           </button>
-          {error && <p className="text-[12px] text-[#C0392B]">{error}</p>}
+          <button
+            onClick={onCancel}
+            className="text-[14px] text-neutral-500 hover:text-neutral-800"
+          >
+            Cancel
+          </button>
         </div>
       </div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/heic"
-        onChange={handleFile}
-        className="hidden"
-      />
+    </div>
+  );
+}
+
+// ─── Delete Confirmation Modal ──────────────────────────────────────
+
+function DeleteModal({
+  name,
+  onConfirm,
+  onCancel,
+}: {
+  name: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") onCancel(); }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onCancel}>
+      <div className="fixed inset-0 bg-black/50" />
+      <div
+        className="relative z-10 w-full sm:max-w-sm bg-white rounded-t-xl sm:rounded-xl p-5 space-y-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div>
+          <p className="text-[15px] font-medium text-neutral-900">Delete {name}?</p>
+          <p className="text-[14px] text-neutral-500 mt-1">This is permanent and can&apos;t be undone.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onConfirm}
+            className="text-[14px] font-medium text-white px-5 py-2 rounded-md hover:opacity-90"
+            style={{ backgroundColor: "#C0392B" }}
+          >
+            Delete
+          </button>
+          <button
+            onClick={onCancel}
+            className="text-[14px] text-neutral-500 hover:text-neutral-800"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -236,6 +347,472 @@ const inputClass =
 
 const selectClass =
   "w-full rounded-md border border-gray-200 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40";
+
+// ─── Product Modal Props ────────────────────────────────────────────
+
+interface ProductModalProps {
+  mode: "add" | "edit";
+  product?: Product;
+  defaultCollectionId?: string;
+  collections: Collection[];
+  userId: string;
+  onSave: () => Promise<void>;
+  onClose: () => void;
+  onCollectionCreated: () => Promise<void>;
+}
+
+function ProductModal({
+  mode,
+  product,
+  defaultCollectionId,
+  collections,
+  userId,
+  onSave,
+  onClose,
+  onCollectionCreated,
+}: ProductModalProps) {
+  const [name, setName] = useState(product?.name || "");
+  const [oneLiner, setOneLiner] = useState(product?.one_liner || "");
+  const [originalUrl, setOriginalUrl] = useState(product?.original_url || "");
+  const [photoUrl, setPhotoUrl] = useState(product?.photo_url || "");
+  const [collectionId, setCollectionId] = useState(
+    product?.collection_id || defaultCollectionId || (collections[0]?.id ?? "")
+  );
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [draggingOver, setDraggingOver] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [creatingCollection, setCreatingCollection] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState("");
+  const [newCollectionError, setNewCollectionError] = useState("");
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const newCollectionInputRef = useRef<HTMLInputElement>(null);
+
+  // Close on Escape
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  // Lock body scroll when modal open
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  // Focus new collection input when it appears
+  useEffect(() => {
+    if (creatingCollection && newCollectionInputRef.current) {
+      newCollectionInputRef.current.focus();
+    }
+  }, [creatingCollection]);
+
+  function handleFileSelect(file: File) {
+    if (file.size > 10 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, photo: "Max 10MB" }));
+      return;
+    }
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.photo;
+      return next;
+    });
+    setCropSrc(URL.createObjectURL(file));
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) handleFileSelect(file);
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    setDraggingOver(true);
+  }
+
+  function handleDragLeave() {
+    setDraggingOver(false);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDraggingOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      handleFileSelect(file);
+    }
+  }
+
+  async function handleCropDone(croppedBlob: Blob) {
+    setCropSrc(null);
+    setUploading(true);
+    try {
+      const file = new File([croppedBlob], "photo.jpg", { type: "image/jpeg" });
+      const id = product?.id || crypto.randomUUID();
+      const url = await uploadProductPhoto(file, userId, id);
+      setPhotoUrl(url);
+    } catch (err) {
+      setErrors((prev) => ({
+        ...prev,
+        photo: err instanceof Error ? err.message : "Upload failed",
+      }));
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleCreateCollection() {
+    setNewCollectionError("");
+    if (!newCollectionName.trim()) {
+      setNewCollectionError("Name is required");
+      return;
+    }
+    const res = await fetch("/api/collections", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newCollectionName.trim() }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      setNewCollectionError(data.error || "Failed to create collection");
+      return;
+    }
+    const created = await res.json();
+    await onCollectionCreated();
+    setCollectionId(created.id);
+    setCreatingCollection(false);
+    setNewCollectionName("");
+  }
+
+  async function handleSave() {
+    const newErrors: Record<string, string> = {};
+    if (!photoUrl) newErrors.photo = "Photo is required";
+    if (!name.trim()) newErrors.name = "Name is required";
+    if (!oneLiner.trim()) newErrors.one_liner = "One-liner is required";
+    if (!collectionId) newErrors.collection = "Collection is required";
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    setErrors({});
+    setSaving(true);
+    try {
+      if (mode === "add") {
+        const res = await fetch("/api/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: name.trim(),
+            collection_id: collectionId,
+            one_liner: oneLiner.trim() || null,
+            original_url: originalUrl.trim() || null,
+            photo_url: photoUrl || null,
+          }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          setErrors({ form: data.error || "Failed to add product" });
+          setSaving(false);
+          return;
+        }
+      } else {
+        const res = await fetch(`/api/products/${product!.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: name.trim(),
+            one_liner: oneLiner.trim() || null,
+            original_url: originalUrl.trim() || null,
+            collection_id: collectionId,
+            photo_url: photoUrl || null,
+          }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          setErrors({ form: data.error || "Failed to update product" });
+          setSaving(false);
+          return;
+        }
+      }
+      await onSave();
+      onClose();
+    } catch {
+      setErrors({ form: "Something went wrong" });
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      onClick={onClose}
+    >
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/50" />
+
+      {/* Modal content */}
+      <div
+        className="relative z-10 bg-white w-full h-full sm:h-auto sm:max-w-lg sm:mx-auto sm:mt-20 sm:rounded-xl sm:max-h-[calc(100vh-10rem)] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between z-10">
+          <h2 className="text-[17px] font-semibold text-neutral-900">
+            {mode === "edit" ? "Edit Product" : "Add Product"}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-neutral-400 hover:text-neutral-600 transition-colors p-1"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+              <path
+                fillRule="evenodd"
+                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div className="px-5 py-4 space-y-4">
+          {/* Photo upload area */}
+          <div>
+            <div
+              className={`relative w-full aspect-[4/3] rounded-lg overflow-hidden cursor-pointer transition-colors ${
+                photoUrl
+                  ? "bg-neutral-200"
+                  : `border-2 border-dashed ${
+                      draggingOver
+                        ? "border-[#C0392B]/40 bg-[#C0392B]/5"
+                        : errors.photo
+                        ? "border-[#C0392B]/40 bg-red-50"
+                        : "border-gray-300 bg-neutral-50"
+                    }`
+              }`}
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              {uploading ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="w-8 h-8 border-2 border-neutral-300 border-t-[#C0392B] rounded-full animate-spin" />
+                  <span className="text-[13px] text-neutral-400 mt-2">Uploading...</span>
+                </div>
+              ) : photoUrl ? (
+                <>
+                  <img
+                    src={photoUrl}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center group">
+                    <span className="text-white text-[14px] font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                      Change photo
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <Camera size={32} className="text-neutral-300 mb-2" />
+                  <span className="text-[14px] text-neutral-400">Tap to add photo</span>
+                </div>
+              )}
+            </div>
+            {errors.photo && (
+              <p className="text-[13px] text-[#C0392B] mt-1">{errors.photo}</p>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/heic"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </div>
+
+          {/* Product name */}
+          <div>
+            <label className="block text-[13px] font-medium text-neutral-600 mb-1">
+              Product name *
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputClass}
+              placeholder="Product name"
+            />
+            {errors.name && (
+              <p className="text-[13px] text-[#C0392B] mt-1">{errors.name}</p>
+            )}
+          </div>
+
+          {/* One-liner */}
+          <div>
+            <label className="block text-[13px] font-medium text-neutral-600 mb-1">
+              One-liner *
+            </label>
+            <textarea
+              value={oneLiner}
+              onChange={(e) => {
+                if (e.target.value.length <= 160) {
+                  setOneLiner(e.target.value);
+                }
+              }}
+              rows={2}
+              className={`${inputClass} resize-none`}
+              placeholder="What would you tell a friend about this?"
+            />
+            <p
+              className={`text-[12px] mt-1 ${
+                oneLiner.length >= 140 ? "text-[#C0392B]" : "text-neutral-400"
+              }`}
+            >
+              {oneLiner.length}/160
+            </p>
+            {errors.one_liner && (
+              <p className="text-[13px] text-[#C0392B] mt-0.5">{errors.one_liner}</p>
+            )}
+          </div>
+
+          {/* Buy link */}
+          <div>
+            <label className="block text-[13px] font-medium text-neutral-600 mb-1">
+              Buy link
+            </label>
+            <input
+              type="url"
+              value={originalUrl}
+              onChange={(e) => setOriginalUrl(e.target.value)}
+              className={inputClass}
+              placeholder="Paste a product URL"
+            />
+          </div>
+
+          {/* Collection */}
+          <div>
+            <label className="block text-[13px] font-medium text-neutral-600 mb-1">
+              Collection *
+            </label>
+            {creatingCollection ? (
+              <div className="flex items-center gap-2">
+                <input
+                  ref={newCollectionInputRef}
+                  type="text"
+                  value={newCollectionName}
+                  onChange={(e) => setNewCollectionName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleCreateCollection();
+                    }
+                    if (e.key === "Escape") {
+                      setCreatingCollection(false);
+                      setNewCollectionName("");
+                      setNewCollectionError("");
+                    }
+                  }}
+                  className={inputClass}
+                  placeholder="Collection name"
+                />
+                <button
+                  type="button"
+                  onClick={handleCreateCollection}
+                  className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity flex-shrink-0"
+                >
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreatingCollection(false);
+                    setNewCollectionName("");
+                    setNewCollectionError("");
+                  }}
+                  className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <select
+                value={collectionId}
+                onChange={(e) => {
+                  if (e.target.value === "__create__") {
+                    setCreatingCollection(true);
+                  } else {
+                    setCollectionId(e.target.value);
+                  }
+                }}
+                className={selectClass}
+              >
+                <option value="" disabled>
+                  Select a collection
+                </option>
+                {collections.map((col) => (
+                  <option key={col.id} value={col.id}>
+                    {col.name}
+                  </option>
+                ))}
+                <option value="__create__">
+                  ＋ Create new collection
+                </option>
+              </select>
+            )}
+            {newCollectionError && (
+              <p className="text-[13px] text-[#C0392B] mt-1">{newCollectionError}</p>
+            )}
+            {errors.collection && (
+              <p className="text-[13px] text-[#C0392B] mt-1">{errors.collection}</p>
+            )}
+          </div>
+
+          {/* Form-level error */}
+          {errors.form && (
+            <p className="text-[13px] text-[#C0392B]">{errors.form}</p>
+          )}
+
+          {/* Save / Cancel */}
+          <div className="flex items-center gap-3 pt-2 pb-2">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || uploading}
+              className="bg-[#C0392B] text-white text-[14px] font-medium px-5 py-2.5 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {saving ? "Saving..." : mode === "edit" ? "Save Changes" : "Add Product"}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {cropSrc && (
+        <CropModal
+          imageSrc={cropSrc}
+          aspect={4 / 3}
+          onDone={handleCropDone}
+          onCancel={() => { setCropSrc(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+        />
+      )}
+    </div>
+  );
+}
 
 // ─── Main component ─────────────────────────────────────────────────
 
@@ -255,6 +832,7 @@ export default function DashboardPage() {
   // Avatar upload
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarCropSrc, setAvatarCropSrc] = useState<string | null>(null);
 
   // Profile inline editing
   const [profileName, setProfileName] = useState("");
@@ -263,27 +841,12 @@ export default function DashboardPage() {
   const [profileInstagram, setProfileInstagram] = useState("");
   const [profileYoutube, setProfileYoutube] = useState("");
 
-  // Add product form
-  const [showAddProduct, setShowAddProduct] = useState(false);
-  const [newProduct, setNewProduct] = useState({
-    name: "",
-    collection_id: "",
-    one_liner: "",
-    original_url: "",
-    photo_url: "",
-  });
-  const [addProductError, setAddProductError] = useState("");
-
-  // Edit product inline
-  const [editingProductId, setEditingProductId] = useState<string | null>(null);
-  const [editFields, setEditFields] = useState({
-    name: "",
-    one_liner: "",
-    original_url: "",
-    collection_id: "",
-    photo_url: "",
-  });
-  const [editError, setEditError] = useState("");
+  // Product modal
+  const [productModal, setProductModal] = useState<{
+    mode: "add" | "edit";
+    collectionId?: string;
+    product?: Product;
+  } | null>(null);
 
   // Add collection
   const [showAddCollection, setShowAddCollection] = useState(false);
@@ -297,6 +860,10 @@ export default function DashboardPage() {
 
   // Collection errors (for delete)
   const [collectionError, setCollectionError] = useState("");
+
+  // Archive & delete modals
+  const [archiveTarget, setArchiveTarget] = useState<Product | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; type: "product" | "collection" | "archived" } | null>(null);
 
   // ─── Data fetching ──────────────────────────────────────────────
 
@@ -365,15 +932,20 @@ export default function DashboardPage() {
     }
   }
 
-  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleAvatarFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-
     if (file.size > 10 * 1024 * 1024) return;
+    setAvatarCropSrc(URL.createObjectURL(file));
+  }
 
+  async function handleAvatarCropDone(croppedBlob: Blob) {
+    setAvatarCropSrc(null);
+    if (!user) return;
     setAvatarUploading(true);
     try {
-      const webpBlob = await convertToSquareWebP(file);
+      const file = new File([croppedBlob], "avatar.jpg", { type: "image/jpeg" });
+      const webpBlob = await convertToWebP(file);
       const supabase = createClient();
       const filePath = `${user.id}/avatar.webp`;
 
@@ -413,95 +985,37 @@ export default function DashboardPage() {
 
   // ─── Product actions ────────────────────────────────────────────
 
-  async function handleAddProduct(e: React.FormEvent) {
-    e.preventDefault();
-    setAddProductError("");
-    if (!newProduct.name.trim()) {
-      setAddProductError("Name is required");
-      return;
-    }
-    if (!newProduct.collection_id) {
-      setAddProductError("Select a collection");
-      return;
-    }
-    const res = await fetch("/api/products", {
+  async function handleArchiveConfirm(note: string | null) {
+    if (!archiveTarget) return;
+    const res = await fetch(`/api/products/${archiveTarget.id}/archive`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: newProduct.name.trim(),
-        collection_id: newProduct.collection_id,
-        one_liner: newProduct.one_liner.trim() || null,
-        original_url: newProduct.original_url.trim() || null,
-        photo_url: newProduct.photo_url.trim() || null,
-      }),
-    });
-    if (!res.ok) {
-      const data = await res.json();
-      setAddProductError(data.error || "Failed to add product");
-      return;
-    }
-    setNewProduct({ name: "", collection_id: "", one_liner: "", original_url: "", photo_url: "" });
-    setShowAddProduct(false);
-    await Promise.all([fetchProducts(), fetchTopPicks()]);
-  }
-
-  function startEdit(p: Product) {
-    setEditingProductId(p.id);
-    setEditFields({
-      name: p.name,
-      one_liner: p.one_liner || "",
-      original_url: p.original_url || "",
-      collection_id: p.collection_id,
-      photo_url: p.photo_url || "",
-    });
-    setEditError("");
-  }
-
-  async function handleSaveEdit(id: string) {
-    setEditError("");
-    if (!editFields.name.trim()) {
-      setEditError("Name is required");
-      return;
-    }
-    const res = await fetch(`/api/products/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: editFields.name.trim(),
-        one_liner: editFields.one_liner.trim() || null,
-        original_url: editFields.original_url.trim() || null,
-        collection_id: editFields.collection_id,
-        photo_url: editFields.photo_url.trim() || null,
-      }),
-    });
-    if (!res.ok) {
-      const data = await res.json();
-      setEditError(data.error || "Failed to update product");
-      return;
-    }
-    setEditingProductId(null);
-    await fetchProducts();
-  }
-
-  async function handleArchive(id: string) {
-    const note = prompt("Optional archive note (or leave empty):");
-    if (note === null) return; // cancelled
-    const res = await fetch(`/api/products/${id}/archive`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ archive_note: note.trim() || null }),
+      body: JSON.stringify({ archive_note: note }),
     });
     if (res.ok) {
       await Promise.all([fetchProducts(), fetchTopPicks()]);
     }
+    setArchiveTarget(null);
   }
 
-  async function handleDeleteProduct(id: string) {
-    if (!confirm("Delete this product? This cannot be undone.")) return;
-    const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
-    if (res.ok) {
-      await Promise.all([fetchProducts(), fetchTopPicks()]);
+  async function handleDeleteConfirm() {
+    if (!deleteTarget) return;
+    if (deleteTarget.type === "collection") {
+      setCollectionError("");
+      const res = await fetch(`/api/collections/${deleteTarget.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json();
+        setCollectionError(data.error || "Failed to delete collection");
+      } else {
+        await fetchCollections();
+      }
+    } else {
+      const res = await fetch(`/api/products/${deleteTarget.id}`, { method: "DELETE" });
+      if (res.ok) {
+        await Promise.all([fetchProducts(), fetchTopPicks()]);
+      }
     }
+    setDeleteTarget(null);
   }
 
   // ─── Top Picks actions ─────────────────────────────────────────
@@ -639,17 +1153,7 @@ export default function DashboardPage() {
     await fetchCollections();
   }
 
-  async function handleDeleteCollection(id: string) {
-    setCollectionError("");
-    if (!confirm("Delete this collection?")) return;
-    const res = await fetch(`/api/collections/${id}`, { method: "DELETE" });
-    if (!res.ok) {
-      const data = await res.json();
-      setCollectionError(data.error || "Failed to delete collection");
-      return;
-    }
-    await fetchCollections();
-  }
+  // handleDeleteCollection replaced by deleteTarget modal flow
 
   // ─── Archive actions ───────────────────────────────────────────
 
@@ -668,11 +1172,7 @@ export default function DashboardPage() {
     }
   }
 
-  async function handleDeleteArchived(id: string) {
-    if (!confirm("Are you sure? This can't be undone.")) return;
-    const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
-    if (res.ok) await fetchProducts();
-  }
+  // handleDeleteArchived replaced by deleteTarget modal flow
 
   function formatDuration(createdAt: string, archivedAt: string): string {
     const start = new Date(createdAt);
@@ -801,7 +1301,7 @@ export default function DashboardPage() {
                     ref={avatarInputRef}
                     type="file"
                     accept="image/jpeg,image/png,image/webp,image/heic"
-                    onChange={handleAvatarUpload}
+                    onChange={handleAvatarFileSelect}
                     className="hidden"
                   />
 
@@ -1237,7 +1737,7 @@ export default function DashboardPage() {
                                         <button
                                           onClick={() => {
                                             setCollectionMenuOpen(null);
-                                            handleDeleteCollection(c.id);
+                                            setDeleteTarget({ id: c.id, name: c.name, type: "collection" });
                                           }}
                                           className="w-full text-left px-4 py-2 text-[14px] text-[#C0392B] hover:bg-neutral-50 transition-colors"
                                         >
@@ -1257,196 +1757,20 @@ export default function DashboardPage() {
                               {/* Add Product button */}
                               <button
                                 type="button"
-                                onClick={() => {
-                                  setShowAddProduct(true);
-                                  setNewProduct((prev) => ({ ...prev, collection_id: c.id }));
-                                  setAddProductError("");
-                                }}
+                                onClick={() =>
+                                  setProductModal({ mode: "add", collectionId: c.id })
+                                }
                                 className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
                               >
                                 + Add Product
                               </button>
 
-                              {/* Inline add product form */}
-                              {showAddProduct && newProduct.collection_id === c.id && (
-                                <form
-                                  onSubmit={handleAddProduct}
-                                  className="bg-neutral-50 rounded-lg border border-gray-200 p-4 space-y-3"
-                                >
-                                  <div>
-                                    <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-                                      Name *
-                                    </label>
-                                    <input
-                                      type="text"
-                                      value={newProduct.name}
-                                      onChange={(e) =>
-                                        setNewProduct({ ...newProduct, name: e.target.value })
-                                      }
-                                      className={inputClass}
-                                      placeholder="Product name"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-                                      One-liner{" "}
-                                      <span className="text-neutral-400 font-normal">
-                                        ({newProduct.one_liner.length}/160)
-                                      </span>
-                                    </label>
-                                    <textarea
-                                      value={newProduct.one_liner}
-                                      onChange={(e) => {
-                                        if (e.target.value.length <= 160) {
-                                          setNewProduct({ ...newProduct, one_liner: e.target.value });
-                                        }
-                                      }}
-                                      rows={2}
-                                      className={`${inputClass} resize-none`}
-                                      placeholder="Short description"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-                                      Product URL
-                                    </label>
-                                    <input
-                                      type="url"
-                                      value={newProduct.original_url}
-                                      onChange={(e) =>
-                                        setNewProduct({ ...newProduct, original_url: e.target.value })
-                                      }
-                                      className={inputClass}
-                                      placeholder="https://..."
-                                    />
-                                  </div>
-                                  <PhotoUpload
-                                    currentUrl={newProduct.photo_url || null}
-                                    onUpload={(url) => setNewProduct({ ...newProduct, photo_url: url })}
-                                    userId={user.id}
-                                  />
-                                  {addProductError && (
-                                    <p className="text-[13px] text-[#C0392B]">{addProductError}</p>
-                                  )}
-                                  <div className="flex items-center gap-3">
-                                    <button
-                                      type="submit"
-                                      className="bg-[#C0392B] text-white text-[14px] font-medium px-4 py-2 rounded-md hover:opacity-90 transition-opacity"
-                                    >
-                                      Add Product
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setShowAddProduct(false);
-                                        setNewProduct({ name: "", collection_id: "", one_liner: "", original_url: "", photo_url: "" });
-                                        setAddProductError("");
-                                      }}
-                                      className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors"
-                                    >
-                                      Cancel
-                                    </button>
-                                  </div>
-                                </form>
-                              )}
-
                               {/* Product rows */}
-                              {colProducts.length === 0 && !(showAddProduct && newProduct.collection_id === c.id) && (
+                              {colProducts.length === 0 && (
                                 <p className="text-[13px] text-neutral-400 py-1">No products in this collection.</p>
                               )}
                               {colProducts.map((p, pIdx) => (
                                 <div key={p.id}>
-                                  {editingProductId === p.id ? (
-                                    /* Inline edit form */
-                                    <div className="bg-neutral-50 rounded-lg border border-gray-200 p-4 space-y-3">
-                                      <div>
-                                        <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-                                          Name
-                                        </label>
-                                        <input
-                                          type="text"
-                                          value={editFields.name}
-                                          onChange={(e) =>
-                                            setEditFields({ ...editFields, name: e.target.value })
-                                          }
-                                          className={inputClass}
-                                        />
-                                      </div>
-                                      <div>
-                                        <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-                                          One-liner{" "}
-                                          <span className="text-neutral-400 font-normal">
-                                            ({editFields.one_liner.length}/160)
-                                          </span>
-                                        </label>
-                                        <textarea
-                                          value={editFields.one_liner}
-                                          onChange={(e) => {
-                                            if (e.target.value.length <= 160) {
-                                              setEditFields({ ...editFields, one_liner: e.target.value });
-                                            }
-                                          }}
-                                          rows={2}
-                                          className={`${inputClass} resize-none`}
-                                        />
-                                      </div>
-                                      <div>
-                                        <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-                                          Product URL
-                                        </label>
-                                        <input
-                                          type="url"
-                                          value={editFields.original_url}
-                                          onChange={(e) =>
-                                            setEditFields({ ...editFields, original_url: e.target.value })
-                                          }
-                                          className={inputClass}
-                                        />
-                                      </div>
-                                      <PhotoUpload
-                                        currentUrl={editFields.photo_url || null}
-                                        onUpload={(url) => setEditFields({ ...editFields, photo_url: url })}
-                                        userId={user.id}
-                                        productId={p.id}
-                                      />
-                                      <div>
-                                        <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-                                          Collection
-                                        </label>
-                                        <select
-                                          value={editFields.collection_id}
-                                          onChange={(e) =>
-                                            setEditFields({ ...editFields, collection_id: e.target.value })
-                                          }
-                                          className={selectClass}
-                                        >
-                                          {collections.map((col) => (
-                                            <option key={col.id} value={col.id}>
-                                              {col.name}
-                                            </option>
-                                          ))}
-                                        </select>
-                                      </div>
-                                      {editError && (
-                                        <p className="text-[13px] text-[#C0392B]">{editError}</p>
-                                      )}
-                                      <div className="flex items-center gap-3">
-                                        <button
-                                          onClick={() => handleSaveEdit(p.id)}
-                                          className="bg-[#C0392B] text-white text-[14px] font-medium px-4 py-2 rounded-md hover:opacity-90 transition-opacity"
-                                        >
-                                          Save
-                                        </button>
-                                        <button
-                                          onClick={() => setEditingProductId(null)}
-                                          className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors"
-                                        >
-                                          Cancel
-                                        </button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    /* Product row */
                                     <div
                                       draggable
                                       onDragStart={() => {
@@ -1500,28 +1824,27 @@ export default function DashboardPage() {
                                       <StatusBadge status={p.status} />
                                       <div className="flex items-center gap-1.5 flex-shrink-0">
                                         <button
-                                          onClick={() => startEdit(p)}
+                                          onClick={() => setProductModal({ mode: "edit", product: p })}
                                           className="text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors"
                                         >
                                           Edit
                                         </button>
                                         <span className="text-neutral-200">|</span>
                                         <button
-                                          onClick={() => handleArchive(p.id)}
+                                          onClick={() => setArchiveTarget(p)}
                                           className="text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors"
                                         >
                                           Archive
                                         </button>
                                         <span className="text-neutral-200">|</span>
                                         <button
-                                          onClick={() => handleDeleteProduct(p.id)}
+                                          onClick={() => setDeleteTarget({ id: p.id, name: p.name, type: "product" })}
                                           className="text-[12px] text-neutral-400 hover:text-[#C0392B] transition-colors"
                                         >
                                           Delete
                                         </button>
                                       </div>
                                     </div>
-                                  )}
                                 </div>
                               ))}
                             </div>
@@ -1613,7 +1936,7 @@ export default function DashboardPage() {
                             </button>
                             <span className="text-neutral-200">|</span>
                             <button
-                              onClick={() => handleDeleteArchived(p.id)}
+                              onClick={() => setDeleteTarget({ id: p.id, name: p.name, type: "archived" })}
                               className="text-[12px] text-neutral-400 hover:text-[#C0392B] transition-colors"
                             >
                               Delete
@@ -1629,6 +1952,46 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Product Modal */}
+      {productModal && (
+        <ProductModal
+          mode={productModal.mode}
+          product={productModal.product}
+          defaultCollectionId={productModal.collectionId}
+          collections={collections}
+          userId={user.id}
+          onSave={async () => {
+            await Promise.all([fetchProducts(), fetchTopPicks()]);
+          }}
+          onClose={() => setProductModal(null)}
+          onCollectionCreated={fetchCollections}
+        />
+      )}
+
+      {/* Avatar Crop Modal */}
+      {avatarCropSrc && (
+        <CropModal
+          imageSrc={avatarCropSrc}
+          aspect={1}
+          onDone={handleAvatarCropDone}
+          onCancel={() => { setAvatarCropSrc(null); if (avatarInputRef.current) avatarInputRef.current.value = ""; }}
+        />
+      )}
+      {archiveTarget && (
+        <ArchiveModal
+          product={archiveTarget}
+          onConfirm={handleArchiveConfirm}
+          onCancel={() => setArchiveTarget(null)}
+        />
+      )}
+      {deleteTarget && (
+        <DeleteModal
+          name={deleteTarget.name}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
     </div>
   );
 }

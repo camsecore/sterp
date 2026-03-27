@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useUser } from "@/app/contexts/auth";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -70,6 +71,124 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+async function convertToWebP(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("Canvas not supported"));
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error("Conversion failed"))),
+        "image/webp",
+        0.85
+      );
+    };
+    img.onerror = () => reject(new Error("Failed to load image"));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+async function uploadProductPhoto(file: File, userId: string, productId: string): Promise<string> {
+  const webpBlob = await convertToWebP(file);
+  const supabase = createClient();
+  const filePath = `${userId}/${productId}.webp`;
+
+  const { error } = await supabase.storage
+    .from("product-photos")
+    .upload(filePath, webpBlob, {
+      contentType: "image/webp",
+      upsert: true,
+    });
+
+  if (error) throw new Error(error.message);
+
+  const { data } = supabase.storage
+    .from("product-photos")
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
+}
+
+function PhotoUpload({
+  currentUrl,
+  onUpload,
+  userId,
+  productId,
+}: {
+  currentUrl: string | null;
+  onUpload: (url: string) => void;
+  userId: string;
+  productId?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Max 5MB");
+      return;
+    }
+
+    setError("");
+    setUploading(true);
+    try {
+      const id = productId || crypto.randomUUID();
+      const url = await uploadProductPhoto(file, userId, id);
+      onUpload(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  return (
+    <div>
+      <label className="block text-[13px] font-medium text-neutral-600 mb-1">
+        Photo
+      </label>
+      <div className="flex items-center gap-3">
+        {currentUrl ? (
+          <div className="h-16 w-16 rounded bg-neutral-200 overflow-hidden flex-shrink-0">
+            <img src={currentUrl} alt="" className="h-full w-full object-cover" />
+          </div>
+        ) : (
+          <div className="h-16 w-16 rounded bg-neutral-100 flex items-center justify-center text-neutral-400 text-xs flex-shrink-0">
+            No photo
+          </div>
+        )}
+        <div className="flex flex-col gap-1">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="text-[13px] font-medium px-3 py-1.5 rounded-md border border-gray-300 hover:bg-neutral-50 disabled:opacity-50 transition-colors"
+          >
+            {uploading ? "Uploading..." : currentUrl ? "Change photo" : "Upload photo"}
+          </button>
+          {error && <p className="text-[12px] text-[#C0392B]">{error}</p>}
+        </div>
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/heic"
+        onChange={handleFile}
+        className="hidden"
+      />
+    </div>
+  );
+}
+
 // ─── Main component ─────────────────────────────────────────────────
 
 export default function DashboardPage() {
@@ -99,6 +218,7 @@ export default function DashboardPage() {
     one_liner: "",
     original_url: "",
     collection_id: "",
+    photo_url: "",
   });
   const [editError, setEditError] = useState("");
 
@@ -191,6 +311,7 @@ export default function DashboardPage() {
       one_liner: p.one_liner || "",
       original_url: p.original_url || "",
       collection_id: p.collection_id,
+      photo_url: p.photo_url || "",
     });
     setEditError("");
   }
@@ -209,6 +330,7 @@ export default function DashboardPage() {
         one_liner: editFields.one_liner.trim() || null,
         original_url: editFields.original_url.trim() || null,
         collection_id: editFields.collection_id,
+        photo_url: editFields.photo_url.trim() || null,
       }),
     });
     if (!res.ok) {
@@ -476,20 +598,11 @@ export default function DashboardPage() {
                       placeholder="https://..."
                     />
                   </div>
-                  <div>
-                    <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-                      Photo URL
-                    </label>
-                    <input
-                      type="url"
-                      value={newProduct.photo_url}
-                      onChange={(e) =>
-                        setNewProduct({ ...newProduct, photo_url: e.target.value })
-                      }
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/30 focus:border-[#C0392B]"
-                      placeholder="https://..."
-                    />
-                  </div>
+                  <PhotoUpload
+                    currentUrl={newProduct.photo_url || null}
+                    onUpload={(url) => setNewProduct({ ...newProduct, photo_url: url })}
+                    userId={user.id}
+                  />
                   {addProductError && (
                     <p className="text-[13px] text-[#C0392B]">{addProductError}</p>
                   )}
@@ -557,6 +670,12 @@ export default function DashboardPage() {
                               className="w-full rounded-md border border-gray-300 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/30 focus:border-[#C0392B]"
                             />
                           </div>
+                          <PhotoUpload
+                            currentUrl={editFields.photo_url || null}
+                            onUpload={(url) => setEditFields({ ...editFields, photo_url: url })}
+                            userId={user.id}
+                            productId={p.id}
+                          />
                           <div>
                             <label className="block text-[13px] font-medium text-neutral-600 mb-1">
                               Collection

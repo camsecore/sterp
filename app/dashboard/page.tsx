@@ -2137,21 +2137,16 @@ export default function DashboardPage() {
                             <span className="text-[14px] font-medium text-neutral-900 truncate block">
                               {p.name}
                             </span>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              {p.created_at && p.archived_at && (
-                                <span className="text-[12px] text-neutral-400">
-                                  Owned {formatDuration(p.created_at, p.archived_at)}
-                                </span>
-                              )}
-                              {p.archive_note && (
-                                <>
-                                  <span className="text-neutral-200">·</span>
-                                  <span className="text-[12px] text-neutral-400 truncate">
-                                    {p.archive_note}
-                                  </span>
-                                </>
-                              )}
-                            </div>
+                            {p.created_at && p.archived_at && (
+                              <span className="text-[12px] text-neutral-400 block mt-0.5">
+                                Owned {formatDuration(p.created_at, p.archived_at)}
+                              </span>
+                            )}
+                            {p.archive_note && (
+                              <span className="text-[12px] text-neutral-400 truncate block mt-0.5">
+                                {p.archive_note}
+                              </span>
+                            )}
                           </div>
                           <button
                             onClick={() => {

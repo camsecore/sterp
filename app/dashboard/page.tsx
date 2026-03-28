@@ -1075,7 +1075,7 @@ export default function DashboardPage() {
   async function handleAvatarFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-    if (file.size > 10 * 1024 * 1024) return;
+    if (file.size > 10 * 1024 * 1024) { setAvatarError("Max 10MB"); return; }
     try {
       const converted = isHeic(file) ? await convertHeicToJpeg(file) : file;
       if (avatarCropSrc) URL.revokeObjectURL(avatarCropSrc);
@@ -2001,7 +2001,7 @@ export default function DashboardPage() {
                                                       </span>
                                                     )}
                                                   </div>
-                                                  <StatusBadge status={p.status} />
+                                                  <span className="hidden sm:inline"><StatusBadge status={p.status} /></span>
                                                   <div className="flex items-center gap-1.5 flex-shrink-0">
                                                     <button
                                                       onClick={() => setProductModal({ mode: "edit", product: p })}

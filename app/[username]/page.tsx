@@ -103,6 +103,7 @@ export default async function ProfilePage({
       .from("products")
       .select("*")
       .eq("user_id", user.id)
+      .neq("status", "draft")
       .order("sort_order"),
     supabase
       .from("top_picks")

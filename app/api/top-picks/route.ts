@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     .single();
 
   if (!product) {
-    return NextResponse.json({ error: "Product not found or is archived" }, { status: 404 });
+    return NextResponse.json({ error: "Product must be active (not archived or draft)" }, { status: 404 });
   }
 
   // Check if already in top picks

@@ -89,7 +89,7 @@ export async function POST(request: Request) {
       one_liner: one_liner?.trim() || null,
       original_url: original_url || null,
       affiliate_url,
-      status: "current",
+      status: photo_url ? "current" : "draft",
       sort_order: nextOrder,
     })
     .select()
@@ -99,18 +99,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 
-  // Auto-populate top picks if user has fewer than 5
-  const { count } = await supabase
-    .from("top_picks")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user!.id);
+  // Auto-populate top picks if user has fewer than 5 (only for current products)
+  if (data.status === "current") {
+    const { count } = await supabase
+      .from("top_picks")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user!.id);
 
-  if ((count ?? 0) < 5) {
-    await supabase.from("top_picks").insert({
-      user_id: user!.id,
-      product_id: data.id,
-      sort_order: (count ?? 0) + 1,
-    });
+    if ((count ?? 0) < 5) {
+      await supabase.from("top_picks").insert({
+        user_id: user!.id,
+        product_id: data.id,
+        sort_order: (count ?? 0) + 1,
+      });
+    }
   }
 
   return NextResponse.json(data, { status: 201 });

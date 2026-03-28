@@ -34,6 +34,19 @@ export async function PATCH(
 
   if (body.photo_url !== undefined) {
     updates.photo_url = body.photo_url || null;
+
+    // Auto-promote draft to current when a photo is added
+    if (body.photo_url) {
+      const { data: existing } = await supabase
+        .from("products")
+        .select("status")
+        .eq("id", id)
+        .eq("user_id", user!.id)
+        .single();
+      if (existing?.status === "draft") {
+        updates.status = "current";
+      }
+    }
   }
 
   if (body.original_url !== undefined) {

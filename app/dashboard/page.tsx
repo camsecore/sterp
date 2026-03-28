@@ -115,18 +115,13 @@ function Thumbnail({ src, alt }: { src: string | null; alt: string }) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const isArchived = status === "archived";
-  return (
-    <span
-      className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
-        isArchived
-          ? "bg-neutral-200 text-neutral-500"
-          : "bg-emerald-100 text-emerald-700"
-      }`}
-    >
-      {isArchived ? "Archived" : "Active"}
-    </span>
-  );
+  if (status === "archived") {
+    return <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-neutral-200 text-neutral-500">Archived</span>;
+  }
+  if (status === "draft") {
+    return <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-400">Draft</span>;
+  }
+  return <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Active</span>;
 }
 
 async function convertToWebP(file: File): Promise<Blob> {
@@ -547,7 +542,7 @@ function ProductModal({
 
   async function handleSave() {
     const newErrors: Record<string, string> = {};
-    if (!photoUrl) newErrors.photo = "Photo is required";
+    // Photo is optional — products without photos save as drafts
     if (!name.trim()) newErrors.name = "Name is required";
     if (!oneLiner.trim()) newErrors.one_liner = "One-liner is required";
     if (!collectionId) newErrors.collection = "Collection is required";
@@ -704,6 +699,7 @@ function ProductModal({
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <Camera size={32} className="text-neutral-300 mb-2" />
                   <span className="text-[14px] text-neutral-400">Tap to add photo</span>
+                  <span className="text-[11px] text-neutral-300 mt-1">Add a photo to make this product live</span>
                 </div>
               )}
             </div>
@@ -857,7 +853,7 @@ function ProductModal({
           </div>
 
           {/* Top Pick status */}
-          {mode === "edit" && product && (
+          {mode === "edit" && product && product.status === "current" && (
             <div className="rounded-md border border-gray-200 px-3 py-2.5">
               {topPickEntry ? (
                 <div className="flex items-center justify-between">
@@ -1529,7 +1525,7 @@ export default function DashboardPage() {
 
   // Count products per collection
   const productCountByCollection = new Map<string, number>();
-  for (const p of currentProducts) {
+  for (const p of products.filter((p) => p.status === "current" || p.status === "draft")) {
     const count = productCountByCollection.get(p.collection_id) || 0;
     productCountByCollection.set(p.collection_id, count + 1);
   }
@@ -1775,6 +1771,14 @@ export default function DashboardPage() {
                   {showAddCollection ? "Cancel" : "+ Add Collection"}
                 </button>
               </div>
+              {(() => {
+                const draftCount = products.filter((p) => p.status === "draft").length;
+                return draftCount > 0 ? (
+                  <p className="text-[13px] text-neutral-400 mb-3">
+                    {draftCount} product{draftCount === 1 ? "" : "s"} need{draftCount === 1 ? "s" : ""} photos
+                  </p>
+                ) : null;
+              })()}
 
               {/* Add collection form */}
               {showAddCollection && (
@@ -1832,7 +1836,7 @@ export default function DashboardPage() {
                         .map((c) => {
                           const isCollapsed = collapsedCollections.has(c.id);
                           const colProducts = products
-                            .filter((p) => p.collection_id === c.id && p.status === "current")
+                            .filter((p) => p.collection_id === c.id && (p.status === "current" || p.status === "draft"))
                             .sort((a, b) => a.sort_order - b.sort_order);
                           const productCount = productCountByCollection.get(c.id) || 0;
 

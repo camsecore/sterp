@@ -1504,29 +1504,29 @@ export default function DashboardPage() {
                   <span className="text-[15px] font-medium text-neutral-900 truncate block">
                     {profile.name || profile.username}
                   </span>
+                  <button
+                    onClick={handleCopyLink}
+                    className={`text-[11px] transition-colors ${copied ? "text-emerald-600" : "text-neutral-400 hover:text-neutral-600 hover:underline"}`}
+                  >
+                    {copied ? "Copied!" : `sterp.com/${profile.username}`}
+                  </button>
                   {currentProducts.length >= 2 && (
-                    <span className="text-[11px] text-emerald-600">Live</span>
+                    <span className="text-[11px] text-emerald-600 block">Live</span>
                   )}
                 </div>
                 <button
                   onClick={() => setProfileModalOpen(true)}
                   className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0"
                 >
-                  Edit Profile
-                </button>
-                <button
-                  onClick={handleCopyLink}
-                  className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors flex-shrink-0"
-                >
-                  {copied ? "Copied!" : "Copy link"}
+                  Edit
                 </button>
                 <a
                   href={`/${profile.username}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[13px] text-[#C0392B] font-medium hover:opacity-70 transition-opacity flex-shrink-0"
+                  className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0"
                 >
-                  View →
+                  View
                 </a>
               </section>
             )}
@@ -2176,6 +2176,7 @@ export default function DashboardPage() {
                   className={inputClass}
                   placeholder="Your name"
                 />
+                <p className="text-[12px] text-neutral-400 mt-1">sterp.com/{profile.username}</p>
               </div>
 
               {/* Bio */}

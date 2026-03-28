@@ -21,6 +21,17 @@ export async function generateMetadata({
     return { title: "Not Found — Sterp" };
   }
 
+  // Go-live check: need at least 2 current products
+  const { count } = await supabase
+    .from("products")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("status", "current");
+
+  if ((count ?? 0) < 2) {
+    return { title: "Not Found — Sterp" };
+  }
+
   // Get the user's #1 top pick photo for the OG image
   const { data: topPick } = await supabase
     .from("top_picks")
@@ -44,7 +55,7 @@ export async function generateMetadata({
       description,
       type: "profile",
       url: `https://sterp.com/${user.username}`,
-      ...(ogImage ? { images: [{ url: ogImage, width: 1200, height: 630 }] } : {}),
+      ...(ogImage ? { images: [{ url: ogImage }] } : {}),
     },
     twitter: {
       card: ogImage ? "summary_large_image" : "summary",
@@ -71,6 +82,15 @@ export default async function ProfilePage({
     .single();
 
   if (!user) notFound();
+
+  // Go-live check: need at least 2 current products
+  const { count } = await supabase
+    .from("products")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("status", "current");
+
+  if ((count ?? 0) < 2) notFound();
 
   // Fetch collections, products, and top picks in parallel
   const [collectionsRes, productsRes, topPicksRes] = await Promise.all([

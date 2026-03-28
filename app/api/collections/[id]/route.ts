@@ -47,16 +47,17 @@ export async function DELETE(
   const { user, supabase, error } = await getAuthenticatedUser();
   if (error) return error;
 
-  // Check if collection has products
+  // Check if collection has current (non-archived) products
   const { count } = await supabase
     .from("products")
     .select("id", { count: "exact", head: true })
     .eq("collection_id", id)
-    .eq("user_id", user!.id);
+    .eq("user_id", user!.id)
+    .eq("status", "current");
 
   if (count && count > 0) {
     return NextResponse.json(
-      { error: "Cannot delete a collection that still has products. Move or delete them first." },
+      { error: "Cannot delete a collection that still has products. Move or archive them first." },
       { status: 400 }
     );
   }

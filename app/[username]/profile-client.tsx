@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Clock } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -31,6 +32,7 @@ interface Product {
   affiliate_url: string | null;
   status: string;
   sort_order: number;
+  created_at: string;
   archive_note: string | null;
   archived_at: string | null;
 }
@@ -85,7 +87,7 @@ function ProductCard({
   name: string;
   photo: string;
   oneLiner: string;
-  url: string;
+  url: string | null;
   productId: string;
   userId: string;
 }) {
@@ -103,11 +105,13 @@ function ProductCard({
 
   return (
     <div className="group flex flex-col rounded-md overflow-hidden border border-gray-200 bg-[#F0F4F8] transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
-      <div className="aspect-[4/3] overflow-hidden bg-neutral-100">
-        <img
+      <div className="relative aspect-[4/3] overflow-hidden bg-neutral-100">
+        <Image
           src={photo}
           alt={name}
-          className="h-full w-full object-cover"
+          fill
+          sizes="(max-width: 640px) 100vw, 50vw"
+          className="object-cover"
         />
       </div>
       <div className="p-3 flex flex-col flex-1">
@@ -117,43 +121,68 @@ function ProductCard({
         <p className="mt-1 text-[15px] text-neutral-700 leading-relaxed flex-grow">
           {oneLiner}
         </p>
-        <a
-          href={url}
-          onClick={handleClick}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block mt-2 text-[13px] hover:opacity-70 transition-opacity"
-          style={{ color: "#C0392B" }}
-        >
-          View Product →
-        </a>
+        {url && (
+          <a
+            href={url}
+            onClick={handleClick}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block mt-2 text-[13px] hover:opacity-70 transition-opacity"
+            style={{ color: "#C0392B" }}
+          >
+            View Product →
+          </a>
+        )}
       </div>
     </div>
   );
+}
+
+function formatDuration(createdAt: string, archivedAt: string): string {
+  const start = new Date(createdAt);
+  const end = new Date(archivedAt);
+  const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+  if (months < 1) return "< 1 month";
+  if (months < 12) return `${months} month${months === 1 ? "" : "s"}`;
+  const years = Math.floor(months / 12);
+  const rem = months % 12;
+  if (rem === 0) return `${years} year${years === 1 ? "" : "s"}`;
+  return `${years} year${years === 1 ? "" : "s"}, ${rem} month${rem === 1 ? "" : "s"}`;
 }
 
 function ArchiveCard({
   name,
   photo,
   archiveNote,
+  createdAt,
+  archivedAt,
 }: {
   name: string;
   photo: string;
   archiveNote: string | null;
+  createdAt: string;
+  archivedAt: string | null;
 }) {
   return (
     <div className="group flex flex-col rounded-md overflow-hidden border border-gray-200 bg-[#F0F4F8] transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
-      <div className="aspect-[4/3] overflow-hidden bg-neutral-100">
-        <img
+      <div className="relative aspect-[4/3] overflow-hidden bg-neutral-100">
+        <Image
           src={photo}
           alt={name}
-          className="h-full w-full object-cover"
+          fill
+          sizes="(max-width: 640px) 100vw, 50vw"
+          className="object-cover"
         />
       </div>
       <div className="p-3 flex flex-col flex-1">
         <h3 className="text-[18px] font-semibold text-neutral-900 leading-snug [font-family:var(--font-space-grotesk)]">
           {name}
         </h3>
+        {archivedAt && (
+          <span className="inline-block mt-1.5 text-[12px] text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-full w-fit">
+            Owned {formatDuration(createdAt, archivedAt)}
+          </span>
+        )}
         {archiveNote && (
           <p className="mt-1 text-[15px] text-neutral-700 leading-relaxed flex-grow">
             {archiveNote}
@@ -177,16 +206,6 @@ export default function ProfileClient({
   products: Product[];
   topPicks: TopPick[];
 }) {
-  const [activeTab, setActiveTab] = useState<Tab>({ kind: "favorites" });
-
-  const isActive = (tab: Tab) => {
-    if (activeTab.kind !== tab.kind) return false;
-    if (tab.kind === "collection" && activeTab.kind === "collection") {
-      return tab.collectionId === activeTab.collectionId;
-    }
-    return true;
-  };
-
   // Build lookup maps
   const productMap = new Map(products.map((p) => [p.id, p]));
   const collectionMap = new Map(collections.map((c) => [c.id, c]));
@@ -195,14 +214,34 @@ export default function ProfileClient({
   const favorites = topPicks
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((tp) => productMap.get(tp.product_id))
-    .filter((p): p is Product => !!p);
+    .filter((p): p is Product => !!p && p.status === "current");
 
   // Current (non-archived) products per collection
   const currentProducts = products.filter((p) => p.status === "current");
-  const archivedProducts = products.filter((p) => p.status === "archived");
+  const archivedProducts = products
+    .filter((p) => p.status === "archived")
+    .sort((a, b) => new Date(b.archived_at ?? 0).getTime() - new Date(a.archived_at ?? 0).getTime());
 
-  // Sorted collections (only those with current products or in the sort order)
-  const sortedCollections = [...collections].sort((a, b) => a.sort_order - b.sort_order);
+  // Sorted collections — only show those with at least one current product
+  const collectionsWithProducts = new Set(currentProducts.map((p) => p.collection_id));
+  const sortedCollections = [...collections]
+    .filter((c) => collectionsWithProducts.has(c.id))
+    .sort((a, b) => a.sort_order - b.sort_order);
+
+  const defaultTab: Tab = favorites.length > 0
+    ? { kind: "favorites" }
+    : sortedCollections.length > 0
+      ? { kind: "collection", collectionId: sortedCollections[0].id }
+      : { kind: "favorites" };
+  const [activeTab, setActiveTab] = useState<Tab>(defaultTab);
+
+  const isActive = (tab: Tab) => {
+    if (activeTab.kind !== tab.kind) return false;
+    if (tab.kind === "collection" && activeTab.kind === "collection") {
+      return tab.collectionId === activeTab.collectionId;
+    }
+    return true;
+  };
 
   // Tab colors
   const collectionColors = [
@@ -216,22 +255,26 @@ export default function ProfileClient({
   ];
 
   const tabs: { tab: Tab; label: string; activeClass: string; activeStyle?: React.CSSProperties }[] = [
-    {
-      tab: { kind: "favorites" },
-      label: `Top ${topPicks.length}`,
-      activeClass: "",
-      activeStyle: { backgroundColor: "#FDECEA", color: "#C0392B" },
-    },
+    ...(favorites.length > 0
+      ? [{
+          tab: { kind: "favorites" as const },
+          label: `Top ${favorites.length}`,
+          activeClass: "",
+          activeStyle: { backgroundColor: "#FDECEA", color: "#C0392B" },
+        }]
+      : []),
     ...sortedCollections.map((c, i) => ({
       tab: { kind: "collection" as const, collectionId: c.id },
       label: c.name,
       activeClass: collectionColors[i % collectionColors.length],
     })),
-    {
-      tab: { kind: "archive" },
-      label: "Archive",
-      activeClass: "bg-neutral-900 text-white",
-    },
+    ...(archivedProducts.length > 0
+      ? [{
+          tab: { kind: "archive" as const },
+          label: "Archive",
+          activeClass: "bg-neutral-900 text-white",
+        }]
+      : []),
   ];
 
   // Grid class shared across all content views
@@ -248,7 +291,7 @@ export default function ProfileClient({
             name={p.name}
             photo={p.photo_url ?? ""}
             oneLiner={p.one_liner ?? ""}
-            url={p.affiliate_url ?? "#"}
+            url={p.affiliate_url ?? null}
             productId={p.id}
             userId={user.id}
           />
@@ -267,7 +310,7 @@ export default function ProfileClient({
             name={p.name}
             photo={p.photo_url ?? ""}
             oneLiner={p.one_liner ?? ""}
-            url={p.affiliate_url ?? "#"}
+            url={p.affiliate_url ?? null}
             productId={p.id}
             userId={user.id}
           />
@@ -285,6 +328,8 @@ export default function ProfileClient({
             name={p.name}
             photo={p.photo_url ?? ""}
             archiveNote={p.archive_note}
+            createdAt={p.created_at}
+            archivedAt={p.archived_at}
           />
         ))}
       </div>
@@ -297,10 +342,13 @@ export default function ProfileClient({
         <header className="mx-auto max-w-2xl px-4 pt-10 sm:pt-16 pb-8">
           <div className="flex items-center gap-5">
             {user.avatar_url && (
-              <img
+              <Image
                 src={user.avatar_url}
                 alt={user.name ?? user.username}
-                className="h-24 w-24 rounded-full object-cover flex-shrink-0 ring-4 ring-white/80 shadow-sm"
+                width={96}
+                height={96}
+                sizes="96px"
+                className="rounded-full object-cover flex-shrink-0 ring-4 ring-white/80 shadow-sm"
               />
             )}
             <div className="min-w-0">
@@ -314,19 +362,19 @@ export default function ProfileClient({
               )}
               <div className="flex items-center gap-3 mt-3">
                 {user.twitter_url && (
-                  <a href={user.twitter_url} target="_blank" rel="noopener noreferrer"
+                  <a href={user.twitter_url} target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"
                     className="text-neutral-400 hover:text-neutral-700 transition-colors">
                     <IconX />
                   </a>
                 )}
                 {user.instagram_url && (
-                  <a href={user.instagram_url} target="_blank" rel="noopener noreferrer"
+                  <a href={user.instagram_url} target="_blank" rel="noopener noreferrer" aria-label="Instagram"
                     className="text-neutral-400 hover:text-neutral-700 transition-colors">
                     <IconInstagram />
                   </a>
                 )}
                 {user.youtube_url && (
-                  <a href={user.youtube_url} target="_blank" rel="noopener noreferrer"
+                  <a href={user.youtube_url} target="_blank" rel="noopener noreferrer" aria-label="YouTube"
                     className="text-neutral-400 hover:text-neutral-700 transition-colors">
                     <IconYouTube />
                   </a>

@@ -60,6 +60,12 @@ export async function PATCH(
     updates.archive_note = body.archive_note?.trim() || null;
   }
 
+  if (body.status === "current") {
+    updates.status = "current";
+    updates.archived_at = null;
+    updates.archive_note = null;
+  }
+
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
   }

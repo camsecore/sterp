@@ -4,12 +4,14 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useUser } from "@/app/contexts/auth";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import Image from "next/image";
 import { Clock, Camera } from "lucide-react";
 import {
   DndContext,
   closestCenter,
   TouchSensor,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -17,6 +19,7 @@ import {
 import {
   SortableContext,
   verticalListSortingStrategy,
+  sortableKeyboardCoordinates,
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -71,11 +74,33 @@ interface Profile {
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
+function isHeic(file: File): boolean {
+  return (
+    file.type === "image/heic" ||
+    file.type === "image/heif" ||
+    /\.heic$/i.test(file.name)
+  );
+}
+
+async function convertHeicToJpeg(file: File): Promise<File> {
+  const heic2any = (await import("heic2any")).default;
+  const blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.92 });
+  const result = Array.isArray(blob) ? blob[0] : blob;
+  return new File([result], file.name.replace(/\.heic$/i, ".jpg"), { type: "image/jpeg" });
+}
+
+function normalizeUrl(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) return trimmed;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
 function Thumbnail({ src, alt }: { src: string | null; alt: string }) {
   return (
     <div className="h-10 w-10 rounded bg-neutral-200 overflow-hidden flex-shrink-0">
       {src ? (
-        <img src={src} alt={alt} className="h-full w-full object-cover" />
+        <Image src={src} alt={alt} width={40} height={40} className="h-full w-full object-cover" />
       ) : (
         <div className="h-full w-full flex items-center justify-center text-neutral-400 text-xs">
           —
@@ -103,8 +128,10 @@ function StatusBadge({ status }: { status: string }) {
 async function convertToWebP(file: File): Promise<Blob> {
   const MAX_WIDTH = 1200;
   return new Promise((resolve, reject) => {
-    const img = new Image();
+    const img = new globalThis.Image();
+    const objectUrl = URL.createObjectURL(file);
     img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
       let w = img.width;
       let h = img.height;
       if (w > MAX_WIDTH) {
@@ -123,14 +150,14 @@ async function convertToWebP(file: File): Promise<Blob> {
         0.85
       );
     };
-    img.onerror = () => reject(new Error("Failed to load image"));
-    img.src = URL.createObjectURL(file);
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("Failed to load image")); };
+    img.src = objectUrl;
   });
 }
 
 async function getCroppedBlob(imageSrc: string, cropArea: Area): Promise<Blob> {
   return new Promise((resolve, reject) => {
-    const img = new Image();
+    const img = new globalThis.Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
       canvas.width = cropArea.width;
@@ -195,7 +222,7 @@ function CropModal({ imageSrc, aspect, onDone, onCancel }: CropModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black flex flex-col">
+    <div role="dialog" aria-modal="true" aria-label="Crop image" className="fixed inset-0 z-[60] bg-black flex flex-col">
       <div className="relative flex-1">
         <Cropper
           image={imageSrc}
@@ -257,7 +284,7 @@ function ArchiveModal({
   }, [onCancel]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onCancel}>
+    <div role="dialog" aria-modal="true" aria-label="Archive product" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onCancel}>
       <div className="fixed inset-0 bg-black/50" />
       <div
         className="relative z-10 w-full sm:max-w-md bg-white rounded-t-xl sm:rounded-xl p-5 space-y-4"
@@ -266,7 +293,7 @@ function ArchiveModal({
         <div className="flex items-center gap-3">
           {product.photo_url && (
             <div className="h-12 w-12 rounded bg-neutral-200 overflow-hidden flex-shrink-0">
-              <img src={product.photo_url} alt="" className="h-full w-full object-cover" />
+              <Image src={product.photo_url} alt="" width={48} height={48} className="h-full w-full object-cover" />
             </div>
           )}
           <div>
@@ -325,7 +352,7 @@ function DeleteModal({
   }, [onCancel]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onCancel}>
+    <div role="dialog" aria-modal="true" aria-label="Confirm deletion" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onCancel}>
       <div className="fixed inset-0 bg-black/50" />
       <div
         className="relative z-10 w-full sm:max-w-sm bg-white rounded-t-xl sm:rounded-xl p-5 space-y-4"
@@ -393,6 +420,7 @@ function ProductModal({
   const [collectionId, setCollectionId] = useState(
     product?.collection_id || defaultCollectionId || (collections[0]?.id ?? "")
   );
+  const [pendingBlob, setPendingBlob] = useState<Blob | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -405,14 +433,14 @@ function ProductModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const newCollectionInputRef = useRef<HTMLInputElement>(null);
 
-  // Close on Escape
+  // Close on Escape (but not while crop modal is open)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && !cropSrc && !creatingCollection) onClose();
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, [onClose, cropSrc, creatingCollection]);
 
   // Lock body scroll when modal open
   useEffect(() => {
@@ -429,7 +457,7 @@ function ProductModal({
     }
   }, [creatingCollection]);
 
-  function handleFileSelect(file: File) {
+  async function handleFileSelect(file: File) {
     if (file.size > 10 * 1024 * 1024) {
       setErrors((prev) => ({ ...prev, photo: "Max 10MB" }));
       return;
@@ -439,7 +467,13 @@ function ProductModal({
       delete next.photo;
       return next;
     });
-    setCropSrc(URL.createObjectURL(file));
+    try {
+      const converted = isHeic(file) ? await convertHeicToJpeg(file) : file;
+      if (cropSrc) URL.revokeObjectURL(cropSrc);
+      setCropSrc(URL.createObjectURL(converted));
+    } catch {
+      setErrors((prev) => ({ ...prev, photo: "Could not read this image format" }));
+    }
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -465,22 +499,12 @@ function ProductModal({
     }
   }
 
-  async function handleCropDone(croppedBlob: Blob) {
+  function handleCropDone(croppedBlob: Blob) {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
     setCropSrc(null);
-    setUploading(true);
-    try {
-      const file = new File([croppedBlob], "photo.jpg", { type: "image/jpeg" });
-      const id = product?.id || crypto.randomUUID();
-      const url = await uploadProductPhoto(file, userId, id);
-      setPhotoUrl(url);
-    } catch (err) {
-      setErrors((prev) => ({
-        ...prev,
-        photo: err instanceof Error ? err.message : "Upload failed",
-      }));
-    } finally {
-      setUploading(false);
-    }
+    if (photoUrl?.startsWith("blob:")) URL.revokeObjectURL(photoUrl);
+    setPendingBlob(croppedBlob);
+    setPhotoUrl(URL.createObjectURL(croppedBlob));
   }
 
   async function handleCreateCollection() {
@@ -520,6 +544,7 @@ function ProductModal({
     setSaving(true);
     try {
       if (mode === "add") {
+        // Create product first (without photo_url if we have a pending blob)
         const res = await fetch("/api/products", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -527,8 +552,8 @@ function ProductModal({
             name: name.trim(),
             collection_id: collectionId,
             one_liner: oneLiner.trim() || null,
-            original_url: originalUrl.trim() || null,
-            photo_url: photoUrl || null,
+            original_url: normalizeUrl(originalUrl) || null,
+            photo_url: pendingBlob ? null : photoUrl || null,
           }),
         });
         if (!res.ok) {
@@ -537,16 +562,34 @@ function ProductModal({
           setSaving(false);
           return;
         }
+        const created = await res.json();
+
+        // Now upload photo with the real product ID
+        if (pendingBlob) {
+          const file = new File([pendingBlob], "photo.jpg", { type: "image/jpeg" });
+          const uploadedUrl = await uploadProductPhoto(file, userId, created.id);
+          await fetch(`/api/products/${created.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ photo_url: uploadedUrl }),
+          });
+        }
       } else {
+        // For edits, upload pending photo with existing product ID
+        let finalPhotoUrl = photoUrl;
+        if (pendingBlob) {
+          const file = new File([pendingBlob], "photo.jpg", { type: "image/jpeg" });
+          finalPhotoUrl = await uploadProductPhoto(file, userId, product!.id);
+        }
         const res = await fetch(`/api/products/${product!.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: name.trim(),
             one_liner: oneLiner.trim() || null,
-            original_url: originalUrl.trim() || null,
+            original_url: normalizeUrl(originalUrl) || null,
             collection_id: collectionId,
-            photo_url: photoUrl || null,
+            photo_url: finalPhotoUrl || null,
           }),
         });
         if (!res.ok) {
@@ -566,6 +609,9 @@ function ProductModal({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={mode === "edit" ? "Edit product" : "Add product"}
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
       onClick={onClose}
     >
@@ -585,6 +631,7 @@ function ProductModal({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close"
             className="text-neutral-400 hover:text-neutral-600 transition-colors p-1"
           >
             <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
@@ -624,10 +671,12 @@ function ProductModal({
                 </div>
               ) : photoUrl ? (
                 <>
-                  <img
+                  <Image
                     src={photoUrl}
                     alt=""
-                    className="w-full h-full object-cover"
+                    fill
+                    unoptimized
+                    className="object-cover"
                   />
                   <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center group">
                     <span className="text-white text-[14px] font-medium opacity-0 group-hover:opacity-100 transition-opacity">
@@ -822,7 +871,7 @@ function ProductModal({
           imageSrc={cropSrc}
           aspect={4 / 3}
           onDone={handleCropDone}
-          onCancel={() => { setCropSrc(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+          onCancel={() => { if (cropSrc) URL.revokeObjectURL(cropSrc); setCropSrc(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
         />
       )}
     </div>
@@ -834,7 +883,7 @@ function ProductModal({
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function DragHandle({ attributes, listeners }: { attributes: any; listeners: any }) {
   return (
-    <div {...attributes} {...listeners} className="w-6 h-6 flex items-center justify-center touch-none cursor-grab active:cursor-grabbing">
+    <div {...attributes} {...listeners} aria-label="Drag to reorder" role="button" tabIndex={0} className="w-6 h-6 flex items-center justify-center touch-none cursor-grab active:cursor-grabbing">
       <svg className="w-4 h-4 text-neutral-300" viewBox="0 0 16 16" fill="currentColor">
         <circle cx="5" cy="3" r="1.5" /><circle cx="11" cy="3" r="1.5" />
         <circle cx="5" cy="8" r="1.5" /><circle cx="11" cy="8" r="1.5" />
@@ -892,6 +941,7 @@ export default function DashboardPage() {
   // Avatar upload
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
   const [avatarCropSrc, setAvatarCropSrc] = useState<string | null>(null);
 
   // Profile inline editing
@@ -983,14 +1033,17 @@ export default function DashboardPage() {
   const [profileSaved, setProfileSaved] = useState(false);
 
   async function saveProfileField(field: string, value: string) {
-    if (!user) return;
+    if (!user || !profile) return;
+    const normalized = field.endsWith("_url") ? normalizeUrl(value) : value.trim();
+    const current = (profile as unknown as Record<string, unknown>)[field] ?? "";
+    if ((normalized || "") === (current || "")) return;
     const supabase = createClient();
     const { error } = await supabase
       .from("users")
-      .update({ [field]: value.trim() || null })
+      .update({ [field]: normalized || null })
       .eq("id", user.id);
     if (!error) {
-      setProfile((prev) => prev ? { ...prev, [field]: value.trim() || null } : prev);
+      setProfile((prev) => prev ? { ...prev, [field]: normalized || null } : prev);
       setProfileSaved(true);
       setTimeout(() => setProfileSaved(false), 2000);
     }
@@ -1004,9 +1057,9 @@ export default function DashboardPage() {
       .update({
         name: profileName.trim() || null,
         bio: profileBio.trim() || null,
-        twitter_url: profileTwitter.trim() || null,
-        instagram_url: profileInstagram.trim() || null,
-        youtube_url: profileYoutube.trim() || null,
+        twitter_url: normalizeUrl(profileTwitter) || null,
+        instagram_url: normalizeUrl(profileInstagram) || null,
+        youtube_url: normalizeUrl(profileYoutube) || null,
       })
       .eq("id", user.id);
     if (!error) {
@@ -1015,17 +1068,25 @@ export default function DashboardPage() {
     }
   }
 
-  function handleAvatarFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleAvatarFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     if (file.size > 10 * 1024 * 1024) return;
-    setAvatarCropSrc(URL.createObjectURL(file));
+    try {
+      const converted = isHeic(file) ? await convertHeicToJpeg(file) : file;
+      if (avatarCropSrc) URL.revokeObjectURL(avatarCropSrc);
+      setAvatarCropSrc(URL.createObjectURL(converted));
+      setAvatarError(null);
+    } catch {
+      setAvatarError("Could not read this image format");
+    }
   }
 
   async function handleAvatarCropDone(croppedBlob: Blob) {
     setAvatarCropSrc(null);
     if (!user) return;
     setAvatarUploading(true);
+    setAvatarError(null);
     try {
       const file = new File([croppedBlob], "avatar.jpg", { type: "image/jpeg" });
       const webpBlob = await convertToWebP(file);
@@ -1048,22 +1109,26 @@ export default function DashboardPage() {
         .update({ avatar_url })
         .eq("id", user.id);
 
-      if (!updateError) {
-        setProfile((prev) => prev ? { ...prev, avatar_url } : prev);
-      }
+      if (updateError) throw new Error(updateError.message);
+
+      setProfile((prev) => prev ? { ...prev, avatar_url } : prev);
     } catch {
-      // silently fail
+      setAvatarError("Avatar upload failed — try again");
     } finally {
       setAvatarUploading(false);
       if (avatarInputRef.current) avatarInputRef.current.value = "";
     }
   }
 
-  function handleCopyLink() {
+  async function handleCopyLink() {
     if (!profile?.username) return;
-    navigator.clipboard.writeText(`sterp.com/${profile.username}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(`https://sterp.com/${profile.username}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard API unavailable (e.g. HTTP or unsupported browser)
+    }
   }
 
   // ─── Product actions ────────────────────────────────────────────
@@ -1196,7 +1261,8 @@ export default function DashboardPage() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   function handleTopPickDragEnd(event: DragEndEvent) {
@@ -1299,7 +1365,16 @@ export default function DashboardPage() {
     }
   }
 
-  // handleDeleteArchived replaced by deleteTarget modal flow
+  async function handleRestoreProduct(id: string) {
+    const res = await fetch(`/api/products/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "current" }),
+    });
+    if (res.ok) {
+      await fetchProducts();
+    }
+  }
 
   function formatDuration(createdAt: string, archivedAt: string): string {
     const start = new Date(createdAt);
@@ -1327,7 +1402,7 @@ export default function DashboardPage() {
 
   // Count products per collection
   const productCountByCollection = new Map<string, number>();
-  for (const p of products) {
+  for (const p of currentProducts) {
     const count = productCountByCollection.get(p.collection_id) || 0;
     productCountByCollection.set(p.collection_id, count + 1);
   }
@@ -1347,9 +1422,20 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#EEF2F7]">
       <div className="mx-auto max-w-2xl px-4 pt-8 sm:pt-14 pb-16">
-        <h1 className="text-[22px] font-semibold text-neutral-900 mb-6">
-          Dashboard
-        </h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-[22px] font-semibold text-neutral-900">
+            Dashboard
+          </h1>
+          <button
+            onClick={async () => {
+              await fetch("/api/auth/logout", { method: "POST" });
+              router.push("/");
+            }}
+            className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors"
+          >
+            Log out
+          </button>
+        </div>
 
         {loading ? (
           <p className="text-neutral-400 text-[15px]">Loading data...</p>
@@ -1408,9 +1494,11 @@ export default function DashboardPage() {
                     className="relative h-20 w-20 rounded-full overflow-hidden bg-neutral-200 flex-shrink-0 group cursor-pointer"
                   >
                     {profile.avatar_url ? (
-                      <img
+                      <Image
                         src={profile.avatar_url}
                         alt={profile.name || profile.username}
+                        width={80}
+                        height={80}
                         className="h-full w-full object-cover"
                       />
                     ) : (
@@ -1431,6 +1519,10 @@ export default function DashboardPage() {
                     onChange={handleAvatarFileSelect}
                     className="hidden"
                   />
+
+                  {avatarError && (
+                    <p className="text-[12px] text-[#C0392B] mt-1">{avatarError}</p>
+                  )}
 
                   {/* Name + Bio */}
                   <div className="flex-1 min-w-0 space-y-2">
@@ -1741,6 +1833,7 @@ export default function DashboardPage() {
                                     <button
                                       type="button"
                                       onClick={() => toggleCollapsed(c.id)}
+                                      aria-label={isCollapsed ? `Expand ${c.name}` : `Collapse ${c.name}`}
                                       className="flex-shrink-0 p-0.5 hover:bg-neutral-100 rounded transition-colors"
                                     >
                                       <svg className={`w-4 h-4 transition-transform ${isCollapsed ? "" : "rotate-90"}`} viewBox="0 0 16 16" fill="currentColor">
@@ -1798,6 +1891,7 @@ export default function DashboardPage() {
                                         <button
                                           type="button"
                                           onClick={() => setCollectionMenuOpen(collectionMenuOpen === c.id ? null : c.id)}
+                                          aria-label={`${c.name} options`}
                                           className="p-1 hover:bg-neutral-100 rounded transition-colors"
                                         >
                                           <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
@@ -2002,6 +2096,13 @@ export default function DashboardPage() {
                           </div>
                           <div className="flex items-center gap-1.5 flex-shrink-0">
                             <button
+                              onClick={() => handleRestoreProduct(p.id)}
+                              className="text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors"
+                            >
+                              Restore
+                            </button>
+                            <span className="text-neutral-200">|</span>
+                            <button
                               onClick={() => {
                                 setEditingNoteId(p.id);
                                 setEditNoteValue(p.archive_note || "");
@@ -2051,7 +2152,7 @@ export default function DashboardPage() {
           imageSrc={avatarCropSrc}
           aspect={1}
           onDone={handleAvatarCropDone}
-          onCancel={() => { setAvatarCropSrc(null); if (avatarInputRef.current) avatarInputRef.current.value = ""; }}
+          onCancel={() => { if (avatarCropSrc) URL.revokeObjectURL(avatarCropSrc); setAvatarCropSrc(null); if (avatarInputRef.current) avatarInputRef.current.value = ""; }}
         />
       )}
       {archiveTarget && (

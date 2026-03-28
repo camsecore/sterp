@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Camera, MessageCircle, Share2 } from "lucide-react";
 
 export default function HomePage() {
@@ -72,9 +73,12 @@ export default function HomePage() {
                 <div className="rounded-[42px] overflow-hidden bg-[#F0F4F8] relative">
                   {/* Dynamic Island */}
                   <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[72px] h-[22px] bg-[#1a1a1a] rounded-full z-20" />
-                  <img
+                  <Image
                     src="/cam-phone-real.png"
                     alt="Sterp profile page"
+                    width={390}
+                    height={844}
+                    priority
                     className="w-full block"
                   />
                 </div>
@@ -112,7 +116,7 @@ export default function HomePage() {
 
       {/* ── Footer ── */}
       <footer className="relative z-10 w-full max-w-5xl mx-auto px-5 py-6 text-[13px] text-white/40">
-        <span>&copy; Sterp 2026 &middot; Terms &middot; Privacy</span>
+        <span>&copy; Sterp 2026 &middot; <Link href="/terms" className="underline hover:text-white/60 transition-colors">Terms</Link> &middot; <Link href="/privacy" className="underline hover:text-white/60 transition-colors">Privacy</Link></span>
       </footer>
     </div>
   );

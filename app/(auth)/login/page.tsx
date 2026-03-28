@@ -1,16 +1,32 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam) {
+      setError("Login failed — please try again.");
+    }
+  }, [searchParams]);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [mode, setMode] = useState<"magic" | "password">("magic");
 
@@ -70,6 +86,7 @@ export default function LoginPage() {
       return;
     }
 
+    setLoading(false);
     window.location.href = "/dashboard";
   }
 

@@ -405,6 +405,8 @@ interface ProductModalProps {
   onSave: () => Promise<void>;
   onClose: () => void;
   onCollectionCreated: () => Promise<void>;
+  onArchive?: (product: Product) => void;
+  onDelete?: (product: Product) => void;
 }
 
 function ProductModal({
@@ -416,6 +418,8 @@ function ProductModal({
   onSave,
   onClose,
   onCollectionCreated,
+  onArchive,
+  onDelete,
 }: ProductModalProps) {
   const [name, setName] = useState(product?.name || "");
   const [oneLiner, setOneLiner] = useState(product?.one_liner || "");
@@ -867,6 +871,28 @@ function ProductModal({
               Cancel
             </button>
           </div>
+          {mode === "edit" && product && (onArchive || onDelete) && (
+            <div className="flex items-center gap-3 pt-1 pb-2 border-t border-gray-100 mt-1">
+              {onArchive && (
+                <button
+                  type="button"
+                  onClick={() => { onClose(); onArchive(product); }}
+                  className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors"
+                >
+                  Archive
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={() => { onClose(); onDelete(product); }}
+                  className="text-[13px] text-neutral-400 hover:text-[#C0392B] transition-colors"
+                >
+                  Delete
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -2009,17 +2035,17 @@ export default function DashboardPage() {
                                                     >
                                                       Edit
                                                     </button>
-                                                    <span className="text-neutral-200">|</span>
+                                                    <span className="hidden sm:inline text-neutral-200">|</span>
                                                     <button
                                                       onClick={() => setArchiveTarget(p)}
-                                                      className="text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors"
+                                                      className="hidden sm:inline text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors"
                                                     >
                                                       Archive
                                                     </button>
-                                                    <span className="text-neutral-200">|</span>
+                                                    <span className="hidden sm:inline text-neutral-200">|</span>
                                                     <button
                                                       onClick={() => setDeleteTarget({ id: p.id, name: p.name, type: "product" })}
-                                                      className="text-[12px] text-neutral-400 hover:text-[#C0392B] transition-colors"
+                                                      className="hidden sm:inline text-[12px] text-neutral-400 hover:text-[#C0392B] transition-colors"
                                                     >
                                                       Delete
                                                     </button>
@@ -2160,6 +2186,8 @@ export default function DashboardPage() {
           }}
           onClose={() => setProductModal(null)}
           onCollectionCreated={fetchCollections}
+          onArchive={(p) => { setProductModal(null); setArchiveTarget(p); }}
+          onDelete={(p) => { setProductModal(null); setDeleteTarget({ id: p.id, name: p.name, type: "product" }); }}
         />
       )}
 

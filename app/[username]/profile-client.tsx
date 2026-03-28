@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { Clock } from "lucide-react";
 
@@ -47,6 +47,10 @@ type Tab =
   | { kind: "favorites" }
   | { kind: "collection"; collectionId: string }
   | { kind: "archive" };
+
+function slugify(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
 
 // ─── Social icons ────────────────────────────────────────────────────
 
@@ -228,12 +232,38 @@ export default function ProfileClient({
     .filter((c) => collectionsWithProducts.has(c.id))
     .sort((a, b) => a.sort_order - b.sort_order);
 
-  const defaultTab: Tab = favorites.length > 0
-    ? { kind: "favorites" }
-    : sortedCollections.length > 0
-      ? { kind: "collection", collectionId: sortedCollections[0].id }
-      : { kind: "favorites" };
-  const [activeTab, setActiveTab] = useState<Tab>(defaultTab);
+  const resolveTabFromHash = useCallback((): Tab => {
+    if (typeof window === "undefined") return favorites.length > 0 ? { kind: "favorites" } : sortedCollections.length > 0 ? { kind: "collection", collectionId: sortedCollections[0].id } : { kind: "favorites" };
+    const hash = decodeURIComponent(window.location.hash.slice(1));
+    if (!hash) return favorites.length > 0 ? { kind: "favorites" } : sortedCollections.length > 0 ? { kind: "collection", collectionId: sortedCollections[0].id } : { kind: "favorites" };
+    if (hash === "top" || hash === "favorites") return { kind: "favorites" };
+    if (hash === "archive") return { kind: "archive" };
+    const match = sortedCollections.find((c) => slugify(c.name) === hash);
+    if (match) return { kind: "collection", collectionId: match.id };
+    return favorites.length > 0 ? { kind: "favorites" } : sortedCollections.length > 0 ? { kind: "collection", collectionId: sortedCollections[0].id } : { kind: "favorites" };
+  }, [favorites.length, sortedCollections]);
+
+  const [activeTab, setActiveTabState] = useState<Tab>(resolveTabFromHash);
+
+  const setActiveTab = useCallback((tab: Tab) => {
+    setActiveTabState(tab);
+    let hash = "";
+    if (tab.kind === "favorites") hash = "top";
+    else if (tab.kind === "archive") hash = "archive";
+    else {
+      const col = collections.find((c) => c.id === tab.collectionId);
+      if (col) hash = slugify(col.name);
+    }
+    window.history.replaceState(null, "", hash ? `#${hash}` : window.location.pathname);
+  }, [collections]);
+
+  useEffect(() => {
+    function onHashChange() {
+      setActiveTabState(resolveTabFromHash());
+    }
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, [resolveTabFromHash]);
 
   const isActive = (tab: Tab) => {
     if (activeTab.kind !== tab.kind) return false;

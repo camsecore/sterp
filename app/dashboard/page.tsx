@@ -89,6 +89,10 @@ async function convertHeicToJpeg(file: File): Promise<File> {
   return new File([result], file.name.replace(/\.heic$/i, ".jpg"), { type: "image/jpeg" });
 }
 
+function slugify(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
 function normalizeUrl(url: string): string {
   const trimmed = url.trim();
   if (!trimmed) return trimmed;
@@ -1908,6 +1912,19 @@ export default function DashboardPage() {
                                               onClick={() => setCollectionMenuOpen(null)}
                                             />
                                             <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-52">
+                                              <button
+                                                onClick={async () => {
+                                                  setCollectionMenuOpen(null);
+                                                  if (profile?.username) {
+                                                    try {
+                                                      await navigator.clipboard.writeText(`https://sterp.com/${profile.username}#${slugify(c.name)}`);
+                                                    } catch {}
+                                                  }
+                                                }}
+                                                className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                              >
+                                                Copy link
+                                              </button>
                                               <button
                                                 onClick={() => {
                                                   setRenamingCollectionId(c.id);

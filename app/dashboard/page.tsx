@@ -401,6 +401,7 @@ interface ProductModalProps {
   product?: Product;
   defaultCollectionId?: string;
   collections: Collection[];
+  topPicks: TopPick[];
   userId: string;
   onSave: () => Promise<void>;
   onClose: () => void;
@@ -414,6 +415,7 @@ function ProductModal({
   product,
   defaultCollectionId,
   collections,
+  topPicks,
   userId,
   onSave,
   onClose,
@@ -421,6 +423,11 @@ function ProductModal({
   onArchive,
   onDelete,
 }: ProductModalProps) {
+  const topPickEntry = product ? topPicks.find((tp) => tp.product_id === product.id) : undefined;
+  const topPickRank = topPickEntry ? topPicks.sort((a, b) => a.sort_order - b.sort_order).indexOf(topPickEntry) + 1 : 0;
+  const topPicksFull = topPicks.length >= 5;
+  const [showReplacePicker, setShowReplacePicker] = useState(false);
+  const [topPickPending, setTopPickPending] = useState(false);
   const [name, setName] = useState(product?.name || "");
   const [oneLiner, setOneLiner] = useState(product?.one_liner || "");
   const [originalUrl, setOriginalUrl] = useState(product?.original_url || "");
@@ -607,6 +614,7 @@ function ProductModal({
           return;
         }
       }
+
       await onSave();
       onClose();
     } catch {
@@ -847,6 +855,94 @@ function ProductModal({
               <p className="text-[13px] text-[#C0392B] mt-1">{errors.collection}</p>
             )}
           </div>
+
+          {/* Top Pick status */}
+          {mode === "edit" && product && (
+            <div className="rounded-md border border-gray-200 px-3 py-2.5">
+              {topPickEntry ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-[14px] text-neutral-700">
+                    Your <span className="font-medium">#{topPickRank}</span> Top Pick
+                  </span>
+                  <button
+                    type="button"
+                    disabled={topPickPending}
+                    onClick={async () => {
+                      setTopPickPending(true);
+                      await fetch(`/api/top-picks/${product.id}`, { method: "DELETE" });
+                      await onSave();
+                      setTopPickPending(false);
+                    }}
+                    className="text-[13px] text-neutral-400 hover:text-[#C0392B] transition-colors"
+                  >
+                    {topPickPending ? "Removing..." : "Remove"}
+                  </button>
+                </div>
+              ) : showReplacePicker ? (
+                <div className="space-y-2">
+                  <p className="text-[13px] text-neutral-600">Replace which Top Pick?</p>
+                  {topPicks
+                    .sort((a, b) => a.sort_order - b.sort_order)
+                    .map((tp, i) => (
+                      <button
+                        key={tp.id}
+                        type="button"
+                        disabled={topPickPending}
+                        onClick={async () => {
+                          setTopPickPending(true);
+                          await fetch(`/api/top-picks/${tp.product_id}`, { method: "DELETE" });
+                          await fetch("/api/top-picks", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ product_id: product.id }),
+                          });
+                          await onSave();
+                          setTopPickPending(false);
+                          setShowReplacePicker(false);
+                        }}
+                        className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded hover:bg-neutral-50 transition-colors"
+                      >
+                        <span className="text-[12px] text-neutral-400 w-4">#{i + 1}</span>
+                        <Thumbnail src={tp.products.photo_url} alt={tp.products.name} />
+                        <span className="text-[14px] text-neutral-700 truncate">{tp.products.name}</span>
+                      </button>
+                    ))}
+                  <button
+                    type="button"
+                    onClick={() => setShowReplacePicker(false)}
+                    className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <span className="text-[14px] text-neutral-400">Not a Top Pick</span>
+                  <button
+                    type="button"
+                    disabled={topPickPending}
+                    onClick={async () => {
+                      if (topPicksFull) {
+                        setShowReplacePicker(true);
+                      } else {
+                        setTopPickPending(true);
+                        await fetch("/api/top-picks", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ product_id: product.id }),
+                        });
+                        await onSave();
+                        setTopPickPending(false);
+                      }
+                    }}
+                    className="text-[13px] text-[#C0392B] hover:opacity-70 transition-opacity"
+                  >
+                    {topPickPending ? "Adding..." : "Add to Top"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Form-level error */}
           {errors.form && (
@@ -1500,18 +1596,20 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[15px] font-medium text-neutral-900 truncate block">
-                    {profile.name || profile.username}
-                  </span>
-                  <button
-                    onClick={handleCopyLink}
-                    className={`text-[11px] transition-colors ${copied ? "text-emerald-600" : "text-neutral-400 hover:text-neutral-600 hover:underline"}`}
-                  >
-                    {copied ? "Copied!" : `sterp.com/${profile.username}`}
-                  </button>
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="min-w-0">
+                    <span className="text-[15px] font-medium text-neutral-900 truncate block leading-none">
+                      {profile.name || profile.username}
+                    </span>
+                    <button
+                      onClick={handleCopyLink}
+                      className={`text-[11px] leading-none mt-1 block p-0 text-left ml-[1px] transition-colors ${copied ? "text-emerald-600" : "text-neutral-400 hover:text-neutral-600 hover:underline"}`}
+                    >
+                      {copied ? "Copied!" : `sterp.com/${profile.username}`}
+                    </button>
+                  </div>
                   {currentProducts.length >= 2 && (
-                    <span className="text-[11px] text-emerald-600 block">Live</span>
+                    <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5 flex-shrink-0">Live</span>
                   )}
                 </div>
                 <button
@@ -1905,38 +2003,24 @@ export default function DashboardPage() {
                                                   {handle}
                                                   <Thumbnail src={p.photo_url} alt={p.name} />
                                                   <div className="flex-1 min-w-0">
-                                                    <span className="text-[15px] font-medium text-neutral-900 truncate block">
-                                                      {p.name}
-                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                      <span className="text-[15px] font-medium text-neutral-900 truncate">
+                                                        {p.name}
+                                                      </span>
+                                                      <span className="hidden sm:inline flex-shrink-0"><StatusBadge status={p.status} /></span>
+                                                    </div>
                                                     {p.one_liner && (
                                                       <span className="text-[13px] text-neutral-400 truncate block">
                                                         {p.one_liner}
                                                       </span>
                                                     )}
                                                   </div>
-                                                  <span className="hidden sm:inline"><StatusBadge status={p.status} /></span>
-                                                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                                                    <button
-                                                      onClick={() => setProductModal({ mode: "edit", product: p })}
-                                                      className="text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors"
-                                                    >
-                                                      Edit
-                                                    </button>
-                                                    <span className="hidden sm:inline text-neutral-200">|</span>
-                                                    <button
-                                                      onClick={() => setArchiveTarget(p)}
-                                                      className="hidden sm:inline text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors"
-                                                    >
-                                                      Archive
-                                                    </button>
-                                                    <span className="hidden sm:inline text-neutral-200">|</span>
-                                                    <button
-                                                      onClick={() => setDeleteTarget({ id: p.id, name: p.name, type: "product" })}
-                                                      className="hidden sm:inline text-[12px] text-neutral-400 hover:text-[#C0392B] transition-colors"
-                                                    >
-                                                      Delete
-                                                    </button>
-                                                  </div>
+                                                  <button
+                                                    onClick={() => setProductModal({ mode: "edit", product: p })}
+                                                    className="text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0"
+                                                  >
+                                                    Edit
+                                                  </button>
                                                 </div>
                                               )}
                                             </SortableProduct>
@@ -2021,16 +2105,18 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-3 px-4 py-3">
                           <Thumbnail src={p.photo_url} alt={p.name} />
                           <div className="flex-1 min-w-0">
-                            <span className="text-[14px] font-semibold text-neutral-900 truncate block">
-                              {p.name}
-                            </span>
-                            {p.created_at && p.archived_at && (
-                              <span className="text-[11px] text-neutral-400 block mt-1">
-                                {formatDuration(p.created_at, p.archived_at)}
+                            <div className="flex items-center gap-2">
+                              <span className="text-[15px] font-medium text-neutral-900 truncate">
+                                {p.name}
                               </span>
-                            )}
+                              {p.created_at && p.archived_at && (
+                                <span className="text-[11px] font-medium text-amber-700 bg-amber-100 rounded-full px-2 py-0.5 flex-shrink-0">
+                                  {formatDuration(p.created_at, p.archived_at)}
+                                </span>
+                              )}
+                            </div>
                             {p.archive_note && (
-                              <span className="text-[12px] text-neutral-300 truncate block mt-0.5">
+                              <span className="text-[13px] text-neutral-400 truncate block">
                                 {p.archive_note}
                               </span>
                             )}
@@ -2062,6 +2148,7 @@ export default function DashboardPage() {
           product={productModal.product}
           defaultCollectionId={productModal.collectionId}
           collections={collections}
+          topPicks={topPicks}
           userId={user.id}
           onSave={async () => {
             await Promise.all([fetchProducts(), fetchTopPicks()]);
@@ -2184,12 +2271,23 @@ export default function DashboardPage() {
                 <label className="block text-[13px] font-medium text-neutral-600 mb-1">Bio</label>
                 <textarea
                   value={profileBio}
-                  onChange={(e) => setProfileBio(e.target.value)}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 160) {
+                      setProfileBio(e.target.value);
+                    }
+                  }}
                   onBlur={() => saveProfileField("bio", profileBio)}
-                  rows={4}
+                  rows={3}
                   className={`${inputClass} resize-none`}
                   placeholder="A short bio"
                 />
+                <p
+                  className={`text-[12px] mt-1 ${
+                    profileBio.length >= 140 ? "text-[#C0392B]" : "text-neutral-400"
+                  }`}
+                >
+                  {profileBio.length}/160
+                </p>
               </div>
 
               {/* Social links */}

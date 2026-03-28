@@ -56,6 +56,10 @@ export async function PATCH(
     updates.collection_id = body.collection_id;
   }
 
+  if (body.archive_note !== undefined) {
+    updates.archive_note = body.archive_note?.trim() || null;
+  }
+
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
   }

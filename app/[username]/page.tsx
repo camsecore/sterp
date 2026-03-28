@@ -30,7 +30,7 @@ export async function generateMetadata({
     .limit(1)
     .single();
 
-  const topPickPhoto = (topPick?.products as { photo_url: string } | null)?.photo_url;
+  const topPickPhoto = (topPick?.products as unknown as { photo_url: string } | null)?.photo_url;
   const ogImage = topPickPhoto || user.avatar_url;
 
   const title = `${user.name || user.username} — Sterp`;
@@ -66,7 +66,7 @@ export default async function ProfilePage({
   // Fetch user by username
   const { data: user } = await supabase
     .from("users")
-    .select("*")
+    .select("id, username, name, bio, avatar_url, twitter_url, instagram_url, youtube_url")
     .eq("username", username)
     .single();
 

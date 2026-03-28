@@ -1061,6 +1061,7 @@ export default function DashboardPage() {
   // ─── Profile actions ─────────────────────────────────────────────
 
   const [profileSaved, setProfileSaved] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   async function saveProfileField(field: string, value: string) {
     if (!user || !profile) return;
@@ -1472,175 +1473,61 @@ export default function DashboardPage() {
         ) : (
           <div className="space-y-6">
             {/* ─── Section 1: Page Status Banner ──────────────── */}
-            {profile?.username && (
-              <>
-                {currentProducts.length < 2 ? (
-                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-5 py-4">
-                    <p className="text-[15px] text-amber-800">
-                      Add at least 2 products to make your page live at{" "}
-                      <span className="font-medium">sterp.com/{profile.username}</span>
-                    </p>
-                  </div>
-                ) : (
-                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
-                    <p className="text-[15px] text-emerald-800 font-medium">
-                      Your page is live
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <a
-                        href={`/${profile.username}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[13px] text-[#C0392B] font-medium hover:opacity-70 transition-opacity"
-                      >
-                        View page
-                      </a>
-                      <button
-                        onClick={handleCopyLink}
-                        className="text-[13px] text-[#C0392B] font-medium hover:opacity-70 transition-opacity"
-                      >
-                        {copied ? "Copied!" : "Copy link"}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
+            {profile?.username && currentProducts.length < 2 && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-5 py-3">
+                <p className="text-[14px] text-amber-800">
+                  Add at least 2 products to make your page live at{" "}
+                  <span className="font-medium">sterp.com/{profile.username}</span>
+                </p>
+              </div>
             )}
 
-            {/* ─── Section 2: Profile Card ────────────────────── */}
+            {/* ─── Section 2: Compact Profile Header ─────────── */}
             {profile && (
-              <section className="bg-white rounded-lg border border-gray-200 p-5">
-                <h2 className="text-[17px] font-medium text-neutral-900 mb-4">
-                  Profile
-                </h2>
-
-                {/* Avatar + Name + Bio */}
-                <div className="flex items-start gap-4">
-                  {/* Avatar */}
-                  <button
-                    type="button"
-                    onClick={() => avatarInputRef.current?.click()}
-                    disabled={avatarUploading}
-                    className="relative h-20 w-20 rounded-full overflow-hidden bg-neutral-200 flex-shrink-0 group cursor-pointer"
-                  >
-                    {profile.avatar_url ? (
-                      <Image
-                        src={profile.avatar_url}
-                        alt={profile.name || profile.username}
-                        width={80}
-                        height={80}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="h-full w-full flex items-center justify-center text-neutral-400 text-sm">
-                        Add
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="text-white text-[11px] font-medium">
-                        {avatarUploading ? "..." : "Edit"}
-                      </span>
+              <section className="bg-white rounded-lg border border-gray-200 px-4 py-3 flex items-center gap-3">
+                <div className="h-12 w-12 rounded-full overflow-hidden bg-neutral-200 flex-shrink-0">
+                  {profile.avatar_url ? (
+                    <Image
+                      src={profile.avatar_url}
+                      alt={profile.name || profile.username}
+                      width={48}
+                      height={48}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-neutral-400 text-xs">
+                      —
                     </div>
-                  </button>
-                  <input
-                    ref={avatarInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/heic"
-                    onChange={handleAvatarFileSelect}
-                    className="hidden"
-                  />
-
-                  {avatarError && (
-                    <p className="text-[12px] text-[#C0392B] mt-1">{avatarError}</p>
                   )}
-
-                  {/* Name + Bio */}
-                  <div className="flex-1 min-w-0 space-y-2">
-                    <div>
-                      <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-                        Name
-                      </label>
-                      <input
-                        type="text"
-                        value={profileName}
-                        onChange={(e) => setProfileName(e.target.value)}
-                        onBlur={() => saveProfileField("name", profileName)}
-                        className={inputClass}
-                        placeholder="Your name"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-                        Bio
-                      </label>
-                      <textarea
-                        value={profileBio}
-                        onChange={(e) => setProfileBio(e.target.value)}
-                        onBlur={() => saveProfileField("bio", profileBio)}
-                        rows={4}
-                        className={`${inputClass} resize-none`}
-                        placeholder="A short bio"
-                      />
-                    </div>
-                  </div>
                 </div>
-
-                {/* Social links */}
-                <div className="mt-4 space-y-2">
-                  <label className="block text-[13px] font-medium text-neutral-600">
-                    Social links
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <input
-                      type="text"
-                      value={profileTwitter}
-                      onChange={(e) => setProfileTwitter(e.target.value)}
-                      onBlur={() => saveProfileField("twitter_url", profileTwitter)}
-                      className={inputClass}
-                      placeholder="x.com/username"
-                    />
-                    <input
-                      type="text"
-                      value={profileInstagram}
-                      onChange={(e) => setProfileInstagram(e.target.value)}
-                      onBlur={() => saveProfileField("instagram_url", profileInstagram)}
-                      className={inputClass}
-                      placeholder="instagram.com/username"
-                    />
-                    <input
-                      type="text"
-                      value={profileYoutube}
-                      onChange={(e) => setProfileYoutube(e.target.value)}
-                      onBlur={() => saveProfileField("youtube_url", profileYoutube)}
-                      className={inputClass}
-                      placeholder="youtube.com/@username"
-                    />
-                  </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[15px] font-medium text-neutral-900 truncate block">
+                    {profile.name || profile.username}
+                  </span>
+                  {currentProducts.length >= 2 && (
+                    <span className="text-[11px] text-emerald-600">Live</span>
+                  )}
                 </div>
-
-                {/* Save + View My Page */}
-                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={saveAllProfileFields}
-                      className="text-[14px] font-medium text-white px-4 py-2 rounded-md hover:opacity-90 transition-opacity"
-                      style={{ backgroundColor: "#C0392B" }}
-                    >
-                      Save Profile
-                    </button>
-                    {profileSaved && (
-                      <span className="text-[13px] text-emerald-600 font-medium">Saved</span>
-                    )}
-                  </div>
-                  <a
-                    href={`/${profile.username}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[13px] text-[#C0392B] hover:opacity-70 transition-opacity"
-                  >
-                    View My Page →
-                  </a>
-                </div>
+                <button
+                  onClick={() => setProfileModalOpen(true)}
+                  className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0"
+                >
+                  Edit Profile
+                </button>
+                <button
+                  onClick={handleCopyLink}
+                  className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors flex-shrink-0"
+                >
+                  {copied ? "Copied!" : "Copy link"}
+                </button>
+                <a
+                  href={`/${profile.username}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[13px] text-[#C0392B] font-medium hover:opacity-70 transition-opacity flex-shrink-0"
+                >
+                  View →
+                </a>
               </section>
             )}
 
@@ -2208,6 +2095,153 @@ export default function DashboardPage() {
           onConfirm={handleDeleteConfirm}
           onCancel={() => setDeleteTarget(null)}
         />
+      )}
+
+      {/* Edit Profile Modal */}
+      {profileModalOpen && profile && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Edit profile"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+          onClick={() => setProfileModalOpen(false)}
+        >
+          <div className="absolute inset-0 bg-black/50" />
+          <div
+            className="relative z-10 bg-white w-full h-full sm:h-auto sm:max-w-lg sm:mx-auto sm:mt-20 sm:rounded-xl sm:max-h-[calc(100vh-10rem)] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between z-10">
+              <h2 className="text-[17px] font-semibold text-neutral-900">Edit Profile</h2>
+              <button
+                type="button"
+                onClick={() => setProfileModalOpen(false)}
+                aria-label="Close"
+                className="text-neutral-400 hover:text-neutral-600 transition-colors p-1"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="px-5 py-4 space-y-4">
+              {/* Avatar */}
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={avatarUploading}
+                  className="relative h-20 w-20 rounded-full overflow-hidden bg-neutral-200 group cursor-pointer"
+                >
+                  {profile.avatar_url ? (
+                    <Image
+                      src={profile.avatar_url}
+                      alt={profile.name || profile.username}
+                      width={80}
+                      height={80}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-neutral-400 text-sm">
+                      Add
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span className="text-white text-[11px] font-medium">
+                      {avatarUploading ? "..." : "Edit"}
+                    </span>
+                  </div>
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/heic"
+                  onChange={handleAvatarFileSelect}
+                  className="hidden"
+                />
+                {avatarError && (
+                  <p className="text-[12px] text-[#C0392B]">{avatarError}</p>
+                )}
+              </div>
+
+              {/* Name */}
+              <div>
+                <label className="block text-[13px] font-medium text-neutral-600 mb-1">Name</label>
+                <input
+                  type="text"
+                  value={profileName}
+                  onChange={(e) => setProfileName(e.target.value)}
+                  onBlur={() => saveProfileField("name", profileName)}
+                  className={inputClass}
+                  placeholder="Your name"
+                />
+              </div>
+
+              {/* Bio */}
+              <div>
+                <label className="block text-[13px] font-medium text-neutral-600 mb-1">Bio</label>
+                <textarea
+                  value={profileBio}
+                  onChange={(e) => setProfileBio(e.target.value)}
+                  onBlur={() => saveProfileField("bio", profileBio)}
+                  rows={4}
+                  className={`${inputClass} resize-none`}
+                  placeholder="A short bio"
+                />
+              </div>
+
+              {/* Social links */}
+              <div className="space-y-2">
+                <label className="block text-[13px] font-medium text-neutral-600">Social links</label>
+                <input
+                  type="text"
+                  value={profileTwitter}
+                  onChange={(e) => setProfileTwitter(e.target.value)}
+                  onBlur={() => saveProfileField("twitter_url", profileTwitter)}
+                  className={inputClass}
+                  placeholder="x.com/username"
+                />
+                <input
+                  type="text"
+                  value={profileInstagram}
+                  onChange={(e) => setProfileInstagram(e.target.value)}
+                  onBlur={() => saveProfileField("instagram_url", profileInstagram)}
+                  className={inputClass}
+                  placeholder="instagram.com/username"
+                />
+                <input
+                  type="text"
+                  value={profileYoutube}
+                  onChange={(e) => setProfileYoutube(e.target.value)}
+                  onBlur={() => saveProfileField("youtube_url", profileYoutube)}
+                  className={inputClass}
+                  placeholder="youtube.com/@username"
+                />
+              </div>
+
+              {/* Save */}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={() => { saveAllProfileFields(); setProfileModalOpen(false); }}
+                  className="text-[14px] font-medium text-white px-5 py-2.5 rounded-md hover:opacity-90 transition-opacity"
+                  style={{ backgroundColor: "#C0392B" }}
+                >
+                  Save Profile
+                </button>
+                <button
+                  onClick={() => setProfileModalOpen(false)}
+                  className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                {profileSaved && (
+                  <span className="text-[13px] text-emerald-600 font-medium">Saved</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

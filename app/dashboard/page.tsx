@@ -5,7 +5,7 @@ import { useUser } from "@/app/contexts/auth";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
-import { Clock, Camera } from "lucide-react";
+import { Clock, Camera, Star } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -289,16 +289,13 @@ function ArchiveModal({
         className="relative z-10 w-full sm:max-w-md bg-white rounded-t-xl sm:rounded-xl p-5 space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col items-center gap-2">
           {product.photo_url && (
-            <div className="h-12 w-12 rounded bg-neutral-200 overflow-hidden flex-shrink-0">
-              <Image src={product.photo_url} alt="" width={48} height={48} className="h-full w-full object-cover" />
+            <div className="h-20 w-20 rounded-lg bg-neutral-200 overflow-hidden">
+              <Image src={product.photo_url} alt="" width={80} height={80} className="h-full w-full object-cover" />
             </div>
           )}
-          <div>
-            <p className="text-[15px] font-medium text-neutral-900">{product.name}</p>
-            <p className="text-[13px] text-neutral-400">Archive this product</p>
-          </div>
+          <p className="text-[15px] font-medium text-neutral-900">{product.name}</p>
         </div>
         <div>
           <textarea
@@ -310,14 +307,13 @@ function ArchiveModal({
             autoFocus
           />
           <p className="text-[12px] text-neutral-400 mt-1">
-            This isn&apos;t a review — it&apos;s a personal note. &quot;Sold this when we moved.&quot; &quot;My first real upgrade.&quot;
+            This is a personal note, not a review.
           </p>
         </div>
         <div className="flex items-center gap-3 pt-1">
           <button
             onClick={() => onConfirm(note.trim() || null)}
-            className="text-[14px] font-medium text-white px-5 py-2 rounded-md hover:opacity-90"
-            style={{ backgroundColor: "#C0392B" }}
+            className="text-[14px] font-medium text-white px-5 py-2 rounded-md hover:opacity-90 bg-neutral-700"
           >
             Archive
           </button>
@@ -631,11 +627,11 @@ function ProductModal({
 
       {/* Modal content */}
       <div
-        className="relative z-10 bg-white w-full h-full sm:h-auto sm:max-w-lg sm:mx-auto sm:mt-20 sm:rounded-xl sm:max-h-[calc(100vh-10rem)] overflow-y-auto"
+        className="relative z-10 bg-white w-full h-full sm:h-auto sm:max-w-lg sm:mx-auto sm:rounded-xl sm:max-h-[calc(100vh-4rem)] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-3 flex items-center justify-between z-10">
           <h2 className="text-[17px] font-semibold text-neutral-900">
             {mode === "edit" ? "Edit Product" : "Add Product"}
           </h2>
@@ -655,19 +651,19 @@ function ProductModal({
           </button>
         </div>
 
-        <div className="px-5 py-4 space-y-4">
+        <div className="px-5 py-3 space-y-3">
           {/* Photo upload area */}
           <div>
             <div
-              className={`relative w-full aspect-[4/3] rounded-lg overflow-hidden cursor-pointer transition-colors ${
+              className={`relative w-full rounded-lg overflow-hidden cursor-pointer transition-colors ${
                 photoUrl
-                  ? "bg-neutral-200"
-                  : `border-2 border-dashed ${
+                  ? "aspect-[4/3] bg-neutral-200"
+                  : `aspect-[3/1] border-2 border-dashed ${
                       draggingOver
                         ? "border-[#C0392B]/40 bg-[#C0392B]/5"
                         : errors.photo
                         ? "border-[#C0392B]/40 bg-red-50"
-                        : "border-gray-300 bg-neutral-50"
+                        : "border-gray-200 bg-neutral-50"
                     }`
               }`}
               onClick={() => fileInputRef.current?.click()}
@@ -697,9 +693,9 @@ function ProductModal({
                 </>
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <Camera size={32} className="text-neutral-300 mb-2" />
-                  <span className="text-[14px] text-neutral-400">Tap to add photo</span>
-                  <span className="text-[11px] text-neutral-300 mt-1">Add a photo to make this product live</span>
+                  <Camera size={24} className="text-neutral-300 mb-1" />
+                  <span className="text-[13px] font-medium text-neutral-500">Add photo</span>
+                  <span className="text-[11px] text-neutral-400 mt-0.5">Products without a photo are saved as drafts.</span>
                 </div>
               )}
             </div>
@@ -717,9 +713,6 @@ function ProductModal({
 
           {/* Product name */}
           <div>
-            <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-              Product name *
-            </label>
             <input
               type="text"
               value={name}
@@ -734,9 +727,6 @@ function ProductModal({
 
           {/* One-liner */}
           <div>
-            <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-              One-liner *
-            </label>
             <textarea
               value={oneLiner}
               onChange={(e) => {
@@ -744,7 +734,7 @@ function ProductModal({
                   setOneLiner(e.target.value);
                 }
               }}
-              rows={4}
+              rows={3}
               className={`${inputClass} resize-none`}
               placeholder="What would you tell a friend about this?"
             />
@@ -760,25 +750,8 @@ function ProductModal({
             )}
           </div>
 
-          {/* Buy link */}
-          <div>
-            <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-              Buy link
-            </label>
-            <input
-              type="url"
-              value={originalUrl}
-              onChange={(e) => setOriginalUrl(e.target.value)}
-              className={inputClass}
-              placeholder="Paste a product URL"
-            />
-          </div>
-
           {/* Collection */}
           <div>
-            <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-              Collection *
-            </label>
             {creatingCollection ? (
               <div className="flex items-center gap-2">
                 <input
@@ -829,7 +802,7 @@ function ProductModal({
                     setCollectionId(e.target.value);
                   }
                 }}
-                className={selectClass}
+                className={`${inputClass} appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%239ca3af%22%20d%3D%22M3%204.5L6%208l3-3.5H3z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_0.75rem_center]`}
               >
                 <option value="" disabled>
                   Select a collection
@@ -850,43 +823,41 @@ function ProductModal({
             {errors.collection && (
               <p className="text-[13px] text-[#C0392B] mt-1">{errors.collection}</p>
             )}
-          </div>
 
-          {/* Top Pick status */}
-          {mode === "edit" && product && product.status === "current" && (
-            <div className="rounded-md border border-gray-200 px-3 py-2.5">
-              {topPickEntry ? (
-                <div className="flex items-center justify-between">
-                  <span className="text-[14px] text-neutral-700">
-                    Your <span className="font-medium">#{topPickRank}</span> Top Pick
-                  </span>
-                  <button
-                    type="button"
-                    disabled={topPickPending}
-                    onClick={async () => {
-                      setTopPickPending(true);
-                      await fetch(`/api/top-picks/${product.id}`, { method: "DELETE" });
-                      await onSave();
-                      setTopPickPending(false);
-                    }}
-                    className="text-[13px] text-neutral-400 hover:text-[#C0392B] transition-colors"
-                  >
-                    {topPickPending ? "Removing..." : "Remove"}
-                  </button>
-                </div>
-              ) : showReplacePicker ? (
-                <div className="space-y-2">
-                  <p className="text-[13px] text-neutral-600">Replace which Top Pick?</p>
-                  {topPicks
-                    .sort((a, b) => a.sort_order - b.sort_order)
-                    .map((tp, i) => (
-                      <button
-                        key={tp.id}
-                        type="button"
-                        disabled={topPickPending}
-                        onClick={async () => {
+            {/* Top Pick — inline with collection row */}
+            {mode === "edit" && product && product.status === "current" && !creatingCollection && (
+              <div className="mt-2">
+                {topPickEntry ? (
+                  <div className="flex items-center justify-between rounded-md px-2.5 py-1.5 bg-[#C0392B]/[0.07]">
+                    <div className="flex items-center gap-1.5">
+                      <Star size={13} className="text-[#C0392B]/70" fill="currentColor" />
+                      <span className="text-[12px] font-medium text-[#C0392B]/80">Top Pick #{topPickRank}</span>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={topPickPending}
+                      onClick={async () => {
+                        setTopPickPending(true);
+                        await fetch(`/api/top-picks/${product.id}`, { method: "DELETE" });
+                        await onSave();
+                        setTopPickPending(false);
+                      }}
+                      className="text-[11px] text-neutral-400 hover:text-neutral-600 transition-colors"
+                    >
+                      {topPickPending ? "Removing..." : "Remove"}
+                    </button>
+                  </div>
+                ) : !showReplacePicker && (
+                  <div className="flex items-center gap-1.5">
+                    <Star size={13} className="text-neutral-300" />
+                    <button
+                      type="button"
+                      disabled={topPickPending}
+                      onClick={async () => {
+                        if (topPicksFull) {
+                          setShowReplacePicker(true);
+                        } else {
                           setTopPickPending(true);
-                          await fetch(`/api/top-picks/${tp.product_id}`, { method: "DELETE" });
                           await fetch("/api/top-picks", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
@@ -894,49 +865,55 @@ function ProductModal({
                           });
                           await onSave();
                           setTopPickPending(false);
-                          setShowReplacePicker(false);
-                        }}
-                        className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded hover:bg-neutral-50 transition-colors"
-                      >
-                        <span className="text-[12px] text-neutral-400 w-4">#{i + 1}</span>
-                        <Thumbnail src={tp.products.photo_url} alt={tp.products.name} />
-                        <span className="text-[14px] text-neutral-700 truncate">{tp.products.name}</span>
-                      </button>
-                    ))}
+                        }
+                      }}
+                      className="text-[12px] text-[#C0392B] hover:opacity-70 transition-opacity"
+                    >
+                      {topPickPending ? "Adding..." : "Add to Top Picks"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Replace picker — separate row when active */}
+          {mode === "edit" && product && showReplacePicker && !topPickEntry && (
+            <div className="space-y-2 rounded-md border border-gray-200 px-3 py-2.5">
+              <p className="text-[13px] text-neutral-600">Replace which Top Pick?</p>
+              {topPicks
+                .sort((a, b) => a.sort_order - b.sort_order)
+                .map((tp, i) => (
                   <button
-                    type="button"
-                    onClick={() => setShowReplacePicker(false)}
-                    className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <span className="text-[14px] text-neutral-400">Not a Top Pick</span>
-                  <button
+                    key={tp.id}
                     type="button"
                     disabled={topPickPending}
                     onClick={async () => {
-                      if (topPicksFull) {
-                        setShowReplacePicker(true);
-                      } else {
-                        setTopPickPending(true);
-                        await fetch("/api/top-picks", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ product_id: product.id }),
-                        });
-                        await onSave();
-                        setTopPickPending(false);
-                      }
+                      setTopPickPending(true);
+                      await fetch(`/api/top-picks/${tp.product_id}`, { method: "DELETE" });
+                      await fetch("/api/top-picks", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ product_id: product.id }),
+                      });
+                      await onSave();
+                      setTopPickPending(false);
+                      setShowReplacePicker(false);
                     }}
-                    className="text-[13px] text-[#C0392B] hover:opacity-70 transition-opacity"
+                    className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded hover:bg-neutral-50 transition-colors"
                   >
-                    {topPickPending ? "Adding..." : "Add to Top"}
+                    <span className="text-[12px] text-neutral-400 w-4">#{i + 1}</span>
+                    <Thumbnail src={tp.products.photo_url} alt={tp.products.name} />
+                    <span className="text-[14px] text-neutral-700 truncate">{tp.products.name}</span>
                   </button>
-                </div>
-              )}
+                ))}
+              <button
+                type="button"
+                onClick={() => setShowReplacePicker(false)}
+                className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors"
+              >
+                Cancel
+              </button>
             </div>
           )}
 
@@ -953,7 +930,7 @@ function ProductModal({
               disabled={saving || uploading}
               className="bg-[#C0392B] text-white text-[14px] font-medium px-5 py-2.5 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              {saving ? "Saving..." : mode === "edit" ? "Save Changes" : "Add Product"}
+              {saving ? "Saving..." : mode === "edit" ? "Save" : "Add Product"}
             </button>
             <button
               type="button"
@@ -964,7 +941,7 @@ function ProductModal({
             </button>
           </div>
           {mode === "edit" && product && (onArchive || onDelete) && (
-            <div className="flex items-center gap-3 pt-1 pb-2 border-t border-gray-100 mt-1">
+            <div className="flex items-center gap-4 pt-4 pb-2 border-t border-gray-200 mt-4">
               {onArchive && (
                 <button
                   type="button"
@@ -978,7 +955,7 @@ function ProductModal({
                 <button
                   type="button"
                   onClick={() => { onClose(); onDelete(product); }}
-                  className="text-[13px] text-neutral-400 hover:text-[#C0392B] transition-colors"
+                  className="text-[13px] text-[#C0392B] hover:opacity-70 transition-opacity"
                 >
                   Delete
                 </button>
@@ -1545,20 +1522,9 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#EEF2F7]">
       <div className="mx-auto max-w-2xl px-4 pt-8 sm:pt-14 pb-16">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-[22px] font-semibold text-neutral-900">
-            Dashboard
-          </h1>
-          <button
-            onClick={async () => {
-              await fetch("/api/auth/logout", { method: "POST" });
-              router.push("/");
-            }}
-            className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors"
-          >
-            Log out
-          </button>
-        </div>
+        <p className="text-center text-[20px] font-semibold text-neutral-900 mb-6" style={{ fontFamily: "var(--font-space-grotesk)" }}>
+          sterp
+        </p>
 
         {loading ? (
           <p className="text-neutral-400 text-[15px]">Loading data...</p>
@@ -1622,6 +1588,15 @@ export default function DashboardPage() {
                 >
                   View
                 </a>
+                <button
+                  onClick={async () => {
+                    await fetch("/api/auth/logout", { method: "POST" });
+                    router.push("/");
+                  }}
+                  className="text-[13px] text-neutral-300 hover:text-neutral-500 transition-colors flex-shrink-0"
+                >
+                  Log out
+                </button>
               </section>
             )}
 

@@ -2098,20 +2098,36 @@ export default function DashboardPage() {
                             placeholder="Archive note..."
                             autoFocus
                           />
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => handleSaveArchiveNote(p.id)}
-                              className="text-[13px] font-medium text-white px-3 py-1.5 rounded-md hover:opacity-90"
-                              style={{ backgroundColor: "#C0392B" }}
-                            >
-                              Save
-                            </button>
-                            <button
-                              onClick={() => setEditingNoteId(null)}
-                              className="text-[13px] text-neutral-500 hover:text-neutral-800"
-                            >
-                              Cancel
-                            </button>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => handleSaveArchiveNote(p.id)}
+                                className="text-[13px] font-medium text-white px-3 py-1.5 rounded-md hover:opacity-90"
+                                style={{ backgroundColor: "#C0392B" }}
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={() => setEditingNoteId(null)}
+                                className="text-[13px] text-neutral-500 hover:text-neutral-800"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => { setEditingNoteId(null); handleRestoreProduct(p.id); }}
+                                className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors"
+                              >
+                                Restore
+                              </button>
+                              <button
+                                onClick={() => { setEditingNoteId(null); setDeleteTarget({ id: p.id, name: p.name, type: "archived" }); }}
+                                className="text-[13px] text-neutral-400 hover:text-[#C0392B] transition-colors"
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ) : (
@@ -2137,31 +2153,15 @@ export default function DashboardPage() {
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-1.5 flex-shrink-0">
-                            <button
-                              onClick={() => handleRestoreProduct(p.id)}
-                              className="text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors"
-                            >
-                              Restore
-                            </button>
-                            <span className="text-neutral-200">|</span>
-                            <button
-                              onClick={() => {
-                                setEditingNoteId(p.id);
-                                setEditNoteValue(p.archive_note || "");
-                              }}
-                              className="text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors"
-                            >
-                              Edit Note
-                            </button>
-                            <span className="text-neutral-200">|</span>
-                            <button
-                              onClick={() => setDeleteTarget({ id: p.id, name: p.name, type: "archived" })}
-                              className="text-[12px] text-neutral-400 hover:text-[#C0392B] transition-colors"
-                            >
-                              Delete
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => {
+                              setEditingNoteId(p.id);
+                              setEditNoteValue(p.archive_note || "");
+                            }}
+                            className="text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0"
+                          >
+                            Edit
+                          </button>
                         </div>
                       )}
                     </div>

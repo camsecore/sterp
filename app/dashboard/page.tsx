@@ -2134,16 +2134,16 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-3 px-4 py-3">
                           <Thumbnail src={p.photo_url} alt={p.name} />
                           <div className="flex-1 min-w-0">
-                            <span className="text-[14px] font-medium text-neutral-900 truncate block">
+                            <span className="text-[14px] font-semibold text-neutral-900 truncate block">
                               {p.name}
                             </span>
                             {p.created_at && p.archived_at && (
-                              <span className="text-[12px] text-neutral-400 block mt-0.5">
-                                Owned {formatDuration(p.created_at, p.archived_at)}
+                              <span className="text-[11px] text-neutral-400 block mt-1">
+                                {formatDuration(p.created_at, p.archived_at)}
                               </span>
                             )}
                             {p.archive_note && (
-                              <span className="text-[12px] text-neutral-400 truncate block mt-0.5">
+                              <span className="text-[12px] text-neutral-300 truncate block mt-0.5">
                                 {p.archive_note}
                               </span>
                             )}

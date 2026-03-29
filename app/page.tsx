@@ -17,12 +17,14 @@ export default function HomePage() {
 
       {/* ── Nav ── */}
       <nav className="relative z-10 w-full max-w-5xl mx-auto px-5 py-5 flex items-center justify-between">
-        <span
-          className="text-[30px] font-semibold tracking-tight"
-          style={{ fontFamily: "var(--font-space-grotesk)" }}
-        >
-          sterp
-        </span>
+        <Image
+          src="/logo-white.png"
+          alt="Sterp"
+          width={135}
+          height={45}
+          className="h-[45px] w-auto"
+          priority
+        />
         <div className="flex items-center gap-5 text-[15px]">
           <Link href="/login" className="text-white/80 hover:text-white transition-colors">
             Log In

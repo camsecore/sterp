@@ -173,7 +173,7 @@ export default function OnboardingProfilePage() {
       const supabase = createClient();
       supabase
         .from("users")
-        .select("username, name")
+        .select("username, name, bio")
         .eq("id", user.id)
         .single()
         .then(({ data }) => {
@@ -182,7 +182,8 @@ export default function OnboardingProfilePage() {
             router.replace("/onboarding/username");
             return;
           }
-          if (data.name) {
+          // bio !== null means user already completed step 2
+          if (data.name && data.bio !== null) {
             router.replace("/dashboard");
             return;
           }
@@ -257,7 +258,7 @@ export default function OnboardingProfilePage() {
       // Save profile
       const updates: Record<string, string | null> = {
         name: name.trim(),
-        bio: bio.trim() || null,
+        bio: bio.trim(),
       };
       if (avatar_url) updates.avatar_url = avatar_url;
 

@@ -1218,7 +1218,9 @@ export default function DashboardPage() {
         router.replace("/onboarding/username");
         return;
       }
-      if (!data.name) {
+      // bio === null means user hasn't completed profile setup (step 2).
+      // After step 2, bio is set to "" (empty string) if left blank.
+      if (!data.name || data.bio === null) {
         router.replace("/onboarding/profile");
         return;
       }

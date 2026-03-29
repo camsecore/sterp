@@ -1605,72 +1605,115 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#EEF2F7]">
       {/* ─── Top Header Bar ──────────────────────────────── */}
-      <div className="mx-auto max-w-2xl px-4 pt-6 sm:pt-10 pb-4 flex items-center justify-between">
-        <div className="mt-1">
-          <Image
-            src="/logo-black.png"
-            alt="Sterp"
-            width={150}
-            height={50}
-            className="h-[50px] w-auto"
-          />
-        </div>
-        {profile && (
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full overflow-hidden bg-neutral-200 flex-shrink-0">
-              {profile.avatar_url ? (
-                <Image
-                  src={profile.avatar_url}
-                  alt={profile.name || profile.username}
-                  width={40}
-                  height={40}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="h-full w-full flex items-center justify-center text-neutral-400 text-xs">
-                  —
-                </div>
-              )}
-            </div>
-            <div className="min-w-0 hidden sm:block max-w-[300px]">
-              <span className="text-[14px] font-medium text-neutral-900 truncate block leading-none max-w-[300px]">
-                {profile.name || profile.username}
-              </span>
-              <button
-                onClick={handleCopyLink}
-                className={`text-[11px] leading-none mt-1 block p-0 text-left ml-[1px] truncate max-w-[300px] transition-colors ${copied ? "text-emerald-600" : "text-neutral-400 hover:text-neutral-600 hover:underline"}`}
-              >
-                {copied ? "Copied!" : `sterp.com/${profile.username}`}
-              </button>
-            </div>
-            {currentProducts.length >= 2 && (
-              <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5 flex-shrink-0 hidden sm:inline">Live</span>
-            )}
-            <button
-              onClick={() => setProfileModalOpen(true)}
-              className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0"
-            >
-              Edit
-            </button>
-            <a
-              href={`/${profile.username}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0"
-            >
-              View
-            </a>
-            <button
-              onClick={async () => {
-                await fetch("/api/auth/logout", { method: "POST" });
-                router.push("/");
-              }}
-              className="text-[13px] text-neutral-300 hover:text-neutral-500 transition-colors flex-shrink-0"
-            >
-              Log out
-            </button>
+      {/* Mobile: logo centered, then profile two-row block */}
+      {/* Desktop: logo left, profile right, single row */}
+      <div className="mx-auto max-w-2xl px-4 pt-6 sm:pt-10 pb-4">
+        {/* Desktop: single row */}
+        <div className="hidden md:flex items-center justify-between">
+          <div className="mt-1">
+            <Image
+              src="/logo-black.png"
+              alt="Sterp"
+              width={150}
+              height={50}
+              className="h-[50px] w-auto"
+            />
           </div>
-        )}
+          {profile && (
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full overflow-hidden bg-neutral-200 flex-shrink-0">
+                {profile.avatar_url ? (
+                  <Image
+                    src={profile.avatar_url}
+                    alt={profile.name || profile.username}
+                    width={40}
+                    height={40}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center text-neutral-400 text-xs">—</div>
+                )}
+              </div>
+              <div className="min-w-0 max-w-[300px]">
+                <span className="text-[14px] font-medium text-neutral-900 truncate block leading-none max-w-[300px]">
+                  {profile.name || profile.username}
+                </span>
+                <button
+                  onClick={handleCopyLink}
+                  className={`text-[11px] leading-none mt-1 block p-0 text-left ml-[1px] truncate max-w-[300px] transition-colors ${copied ? "text-emerald-600" : "text-neutral-400 hover:text-neutral-600 hover:underline"}`}
+                >
+                  {copied ? "Copied!" : `sterp.com/${profile.username}`}
+                </button>
+              </div>
+              {currentProducts.length >= 2 && (
+                <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5 flex-shrink-0">Live</span>
+              )}
+              <button onClick={() => setProfileModalOpen(true)} className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0">Edit</button>
+              <a href={`/${profile.username}`} target="_blank" rel="noopener noreferrer" className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0">View</a>
+              <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); }} className="text-[13px] text-neutral-300 hover:text-neutral-500 transition-colors flex-shrink-0">Log out</button>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile: logo centered + two-row profile */}
+        <div className="md:hidden space-y-3">
+          <div className="text-center">
+            <Image
+              src="/logo-black.png"
+              alt="Sterp"
+              width={120}
+              height={40}
+              className="h-[40px] w-auto inline-block"
+            />
+          </div>
+          {profile && (
+            <div className="space-y-1">
+              {/* Row 1: avatar + name + Live | Edit View */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="h-8 w-8 rounded-full overflow-hidden bg-neutral-200 flex-shrink-0">
+                    {profile.avatar_url ? (
+                      <Image
+                        src={profile.avatar_url}
+                        alt={profile.name || profile.username}
+                        width={32}
+                        height={32}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-neutral-400 text-[10px]">—</div>
+                    )}
+                  </div>
+                  <span className="text-[14px] font-medium text-neutral-900 truncate leading-none max-w-[180px]">
+                    {profile.name || profile.username}
+                  </span>
+                  {currentProducts.length >= 2 && (
+                    <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5 flex-shrink-0">Live</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <button onClick={() => setProfileModalOpen(true)} className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors">Edit</button>
+                  <a href={`/${profile.username}`} target="_blank" rel="noopener noreferrer" className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors">View</a>
+                </div>
+              </div>
+              {/* Row 2: URL | Log out */}
+              <div className="flex items-center justify-between pl-10">
+                <button
+                  onClick={handleCopyLink}
+                  className={`text-[11px] p-0 text-left transition-colors ${copied ? "text-emerald-600" : "text-neutral-400 hover:text-neutral-600 hover:underline"}`}
+                >
+                  {copied ? "Copied!" : `sterp.com/${profile.username}`}
+                </button>
+                <button
+                  onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); }}
+                  className="text-[12px] text-neutral-300 hover:text-neutral-500 transition-colors"
+                >
+                  Log out
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="mx-auto max-w-2xl px-4 pb-16">

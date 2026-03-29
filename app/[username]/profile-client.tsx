@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Clock } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -454,6 +455,19 @@ export default function ProfileClient({
 
         <section>{content}</section>
       </main>
+
+      <footer className="mt-16 mb-8 flex flex-col items-center gap-3">
+        <Image
+          src="/logo-black.png"
+          alt="Sterp"
+          width={72}
+          height={24}
+          className="h-[24px] w-auto opacity-40"
+        />
+        <span className="text-[13px] text-gray-300">
+          &copy; Sterp 2026 &middot; <Link href="/terms" className="underline hover:text-gray-400 transition-colors">Terms</Link> &middot; <Link href="/privacy" className="underline hover:text-gray-400 transition-colors">Privacy</Link>
+        </span>
+      </footer>
     </div>
   );
 }

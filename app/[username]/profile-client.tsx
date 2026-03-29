@@ -35,6 +35,7 @@ interface Product {
   created_at: string;
   archive_note: string | null;
   archived_at: string | null;
+  acquired_at: string | null;
 }
 
 interface TopPick {
@@ -358,7 +359,7 @@ export default function ProfileClient({
             name={p.name}
             photo={p.photo_url ?? ""}
             archiveNote={p.archive_note}
-            createdAt={p.created_at}
+            createdAt={p.acquired_at ?? p.created_at}
             archivedAt={p.archived_at}
           />
         ))}

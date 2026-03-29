@@ -16,18 +16,19 @@ export async function POST(
 
   const body = await request.json().catch(() => ({}));
   const archive_note = body.archive_note?.trim() || null;
+  const archived_at = body.archived_at || new Date().toISOString();
 
   // Archive the product
   const { data, error: dbError } = await supabase
     .from("products")
     .update({
       status: "archived",
-      archived_at: new Date().toISOString(),
+      archived_at,
       archive_note,
     })
     .eq("id", id)
     .eq("user_id", user!.id)
-    .eq("status", "current")
+    .in("status", ["current", "draft"])
     .select()
     .single();
 

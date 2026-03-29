@@ -49,6 +49,10 @@ export async function PATCH(
     }
   }
 
+  if (body.acquired_at !== undefined) {
+    updates.acquired_at = body.acquired_at || null;
+  }
+
   if (body.original_url !== undefined) {
     updates.original_url = body.original_url || null;
     updates.affiliate_url = body.original_url ? rewriteAffiliateUrl(body.original_url) : null;

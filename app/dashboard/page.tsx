@@ -41,6 +41,7 @@ interface Product {
   created_at: string;
   archive_note: string | null;
   archived_at: string | null;
+  acquired_at: string | null;
 }
 
 interface Collection {
@@ -271,10 +272,15 @@ function ArchiveModal({
   onCancel,
 }: {
   product: Product;
-  onConfirm: (note: string | null) => void;
+  onConfirm: (note: string | null, archivedAt: string) => void;
   onCancel: () => void;
 }) {
   const [note, setNote] = useState("");
+  const now = new Date();
+  const [editingDate, setEditingDate] = useState(false);
+  const [archiveMonth, setArchiveMonth] = useState(String(now.getMonth() + 1));
+  const [archiveYear, setArchiveYear] = useState(String(now.getFullYear()));
+  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === "Escape") onCancel(); }
@@ -310,9 +316,44 @@ function ArchiveModal({
             This is a personal note, not a review.
           </p>
         </div>
+        <div>
+          {editingDate ? (
+            <div className="flex items-center gap-2">
+              <select
+                value={archiveMonth}
+                onChange={(e) => setArchiveMonth(e.target.value)}
+                className="flex-1 rounded-md border border-gray-200 px-2 py-1.5 text-[13px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40 appearance-none"
+              >
+                {monthNames.map((m, i) => (
+                  <option key={i + 1} value={String(i + 1)}>{m}</option>
+                ))}
+              </select>
+              <select
+                value={archiveYear}
+                onChange={(e) => setArchiveYear(e.target.value)}
+                className="flex-1 rounded-md border border-gray-200 px-2 py-1.5 text-[13px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40 appearance-none"
+              >
+                {Array.from({ length: now.getFullYear() - 2009 }, (_, i) => now.getFullYear() - i).map((y) => (
+                  <option key={y} value={String(y)}>{y}</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <p className="text-[13px] text-neutral-400">
+              {monthNames[Number(archiveMonth) - 1]} {archiveYear}
+              <button
+                type="button"
+                onClick={() => setEditingDate(true)}
+                className="ml-2 text-[12px] text-[#C0392B] hover:opacity-70 transition-opacity"
+              >
+                Change
+              </button>
+            </p>
+          )}
+        </div>
         <div className="flex items-center gap-3 pt-1">
           <button
-            onClick={() => onConfirm(note.trim() || null)}
+            onClick={() => onConfirm(note.trim() || null, `${archiveYear}-${archiveMonth.padStart(2, "0")}-01T00:00:00Z`)}
             className="text-[14px] font-medium text-white px-5 py-2 rounded-md hover:opacity-90 bg-neutral-700"
           >
             Archive
@@ -426,6 +467,9 @@ function ProductModal({
   const [collectionId, setCollectionId] = useState(
     product?.collection_id || defaultCollectionId || (collections[0]?.id ?? "")
   );
+  const existingDate = product?.acquired_at ? new Date(product.acquired_at) : null;
+  const [acquiredMonth, setAcquiredMonth] = useState<string>(existingDate ? String(existingDate.getUTCMonth() + 1) : "");
+  const [acquiredYear, setAcquiredYear] = useState<string>(existingDate ? String(existingDate.getUTCFullYear()) : "");
   const [pendingBlob, setPendingBlob] = useState<Blob | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -596,6 +640,7 @@ function ProductModal({
             original_url: normalizeUrl(originalUrl) || null,
             collection_id: collectionId,
             photo_url: finalPhotoUrl || null,
+            acquired_at: acquiredMonth && acquiredYear ? `${acquiredYear}-${acquiredMonth.padStart(2, "0")}-01` : null,
           }),
         });
         if (!res.ok) {
@@ -749,6 +794,44 @@ function ProductModal({
               <p className="text-[13px] text-[#C0392B] mt-0.5">{errors.one_liner}</p>
             )}
           </div>
+
+          {/* Acquired date — edit mode only */}
+          {mode === "edit" && (
+            <div>
+              <label className="block text-[13px] text-neutral-400 mb-1">When did you get this?</label>
+              <div className="flex items-center gap-2">
+                <select
+                  value={acquiredMonth}
+                  onChange={(e) => setAcquiredMonth(e.target.value)}
+                  className={`${inputClass} flex-1 appearance-none`}
+                >
+                  <option value="">Month</option>
+                  {["January","February","March","April","May","June","July","August","September","October","November","December"].map((m, i) => (
+                    <option key={i + 1} value={String(i + 1)}>{m}</option>
+                  ))}
+                </select>
+                <select
+                  value={acquiredYear}
+                  onChange={(e) => setAcquiredYear(e.target.value)}
+                  className={`${inputClass} flex-1 appearance-none`}
+                >
+                  <option value="">Year</option>
+                  {Array.from({ length: new Date().getFullYear() - 2009 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                    <option key={y} value={String(y)}>{y}</option>
+                  ))}
+                </select>
+                {(acquiredMonth || acquiredYear) && (
+                  <button
+                    type="button"
+                    onClick={() => { setAcquiredMonth(""); setAcquiredYear(""); }}
+                    className="text-[12px] text-neutral-400 hover:text-neutral-600 transition-colors flex-shrink-0"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Collection */}
           <div>
@@ -1233,12 +1316,12 @@ export default function DashboardPage() {
 
   // ─── Product actions ────────────────────────────────────────────
 
-  async function handleArchiveConfirm(note: string | null) {
+  async function handleArchiveConfirm(note: string | null, archivedAt: string) {
     if (!archiveTarget) return;
     const res = await fetch(`/api/products/${archiveTarget.id}/archive`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ archive_note: note }),
+      body: JSON.stringify({ archive_note: note, archived_at: archivedAt }),
     });
     if (res.ok) {
       await Promise.all([fetchProducts(), fetchTopPicks()]);
@@ -2090,7 +2173,7 @@ export default function DashboardPage() {
                               </span>
                               {p.created_at && p.archived_at && (
                                 <span className="text-[11px] font-medium text-amber-700 bg-amber-100 rounded-full px-2 py-0.5 flex-shrink-0">
-                                  {formatDuration(p.created_at, p.archived_at)}
+                                  {formatDuration(p.acquired_at ?? p.created_at, p.archived_at)}
                                 </span>
                               )}
                             </div>

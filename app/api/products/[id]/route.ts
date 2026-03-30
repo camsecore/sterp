@@ -45,6 +45,18 @@ export async function PATCH(
         .single();
       if (existing?.status === "draft") {
         updates.status = "current";
+        // Auto-populate top picks (same logic as POST /api/products)
+        const { count } = await supabase
+          .from("top_picks")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user!.id);
+        if ((count ?? 0) < 5) {
+          await supabase.from("top_picks").insert({
+            user_id: user!.id,
+            product_id: id,
+            sort_order: (count ?? 0) + 1,
+          });
+        }
       }
     }
   }

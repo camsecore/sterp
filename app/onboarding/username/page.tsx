@@ -141,7 +141,7 @@ export default function OnboardingUsernamePage() {
 
   return (
     <div className="min-h-screen bg-[#EEF2F7] flex flex-col items-center justify-center px-4">
-      <div className="w-full max-w-md flex flex-col items-center">
+      <div className="w-full max-w-sm mx-auto flex flex-col items-center">
         {/* Logo */}
         <Image
           src="/logo-black.png"
@@ -153,14 +153,14 @@ export default function OnboardingUsernamePage() {
         />
 
         {/* Headline */}
-        <h1 className="text-2xl font-semibold text-neutral-900 mb-8 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 mb-8 text-center">
           Claim your Sterp URL
         </h1>
 
         {/* Input */}
         <div className="w-full">
-          <div className="flex items-center bg-white rounded-lg border border-neutral-200 focus-within:border-neutral-400 transition-colors overflow-hidden">
-            <span className="pl-4 pr-1 text-[15px] text-neutral-400 select-none whitespace-nowrap">
+          <div className="relative flex items-center bg-white rounded-lg border border-gray-200 shadow-sm focus-within:border-neutral-400 transition-colors overflow-hidden">
+            <span className="pl-4 pr-1 text-[15px] text-gray-400 select-none whitespace-nowrap">
               sterp.com/
             </span>
             <input
@@ -168,17 +168,24 @@ export default function OnboardingUsernamePage() {
               value={username}
               onChange={handleChange}
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-              className="flex-1 py-3 pr-4 text-[15px] text-neutral-900 bg-transparent outline-none placeholder:text-neutral-300"
+              className="flex-1 py-3 pr-10 text-[15px] text-gray-900 font-medium bg-transparent outline-none placeholder:text-neutral-300 placeholder:font-normal"
               placeholder="yourname"
               autoFocus
               autoCapitalize="off"
               autoCorrect="off"
               spellCheck={false}
             />
+            {/* Inline validation icon */}
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              {validation.status === "checking" && <Loader2 className="w-4 h-4 animate-spin text-neutral-400" />}
+              {validation.status === "available" && <Check className="w-4 h-4 text-emerald-600" />}
+              {validation.status === "taken" && <X className="w-4 h-4 text-red-500" />}
+              {validation.status === "error" && <X className="w-4 h-4 text-red-500" />}
+            </div>
           </div>
 
           {/* Validation feedback */}
-          <div className="h-6 mt-2 flex items-center gap-1.5 pl-1">
+          <div className="h-5 mt-1.5 flex items-center gap-1.5 pl-1">
             {validation.status === "checking" && (
               <span className="flex items-center gap-1.5 text-[13px] text-neutral-400">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -210,8 +217,7 @@ export default function OnboardingUsernamePage() {
         <button
           onClick={handleSubmit}
           disabled={!isValid || submitting}
-          className="w-full mt-4 py-3 rounded-lg text-[15px] font-medium text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ backgroundColor: "#C0392B" }}
+          className="w-full mt-4 py-3 rounded-lg text-[15px] font-medium text-white bg-[#C0392B] hover:bg-red-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#C0392B]"
         >
           {submitting ? "Claiming..." : "Continue"}
         </button>

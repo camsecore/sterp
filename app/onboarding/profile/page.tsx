@@ -286,11 +286,11 @@ export default function OnboardingProfilePage() {
   }
 
   const inputClass =
-    "w-full rounded-md border border-gray-200 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40";
+    "w-full rounded-md bg-white border border-gray-200 shadow-sm px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40";
 
   return (
     <div className="min-h-screen bg-[#EEF2F7] flex flex-col items-center justify-center px-4">
-      <div className="w-full max-w-md flex flex-col items-center">
+      <div className="w-full max-w-sm mx-auto flex flex-col items-center">
         {/* Logo */}
         <Image
           src="/logo-black.png"
@@ -302,22 +302,22 @@ export default function OnboardingProfilePage() {
         />
 
         {/* Headline */}
-        <h1 className="text-2xl font-semibold text-neutral-900 mb-8 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 mb-8 text-center">
           Set up your profile
         </h1>
 
         {/* Avatar upload */}
-        <div className="mb-6">
+        <div className="mb-4">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="relative w-24 h-24 rounded-full bg-neutral-200 overflow-hidden group cursor-pointer"
+            className="relative w-24 h-24 rounded-full bg-white border-2 border-dashed border-gray-300 overflow-hidden group cursor-pointer"
           >
             {avatarPreview ? (
               <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <Camera className="w-6 h-6 text-neutral-400" />
+                <Camera className="w-6 h-6 text-[#C0392B]" />
               </div>
             )}
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -350,30 +350,31 @@ export default function OnboardingProfilePage() {
 
         {/* Bio */}
         <div className="w-full mb-6">
-          <textarea
-            value={bio}
-            onChange={(e) => {
-              if (e.target.value.length <= 160) setBio(e.target.value);
-            }}
-            rows={3}
-            className={`${inputClass} resize-none`}
-            placeholder="A short bio (optional)"
-          />
-          <p
-            className={`text-[12px] mt-0.5 ${
-              bio.length >= 140 ? "text-[#C0392B]" : "text-neutral-400"
-            }`}
-          >
-            {bio.length}/160
-          </p>
+          <div className="relative">
+            <textarea
+              value={bio}
+              onChange={(e) => {
+                if (e.target.value.length <= 160) setBio(e.target.value);
+              }}
+              rows={3}
+              className={`${inputClass} resize-none pb-6`}
+              placeholder="A short bio (optional)"
+            />
+            <span
+              className={`absolute bottom-2 right-3 text-xs ${
+                bio.length >= 140 ? "text-[#C0392B]" : "text-gray-400"
+              }`}
+            >
+              {bio.length}/160
+            </span>
+          </div>
         </div>
 
         {/* Continue button */}
         <button
           onClick={handleSubmit}
           disabled={!name.trim() || submitting}
-          className="w-full py-3 rounded-lg text-[15px] font-medium text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ backgroundColor: "#C0392B" }}
+          className="w-full py-3 rounded-lg text-[15px] font-medium text-white bg-[#C0392B] hover:bg-red-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#C0392B]"
         >
           {submitting ? "Saving..." : "Continue"}
         </button>

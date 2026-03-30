@@ -1659,11 +1659,12 @@ export default function DashboardPage() {
 
   const collectionMap = new Map(collections.map((c) => [c.id, c]));
   const currentProducts = products.filter((p) => p.status === "current");
-  const [liveBannerDismissed, setLiveBannerDismissed] = useState(true); // default hidden to avoid flash
-
-  useEffect(() => {
-    setLiveBannerDismissed(localStorage.getItem("sterp_live_banner_dismissed") === "true");
-  }, []);
+  const [liveBannerDismissed, setLiveBannerDismissed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("sterp_live_banner_dismissed") === "true";
+    }
+    return true;
+  });
   const archivedProducts = products
     .filter((p) => p.status === "archived")
     .sort((a, b) => {

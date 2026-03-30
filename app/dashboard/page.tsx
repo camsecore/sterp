@@ -1095,13 +1095,16 @@ function ProductModal({
         </div>
       </div>
 
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       {cropSrc && (
-        <CropModal
-          imageSrc={cropSrc}
-          aspect={4 / 3}
-          onDone={handleCropDone}
-          onCancel={() => { if (cropSrc) URL.revokeObjectURL(cropSrc); setCropSrc(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
-        />
+        <div onClick={(e) => e.stopPropagation()}>
+          <CropModal
+            imageSrc={cropSrc}
+            aspect={4 / 3}
+            onDone={handleCropDone}
+            onCancel={() => { if (cropSrc) URL.revokeObjectURL(cropSrc); setCropSrc(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+          />
+        </div>
       )}
     </div>
   );

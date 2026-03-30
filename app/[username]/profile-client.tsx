@@ -286,6 +286,15 @@ export default function ProfileClient({
     "bg-teal-100 text-teal-700",
   ];
 
+  // For single-collection users, hide the collection tab if all its products are already Top Picks
+  const topPickProductIds = new Set(favorites.map((f) => f.id));
+  const visibleCollections = sortedCollections.length === 1
+    ? sortedCollections.filter((c) => {
+        const colProducts = currentProducts.filter((p) => p.collection_id === c.id);
+        return colProducts.some((p) => !topPickProductIds.has(p.id));
+      })
+    : sortedCollections;
+
   const tabs: { tab: Tab; label: string; activeClass: string; activeStyle?: React.CSSProperties }[] = [
     ...(favorites.length > 0
       ? [{
@@ -295,7 +304,7 @@ export default function ProfileClient({
           activeStyle: { backgroundColor: "#FDECEA", color: "#C0392B" },
         }]
       : []),
-    ...sortedCollections.map((c, i) => ({
+    ...visibleCollections.map((c, i) => ({
       tab: { kind: "collection" as const, collectionId: c.id },
       label: c.name,
       activeClass: collectionColors[i % collectionColors.length],

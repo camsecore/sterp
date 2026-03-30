@@ -607,10 +607,8 @@ function ProductModal({
     // Photo is optional — products without photos save as drafts
     if (!name.trim()) newErrors.name = "Name is required";
     if (!oneLiner.trim()) newErrors.one_liner = "One-liner is required";
-    // When zero collections, the user types a new collection name instead of selecting
-    const needsNewCollection = collections.length === 0 && !collectionId;
-    if (!collectionId && !needsNewCollection) newErrors.collection = "Collection is required";
-    if (needsNewCollection && !newCollectionName.trim()) newErrors.collection = "Collection is required";
+    // Collection validation only needed when user has 2+ collections (dropdown visible)
+    if (collections.length >= 2 && !collectionId) newErrors.collection = "Collection is required";
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -618,23 +616,27 @@ function ProductModal({
     setErrors({});
     setSaving(true);
     try {
-      // If zero collections, create one first from the text input
+      // Auto-resolve collection for 0-1 collection users (field is hidden)
       let resolvedCollectionId = collectionId;
-      if (needsNewCollection && newCollectionName.trim()) {
+      if (collections.length === 0) {
+        // Silently create a "Products" collection
         const colRes = await fetch("/api/collections", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: newCollectionName.trim() }),
+          body: JSON.stringify({ name: "Products" }),
         });
         if (!colRes.ok) {
           const data = await colRes.json();
-          setErrors({ collection: data.error || "Failed to create collection" });
+          setErrors({ form: data.error || "Failed to create collection" });
           setSaving(false);
           return;
         }
         const createdCol = await colRes.json();
         resolvedCollectionId = createdCol.id;
         await onCollectionCreated();
+      } else if (collections.length === 1 && !resolvedCollectionId) {
+        // Auto-assign to their only collection
+        resolvedCollectionId = collections[0].id;
       }
 
       if (mode === "add") {
@@ -877,18 +879,10 @@ function ProductModal({
             </div>
           )}
 
-          {/* Collection */}
+          {/* Collection — hidden for 0-1 collections, shown as dropdown for 2+ */}
           <div>
-            {collections.length === 0 && !creatingCollection ? (
-              /* Zero collections: show text input to create one inline */
-              <input
-                type="text"
-                value={newCollectionName}
-                onChange={(e) => setNewCollectionName(e.target.value)}
-                className={inputClass}
-                placeholder="Collection — e.g. Desk Setup, Gym Bag, Kitchen..."
-              />
-            ) : creatingCollection ? (
+            {collections.length >= 2 && (
+              creatingCollection ? (
               <div className="flex items-center gap-2">
                 <input
                   ref={newCollectionInputRef}
@@ -952,7 +946,7 @@ function ProductModal({
                   ＋ Create new collection
                 </option>
               </select>
-            )}
+            ))}
             {newCollectionError && (
               <p className="text-[13px] text-[#C0392B] mt-1">{newCollectionError}</p>
             )}
@@ -1212,6 +1206,16 @@ export default function DashboardPage() {
 
   // Collection errors (for delete)
   const [collectionError, setCollectionError] = useState("");
+
+  // Post-live nudge (one-time, localStorage)
+  const [nudgeDismissed, setNudgeDismissed] = useState(true); // default true to avoid flash
+  useEffect(() => {
+    setNudgeDismissed(localStorage.getItem("sterp_nudge_dismissed") === "true");
+  }, []);
+  function dismissNudge() {
+    localStorage.setItem("sterp_nudge_dismissed", "true");
+    setNudgeDismissed(true);
+  }
 
   // Archive & delete modals
   const [archiveTarget, setArchiveTarget] = useState<Product | null>(null);
@@ -1821,25 +1825,21 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* ─── Add Product button (prominent when zero products) ── */}
+            {/* ─── Add Product button + helper text (zero products) ── */}
             {products.length === 0 && (
-              <button
-                onClick={() => setProductModal({ mode: "add" })}
-                className="w-full text-white text-[15px] font-semibold py-3 rounded-lg hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: "#C0392B" }}
-              >
-                + Add Product
-              </button>
-            )}
-
-            {/* ─── First-run onboarding card ─────────────────── */}
-            {products.length === 0 && (
-              <div className="bg-white rounded-lg border border-gray-200 px-6 py-8 text-center space-y-3">
-                <h3 className="text-[18px] font-semibold text-neutral-900">
-                  Add your first product
-                </h3>
-                <p className="text-[14px] text-neutral-500 max-w-sm mx-auto leading-relaxed">
-                  Share something you actually use. Your desk chair, your favorite headphones, your go-to protein powder. Start anywhere.
+              <div className="text-center py-2 space-y-4">
+                <button
+                  onClick={() => setProductModal({ mode: "add" })}
+                  className="w-[60%] text-white text-[15px] font-semibold py-3 rounded-lg hover:opacity-90 transition-opacity"
+                  style={{ backgroundColor: "#C0392B" }}
+                >
+                  + Add Product
+                </button>
+                <p className="text-[16px] font-medium text-neutral-700">
+                  What are your top products?
+                </p>
+                <p className="text-[14px] text-neutral-400">
+                  The stuff you&apos;d recommend to anyone. Add 2 to make your page live.
                 </p>
               </div>
             )}
@@ -1974,8 +1974,8 @@ export default function DashboardPage() {
               )}
             </section>}
 
-            {/* ─── Section 4: Collections ─────────────────── */}
-            {products.length > 0 && <section>
+            {/* ─── Section 4: Collections (hidden until user has 2+ collections) ── */}
+            {products.length > 0 && collections.length >= 2 && <section>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[17px] font-medium text-neutral-900">
                   Collections
@@ -2369,6 +2369,38 @@ export default function DashboardPage() {
                   ))}
                 </div>
               </section>
+            )}
+            {/* ─── Post-Live Nudge Card (one-time) ──────── */}
+            {currentProducts.length >= 2 && !nudgeDismissed && (
+              <div className="relative rounded-lg border border-neutral-200 bg-neutral-50 px-5 py-4">
+                <button
+                  onClick={dismissNudge}
+                  className="absolute top-3 right-3 text-neutral-300 hover:text-neutral-500 transition-colors text-[16px] leading-none"
+                  aria-label="Dismiss"
+                >
+                  ×
+                </button>
+                <p className="text-[15px] font-medium text-neutral-800 mb-1.5 pr-6">
+                  Your top picks are set. Now add the rest.
+                </p>
+                <p className="text-[14px] text-neutral-500 leading-relaxed">
+                  The speaker on your desk. The protein powder in your cabinet. Even the stuff
+                  you&apos;re not thrilled about. That&apos;s what makes a Sterp page real.
+                </p>
+                <div className="flex items-center gap-2 mt-3">
+                  <span className="text-[13px] text-neutral-500">Group them however you want.</span>
+                  <button
+                    onClick={() => {
+                      setShowAddCollection(true);
+                      setAddCollectionError("");
+                      dismissNudge();
+                    }}
+                    className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
+                  >
+                    + Add Collection
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         )}

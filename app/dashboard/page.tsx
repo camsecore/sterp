@@ -1863,7 +1863,7 @@ export default function DashboardPage() {
 
             {/* ─── Persistent Add Product button ── */}
             {products.length > 0 && (
-              <div className="text-center">
+              <div className="text-center space-y-2">
                 <button
                   onClick={() => setProductModal({ mode: "add" })}
                   className="w-[60%] text-white text-[15px] font-semibold py-3 rounded-lg hover:opacity-90 transition-opacity"
@@ -1871,7 +1871,47 @@ export default function DashboardPage() {
                 >
                   + Add Product
                 </button>
+                {collections.length < 2 && (
+                  <div>
+                    <button
+                      onClick={() => { setShowAddCollection(true); setAddCollectionError(""); }}
+                      className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
+                    >
+                      + Add Collection
+                    </button>
+                  </div>
+                )}
               </div>
+            )}
+
+            {/* ─── Add Collection form (when Collections section is hidden) ── */}
+            {products.length > 0 && collections.length < 2 && showAddCollection && (
+              <form
+                onSubmit={handleAddCollection}
+                className="bg-white rounded-lg border border-gray-200 p-4 flex items-end gap-3"
+              >
+                <div className="flex-1">
+                  <label className="block text-[13px] font-medium text-neutral-600 mb-1">
+                    Collection name
+                  </label>
+                  <input
+                    type="text"
+                    value={newCollectionName}
+                    onChange={(e) => setNewCollectionName(e.target.value)}
+                    className={inputClass}
+                    placeholder="e.g. Kitchen, Tech, Travel"
+                  />
+                  {addCollectionError && (
+                    <p className="text-[13px] text-[#C0392B] mt-1">{addCollectionError}</p>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  className="bg-[#C0392B] text-white text-[14px] font-medium px-4 py-2 rounded-md hover:opacity-90 transition-opacity flex-shrink-0"
+                >
+                  Add
+                </button>
+              </form>
             )}
 
             {/* ─── Section 3: Top Picks ──────────────────────── */}
@@ -2423,7 +2463,6 @@ export default function DashboardPage() {
                     onClick={() => {
                       setShowAddCollection(true);
                       setAddCollectionError("");
-                      dismissNudge();
                     }}
                     className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
                   >

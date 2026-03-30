@@ -1833,7 +1833,7 @@ export default function DashboardPage() {
                 </div>
               </div>
             )}
-            {profile?.username && currentProducts.length < 2 && (
+            {profile?.username && currentProducts.length === 1 && (
               <div className="rounded-lg border border-amber-200 bg-amber-50 px-5 py-3">
                 <p className="text-[14px] text-amber-800">
                   Add at least 2 products to make your page live at{" "}
@@ -1842,22 +1842,22 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* ─── Add Product button + helper text (zero products) ── */}
+            {/* ─── First-run composition (zero products) ── */}
             {products.length === 0 && (
-              <div className="text-center py-2 space-y-4">
+              <div className="text-center pt-10 pb-4">
+                <h2 className="text-[22px] font-semibold text-neutral-800 mb-2">
+                  What are your top products?
+                </h2>
+                <p className="text-[15px] text-neutral-400 mb-6">
+                  The stuff you&apos;d recommend to anyone. Add 2 to make your page live.
+                </p>
                 <button
                   onClick={() => setProductModal({ mode: "add" })}
-                  className="w-[60%] text-white text-[15px] font-semibold py-3 rounded-lg hover:opacity-90 transition-opacity"
+                  className="w-[45%] text-white text-[15px] font-semibold py-3 rounded-lg hover:opacity-90 transition-opacity"
                   style={{ backgroundColor: "#C0392B" }}
                 >
                   + Add Product
                 </button>
-                <p className="text-[16px] font-medium text-neutral-700">
-                  What are your top products?
-                </p>
-                <p className="text-[14px] text-neutral-400">
-                  The stuff you&apos;d recommend to anyone. Add 2 to make your page live.
-                </p>
               </div>
             )}
 

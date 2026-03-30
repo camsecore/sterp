@@ -607,7 +607,10 @@ function ProductModal({
     // Photo is optional — products without photos save as drafts
     if (!name.trim()) newErrors.name = "Name is required";
     if (!oneLiner.trim()) newErrors.one_liner = "One-liner is required";
-    if (!collectionId) newErrors.collection = "Collection is required";
+    // When zero collections, the user types a new collection name instead of selecting
+    const needsNewCollection = collections.length === 0 && !collectionId;
+    if (!collectionId && !needsNewCollection) newErrors.collection = "Collection is required";
+    if (needsNewCollection && !newCollectionName.trim()) newErrors.collection = "Collection is required";
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -615,6 +618,25 @@ function ProductModal({
     setErrors({});
     setSaving(true);
     try {
+      // If zero collections, create one first from the text input
+      let resolvedCollectionId = collectionId;
+      if (needsNewCollection && newCollectionName.trim()) {
+        const colRes = await fetch("/api/collections", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: newCollectionName.trim() }),
+        });
+        if (!colRes.ok) {
+          const data = await colRes.json();
+          setErrors({ collection: data.error || "Failed to create collection" });
+          setSaving(false);
+          return;
+        }
+        const createdCol = await colRes.json();
+        resolvedCollectionId = createdCol.id;
+        await onCollectionCreated();
+      }
+
       if (mode === "add") {
         // Create product first (without photo_url if we have a pending blob)
         const res = await fetch("/api/products", {
@@ -622,7 +644,7 @@ function ProductModal({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: name.trim(),
-            collection_id: collectionId,
+            collection_id: resolvedCollectionId,
             one_liner: oneLiner.trim() || null,
             original_url: normalizeUrl(originalUrl) || null,
             photo_url: pendingBlob ? null : photoUrl || null,
@@ -660,7 +682,7 @@ function ProductModal({
             name: name.trim(),
             one_liner: oneLiner.trim() || null,
             original_url: normalizeUrl(originalUrl) || null,
-            collection_id: collectionId,
+            collection_id: resolvedCollectionId,
             photo_url: finalPhotoUrl || null,
             acquired_at: acquiredMonth && acquiredYear ? `${acquiredYear}-${acquiredMonth.padStart(2, "0")}-01` : null,
           }),
@@ -857,7 +879,16 @@ function ProductModal({
 
           {/* Collection */}
           <div>
-            {creatingCollection ? (
+            {collections.length === 0 && !creatingCollection ? (
+              /* Zero collections: show text input to create one inline */
+              <input
+                type="text"
+                value={newCollectionName}
+                onChange={(e) => setNewCollectionName(e.target.value)}
+                className={inputClass}
+                placeholder="Collection — e.g. Desk Setup, Gym Bag, Kitchen..."
+              />
+            ) : creatingCollection ? (
               <div className="flex items-center gap-2">
                 <input
                   ref={newCollectionInputRef}
@@ -1781,11 +1812,34 @@ export default function DashboardPage() {
                 </p>
               </div>
             )}
-            {profile?.username && products.length > 0 && currentProducts.length < 2 && (
+            {profile?.username && currentProducts.length < 2 && (
               <div className="rounded-lg border border-amber-200 bg-amber-50 px-5 py-3">
                 <p className="text-[14px] text-amber-800">
                   Add at least 2 products to make your page live at{" "}
                   <span className="font-medium">sterp.com/{profile.username}</span>
+                </p>
+              </div>
+            )}
+
+            {/* ─── Add Product button (prominent when zero products) ── */}
+            {products.length === 0 && (
+              <button
+                onClick={() => setProductModal({ mode: "add" })}
+                className="w-full text-white text-[15px] font-semibold py-3 rounded-lg hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: "#C0392B" }}
+              >
+                + Add Product
+              </button>
+            )}
+
+            {/* ─── First-run onboarding card ─────────────────── */}
+            {products.length === 0 && (
+              <div className="bg-white rounded-lg border border-gray-200 px-6 py-8 text-center space-y-3">
+                <h3 className="text-[18px] font-semibold text-neutral-900">
+                  Add your first product
+                </h3>
+                <p className="text-[14px] text-neutral-500 max-w-sm mx-auto leading-relaxed">
+                  Share something you actually use. Your desk chair, your favorite headphones, your go-to protein powder. Start anywhere.
                 </p>
               </div>
             )}
@@ -1921,7 +1975,7 @@ export default function DashboardPage() {
             </section>}
 
             {/* ─── Section 4: Collections ─────────────────── */}
-            <section>
+            {products.length > 0 && <section>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[17px] font-medium text-neutral-900">
                   Collections
@@ -1982,17 +2036,17 @@ export default function DashboardPage() {
               {collections.length === 0 && !showAddCollection ? (
                 <div className="bg-white rounded-lg border border-gray-200 px-6 py-8 text-center space-y-3">
                   <h3 className="text-[18px] font-semibold text-neutral-900">
-                    Build your Sterp
+                    No collections yet
                   </h3>
                   <p className="text-[14px] text-neutral-500 max-w-sm mx-auto leading-relaxed">
-                    Start by creating a collection — group your products however you want. &ldquo;Desk Setup,&rdquo; &ldquo;Gym Bag,&rdquo; &ldquo;Kitchen Essentials,&rdquo; whatever fits.
+                    Group your products however you want — &ldquo;Desk Setup,&rdquo; &ldquo;Gym Bag,&rdquo; &ldquo;Kitchen Essentials,&rdquo; whatever fits.
                   </p>
                   <button
                     onClick={() => { setShowAddCollection(true); setAddCollectionError(""); }}
                     className="text-[14px] font-medium text-white px-5 py-2.5 rounded-md hover:opacity-90"
                     style={{ backgroundColor: "#C0392B" }}
                   >
-                    Create Your First Collection
+                    + Add Collection
                   </button>
                 </div>
               ) : (
@@ -2217,7 +2271,7 @@ export default function DashboardPage() {
                   </SortableContext>
                 </DndContext>
               )}
-            </section>
+            </section>}
 
             {/* ─── Section 5: Archive ──────────────────────────── */}
             {archivedProducts.length > 0 && (
@@ -2330,7 +2384,7 @@ export default function DashboardPage() {
           topPicks={topPicks}
           userId={user.id}
           onSave={async () => {
-            await Promise.all([fetchProducts(), fetchTopPicks()]);
+            await Promise.all([fetchProducts(), fetchCollections(), fetchTopPicks()]);
           }}
           onClose={() => setProductModal(null)}
           onCollectionCreated={fetchCollections}

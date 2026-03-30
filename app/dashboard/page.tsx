@@ -1659,6 +1659,11 @@ export default function DashboardPage() {
 
   const collectionMap = new Map(collections.map((c) => [c.id, c]));
   const currentProducts = products.filter((p) => p.status === "current");
+  const [liveBannerDismissed, setLiveBannerDismissed] = useState(true); // default hidden to avoid flash
+
+  useEffect(() => {
+    setLiveBannerDismissed(localStorage.getItem("sterp_live_banner_dismissed") === "true");
+  }, []);
   const archivedProducts = products
     .filter((p) => p.status === "archived")
     .sort((a, b) => {
@@ -1806,17 +1811,26 @@ export default function DashboardPage() {
         ) : (
           <div className="space-y-6">
             {/* ─── Section 1: Page Status Banner ──────────────── */}
-            {profile?.username && currentProducts.length >= 2 && (
+            {profile?.username && currentProducts.length >= 2 && !liveBannerDismissed && (
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-5 py-3">
-                <p className="text-[14px] text-emerald-800">
-                  Your page is live at{" "}
+                <div className="flex items-center justify-between">
+                  <p className="text-[14px] text-emerald-800">
+                    Your page is live at{" "}
+                    <button
+                      onClick={handleCopyLink}
+                      className={`font-medium underline transition-colors ${copied ? "text-emerald-600" : "text-emerald-800 hover:text-emerald-900"}`}
+                    >
+                      {copied ? "Copied!" : `sterp.com/${profile.username}`}
+                    </button>
+                  </p>
                   <button
-                    onClick={handleCopyLink}
-                    className={`font-medium underline transition-colors ${copied ? "text-emerald-600" : "text-emerald-800 hover:text-emerald-900"}`}
+                    onClick={() => { localStorage.setItem("sterp_live_banner_dismissed", "true"); setLiveBannerDismissed(true); }}
+                    className="text-emerald-400 hover:text-emerald-600 transition-colors ml-3 text-[18px] leading-none"
+                    aria-label="Dismiss banner"
                   >
-                    {copied ? "Copied!" : `sterp.com/${profile.username}`}
+                    ×
                   </button>
-                </p>
+                </div>
               </div>
             )}
             {profile?.username && currentProducts.length < 2 && (
@@ -1844,6 +1858,19 @@ export default function DashboardPage() {
                 <p className="text-[14px] text-neutral-400">
                   The stuff you&apos;d recommend to anyone. Add 2 to make your page live.
                 </p>
+              </div>
+            )}
+
+            {/* ─── Persistent Add Product button ── */}
+            {products.length > 0 && (
+              <div className="text-center">
+                <button
+                  onClick={() => setProductModal({ mode: "add" })}
+                  className="w-[60%] text-white text-[15px] font-semibold py-3 rounded-lg hover:opacity-90 transition-opacity"
+                  style={{ backgroundColor: "#C0392B" }}
+                >
+                  + Add Product
+                </button>
               </div>
             )}
 

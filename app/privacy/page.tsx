@@ -35,7 +35,7 @@ export default function PrivacyPage() {
           </p>
 
           <p className="text-[15px] text-neutral-600 leading-relaxed mb-6">
-            Sterp (&ldquo;we,&rdquo; &ldquo;us,&rdquo; &ldquo;our&rdquo;) is operated by Cameron Scott. This policy explains what data we collect, why, and what we do with it.
+            Sterp (&ldquo;we,&rdquo; &ldquo;us,&rdquo; &ldquo;our&rdquo;) is operated by Cameron Secore. This policy explains what data we collect, why, and what we do with it.
           </p>
 
           <Section title="What We Collect">

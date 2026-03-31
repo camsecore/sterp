@@ -35,7 +35,7 @@ export default function TermsPage() {
           </p>
 
           <p className="text-[15px] text-neutral-600 leading-relaxed mb-6">
-            Sterp is operated by Cameron Scott (&ldquo;we,&rdquo; &ldquo;us,&rdquo; &ldquo;our&rdquo;). By using Sterp, you agree to these terms.
+            Sterp is operated by Cameron Secore (&ldquo;we,&rdquo; &ldquo;us,&rdquo; &ldquo;our&rdquo;). By using Sterp, you agree to these terms.
           </p>
 
           <Section title="What Sterp Is">

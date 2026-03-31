@@ -313,11 +313,11 @@ export default function SignupPage() {
         }
         @keyframes floatRight {
           from { opacity: 0; transform: translateY(-50%) rotate(-4deg) translateX(40px); }
-          to { opacity: 0.42; transform: translateY(-50%) rotate(-4deg) translateX(0); }
+          to { opacity: 0.7; transform: translateY(-50%) rotate(-4deg) translateX(0); }
         }
         @keyframes floatLeft {
           from { opacity: 0; transform: translateY(-45%) rotate(6deg) translateX(-40px); }
-          to { opacity: 0.28; transform: translateY(-45%) rotate(6deg) translateX(0); }
+          to { opacity: 0.55; transform: translateY(-45%) rotate(6deg) translateX(0); }
         }
       `}</style>
     </div>

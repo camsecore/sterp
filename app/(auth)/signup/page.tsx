@@ -89,47 +89,47 @@ export default function SignupPage() {
     <>
       <style dangerouslySetInnerHTML={{ __html: pageStyles }} />
 
-      {/* Floating page previews — desktop only */}
-      <div className="preview-frame preview-right">
-        <div className="ph-header">
-          <div className="ph-avatar a1" />
-          <div className="ph-name">Cam Scofield</div>
-          <div className="ph-url">sterp.com/cam</div>
-        </div>
-        <div className="ph-tabs">
-          <div className="ph-tab active">Top 4</div>
-          <div className="ph-tab">Desk</div>
-          <div className="ph-tab">Supps</div>
-        </div>
-        <div className="ph-grid">
-          <div className="ph-card"><div className="ph-card-img c1" /><div className="ph-card-body"><div className="ph-card-title">Herman Miller Aeron</div><div className="ph-card-desc">Best office purchase I&apos;ve made.</div></div></div>
-          <div className="ph-card"><div className="ph-card-img c2" /><div className="ph-card-body"><div className="ph-card-title">LG 27&quot; 4K Monitor</div><div className="ph-card-desc">Solid for the price.</div></div></div>
-          <div className="ph-card"><div className="ph-card-img c3" /><div className="ph-card-body"><div className="ph-card-title">Hatch Restore 2</div><div className="ph-card-desc">Sunrise alarm is legit.</div></div></div>
-          <div className="ph-card"><div className="ph-card-img c4" /><div className="ph-card-body"><div className="ph-card-title">Oura Ring Gen 3</div><div className="ph-card-desc">Best sleep tracker I&apos;ve tried.</div></div></div>
-        </div>
-      </div>
-
-      <div className="preview-frame preview-left">
-        <div className="ph-header">
-          <div className="ph-avatar a2" />
-          <div className="ph-name">Alex Rivera</div>
-          <div className="ph-url">sterp.com/alex</div>
-        </div>
-        <div className="ph-tabs">
-          <div className="ph-tab active">Top 3</div>
-          <div className="ph-tab">Kitchen</div>
-          <div className="ph-tab">Fitness</div>
-        </div>
-        <div className="ph-grid">
-          <div className="ph-card"><div className="ph-card-img c3" /><div className="ph-card-body"><div className="ph-card-title">Weber Kettle 22&quot;</div><div className="ph-card-desc">Everything you need, nothing you don&apos;t.</div></div></div>
-          <div className="ph-card"><div className="ph-card-img c1" /><div className="ph-card-body"><div className="ph-card-title">Baratza Encore</div><div className="ph-card-desc">Entry-level grinder that punches up.</div></div></div>
-          <div className="ph-card"><div className="ph-card-img c4" /><div className="ph-card-body"><div className="ph-card-title">Rogue Echo Bike</div><div className="ph-card-desc">Humbling. Best cardio investment.</div></div></div>
-          <div className="ph-card"><div className="ph-card-img c2" /><div className="ph-card-body"><div className="ph-card-title">AeroPress</div><div className="ph-card-desc">Unbeatable for the price.</div></div></div>
-        </div>
-      </div>
-
       {/* Center content */}
       <div className="signup-body">
+        {/* Floating page previews — desktop only */}
+        <div className="preview-frame preview-right">
+          <div className="ph-header">
+            <div className="ph-avatar a1" />
+            <div className="ph-name">Cam Scofield</div>
+            <div className="ph-url">sterp.com/cam</div>
+          </div>
+          <div className="ph-tabs">
+            <div className="ph-tab active">Top 4</div>
+            <div className="ph-tab">Desk</div>
+            <div className="ph-tab">Supps</div>
+          </div>
+          <div className="ph-grid">
+            <div className="ph-card"><div className="ph-card-img c1" /><div className="ph-card-body"><div className="ph-card-title">Herman Miller Aeron</div><div className="ph-card-desc">Best office purchase I&apos;ve made.</div></div></div>
+            <div className="ph-card"><div className="ph-card-img c2" /><div className="ph-card-body"><div className="ph-card-title">LG 27&quot; 4K Monitor</div><div className="ph-card-desc">Solid for the price.</div></div></div>
+            <div className="ph-card"><div className="ph-card-img c3" /><div className="ph-card-body"><div className="ph-card-title">Hatch Restore 2</div><div className="ph-card-desc">Sunrise alarm is legit.</div></div></div>
+            <div className="ph-card"><div className="ph-card-img c4" /><div className="ph-card-body"><div className="ph-card-title">Oura Ring Gen 3</div><div className="ph-card-desc">Best sleep tracker I&apos;ve tried.</div></div></div>
+          </div>
+        </div>
+
+        <div className="preview-frame preview-left">
+          <div className="ph-header">
+            <div className="ph-avatar a2" />
+            <div className="ph-name">Alex Rivera</div>
+            <div className="ph-url">sterp.com/alex</div>
+          </div>
+          <div className="ph-tabs">
+            <div className="ph-tab active">Top 3</div>
+            <div className="ph-tab">Kitchen</div>
+            <div className="ph-tab">Fitness</div>
+          </div>
+          <div className="ph-grid">
+            <div className="ph-card"><div className="ph-card-img c3" /><div className="ph-card-body"><div className="ph-card-title">Weber Kettle 22&quot;</div><div className="ph-card-desc">Everything you need, nothing you don&apos;t.</div></div></div>
+            <div className="ph-card"><div className="ph-card-img c1" /><div className="ph-card-body"><div className="ph-card-title">Baratza Encore</div><div className="ph-card-desc">Entry-level grinder that punches up.</div></div></div>
+            <div className="ph-card"><div className="ph-card-img c4" /><div className="ph-card-body"><div className="ph-card-title">Rogue Echo Bike</div><div className="ph-card-desc">Humbling. Best cardio investment.</div></div></div>
+            <div className="ph-card"><div className="ph-card-img c2" /><div className="ph-card-body"><div className="ph-card-title">AeroPress</div><div className="ph-card-desc">Unbeatable for the price.</div></div></div>
+          </div>
+        </div>
+
         <div className="center-content">
           <Image
             src="/logo-black.png"
@@ -256,8 +256,6 @@ const pageStyles = `
     align-items: center;
     justify-content: center;
     padding: 24px;
-    overflow-x: hidden;
-    position: relative;
   }
 
   /* ===== FLOATING PAGE PREVIEWS (desktop only) ===== */
@@ -279,25 +277,14 @@ const pageStyles = `
     right: -30px;
     top: 50%;
     transform: translateY(-50%) rotate(-4deg);
-    opacity: 0;
-    animation: floatRight 0.8s ease-out 0.3s forwards;
+    opacity: 0.42;
   }
 
   .preview-left {
     left: -50px;
     top: 50%;
     transform: translateY(-45%) rotate(6deg);
-    opacity: 0;
-    animation: floatLeft 0.8s ease-out 0.5s forwards;
-  }
-
-  @keyframes floatRight {
-    from { opacity: 0; transform: translateY(-50%) rotate(-4deg) translateX(40px); }
-    to { opacity: 0.42; transform: translateY(-50%) rotate(-4deg) translateX(0); }
-  }
-  @keyframes floatLeft {
-    from { opacity: 0; transform: translateY(-45%) rotate(6deg) translateX(-40px); }
-    to { opacity: 0.28; transform: translateY(-45%) rotate(6deg) translateX(0); }
+    opacity: 0.28;
   }
 
   /* Phone internals */

@@ -313,11 +313,11 @@ export default function SignupPage() {
         }
         @keyframes floatRight {
           from { opacity: 0; transform: translateY(-50%) rotate(-4deg) translateX(40px); }
-          to { opacity: 0.42; transform: translateY(-50%) rotate(-4deg) translateX(0); }
+          to { opacity: 0.7; transform: translateY(-50%) rotate(-4deg) translateX(0); }
         }
         @keyframes floatLeft {
           from { opacity: 0; transform: translateY(-45%) rotate(6deg) translateX(-40px); }
-          to { opacity: 0.28; transform: translateY(-45%) rotate(6deg) translateX(0); }
+          to { opacity: 0.55; transform: translateY(-45%) rotate(6deg) translateX(0); }
         }
       `}</style>
     </div>
@@ -343,8 +343,8 @@ function PhoneFrame({
 }) {
   const positionClass =
     side === "right"
-      ? "right-[-30px] top-1/2 -translate-y-1/2 -rotate-[4deg] animate-[floatRight_0.8s_ease-out_0.3s_forwards] max-[1100px]:right-[-60px] max-[900px]:right-[-80px] max-[900px]:w-[220px] max-[900px]:h-[460px] max-[900px]:rounded-3xl max-[900px]:p-3"
-      : "left-[-50px] top-1/2 -translate-y-[45%] rotate-[6deg] animate-[floatLeft_0.8s_ease-out_0.5s_forwards] max-[1100px]:left-[-70px] max-[900px]:left-[-90px] max-[900px]:w-[220px] max-[900px]:h-[460px] max-[900px]:rounded-3xl max-[900px]:p-3";
+      ? "right-[40px] top-1/2 -translate-y-1/2 -rotate-[4deg] animate-[floatRight_0.8s_ease-out_0.3s_forwards] max-[1100px]:right-[10px] max-[900px]:right-[-40px] max-[900px]:w-[220px] max-[900px]:h-[460px] max-[900px]:rounded-3xl max-[900px]:p-3"
+      : "left-[20px] top-1/2 -translate-y-[45%] rotate-[6deg] animate-[floatLeft_0.8s_ease-out_0.5s_forwards] max-[1100px]:left-[-10px] max-[900px]:left-[-50px] max-[900px]:w-[220px] max-[900px]:h-[460px] max-[900px]:rounded-3xl max-[900px]:p-3";
 
   return (
     <div

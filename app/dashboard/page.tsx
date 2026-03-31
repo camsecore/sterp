@@ -504,6 +504,8 @@ function ProductModal({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const newCollectionInputRef = useRef<HTMLInputElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const oneLinerRef = useRef<HTMLTextAreaElement>(null);
 
   // Close on Escape (but not while crop modal is open)
   useEffect(() => {
@@ -611,6 +613,14 @@ function ProductModal({
     if (collections.length >= 2 && !collectionId) newErrors.collection = "Collection is required";
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      // Focus the first field with an error so the user can fix it
+      if (newErrors.name) {
+        nameInputRef.current?.focus();
+        nameInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else if (newErrors.one_liner) {
+        oneLinerRef.current?.focus();
+        oneLinerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
       return;
     }
     setErrors({});
@@ -805,10 +815,14 @@ function ProductModal({
           {/* Product name */}
           <div>
             <input
+              ref={nameInputRef}
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              className={inputClass}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (errors.name) setErrors((prev) => { const next = { ...prev }; delete next.name; return next; });
+              }}
+              className={`${inputClass}${errors.name ? " border-[#C0392B]" : ""}`}
               placeholder="Product name"
             />
             {errors.name && (
@@ -819,14 +833,16 @@ function ProductModal({
           {/* One-liner */}
           <div>
             <textarea
+              ref={oneLinerRef}
               value={oneLiner}
               onChange={(e) => {
                 if (e.target.value.length <= 160) {
                   setOneLiner(e.target.value);
+                  if (errors.one_liner) setErrors((prev) => { const next = { ...prev }; delete next.one_liner; return next; });
                 }
               }}
               rows={3}
-              className={`${inputClass} resize-none`}
+              className={`${inputClass} resize-none${errors.one_liner ? " border-[#C0392B]" : ""}`}
               placeholder="What would you tell a friend about this?"
             />
             <p

@@ -63,7 +63,7 @@ export default function SignupPage() {
   if (magicLinkSent) {
     return (
       <>
-        <style jsx global>{pageStyles}</style>
+        <style dangerouslySetInnerHTML={{ __html: pageStyles }} />
         <div className="signup-body">
           <div className="center-content">
             <div className="auth-card" style={{ textAlign: "center" }}>
@@ -87,7 +87,7 @@ export default function SignupPage() {
 
   return (
     <>
-      <style jsx global>{pageStyles}</style>
+      <style dangerouslySetInnerHTML={{ __html: pageStyles }} />
 
       {/* Floating page previews — desktop only */}
       <div className="preview-frame preview-right">

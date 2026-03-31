@@ -103,7 +103,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#EEF2F7] flex flex-col items-center justify-center px-6 relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#EEF2F7] flex flex-col items-center justify-center px-6">
       {/* ── Floating phone frames (desktop only) ── */}
       <PhoneFrame
         side="right"
@@ -307,6 +307,7 @@ export default function SignupPage() {
 
       {/* Keyframes */}
       <style jsx global>{`
+        html { overflow-x: hidden; }
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(12px); }
           to { opacity: 1; transform: translateY(0); }

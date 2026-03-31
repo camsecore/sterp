@@ -20,8 +20,14 @@ export default function NotFound() {
         Create your Sterp
       </Link>
       <Link
-        href="/"
+        href="/featured"
         className="mt-3 text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors"
+      >
+        See featured Sterps →
+      </Link>
+      <Link
+        href="/"
+        className="mt-2 text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors"
       >
         Back to home
       </Link>

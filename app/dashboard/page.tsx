@@ -1827,27 +1827,52 @@ export default function DashboardPage() {
           <p className="text-neutral-400 text-[15px]">Loading data...</p>
         ) : (
           <div className="space-y-6">
-            {/* ─── Section 1: Page Status Banner ──────────────── */}
+            {/* ─── Section 1: Share Card (page live) ──────────────── */}
             {profile?.username && currentProducts.length >= 2 && !liveBannerDismissed && (
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-5 py-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-[14px] text-emerald-800">
-                    Your page is live at{" "}
-                    <button
-                      onClick={handleCopyLink}
-                      className={`font-medium underline transition-colors ${copied ? "text-emerald-600" : "text-emerald-800 hover:text-emerald-900"}`}
-                    >
-                      {copied ? "Copied!" : `sterp.com/${profile.username}`}
-                    </button>
-                  </p>
+              <div className="relative rounded-xl border border-gray-200 bg-white px-5 py-5 sm:px-8 sm:py-6 mx-auto w-full sm:max-w-[600px]">
+                <button
+                  onClick={() => { localStorage.setItem("sterp_live_banner_dismissed", "true"); setLiveBannerDismissed(true); }}
+                  className="absolute top-3 right-3 text-neutral-300 hover:text-neutral-500 transition-colors text-[18px] leading-none p-1"
+                  aria-label="Dismiss"
+                >
+                  ×
+                </button>
+                <h3 className="text-[17px] font-semibold text-neutral-900 mb-2">Your page is live.</h3>
+                <button
+                  onClick={handleCopyLink}
+                  className={`text-[15px] font-medium transition-colors ${copied ? "text-emerald-600" : "text-[#C0392B] hover:opacity-80"}`}
+                >
+                  {copied ? "Copied!" : `sterp.com/${profile.username}`}
+                </button>
+                <p className="text-[13px] text-neutral-400 mt-2 leading-relaxed">
+                  Drop it in your X bio, text it to the group chat, or send it to the friend who always asks what you use.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-2 mt-4">
                   <button
-                    onClick={() => { localStorage.setItem("sterp_live_banner_dismissed", "true"); setLiveBannerDismissed(true); }}
-                    className="text-emerald-400 hover:text-emerald-600 transition-colors ml-3 text-[18px] leading-none"
-                    aria-label="Dismiss banner"
+                    onClick={handleCopyLink}
+                    className={`text-[14px] font-medium px-4 py-2 rounded-md transition-colors ${
+                      copied
+                        ? "bg-emerald-600 text-white"
+                        : "bg-[#C0392B] text-white hover:opacity-90"
+                    }`}
                   >
-                    ×
+                    {copied ? "Copied!" : "Copy Link"}
                   </button>
+                  <a
+                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out my Sterp — the stuff I actually own and use: sterp.com/${profile.username}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[14px] font-medium px-4 py-2 rounded-md border border-gray-200 text-neutral-700 hover:bg-neutral-50 transition-colors text-center"
+                  >
+                    Share on X
+                  </a>
                 </div>
+                <a
+                  href="/featured"
+                  className="inline-block mt-3 text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors"
+                >
+                  See an example →
+                </a>
               </div>
             )}
             {profile?.username && currentProducts.length === 1 && (

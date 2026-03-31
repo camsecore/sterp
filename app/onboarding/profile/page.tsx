@@ -118,7 +118,7 @@ function CropModal({ imageSrc, onDone, onCancel }: {
           showGrid={true}
         />
       </div>
-      <div className="flex items-center gap-4 px-6 py-4 bg-black">
+      <div className="flex items-center gap-4 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-black">
         <input
           type="range"
           min={1}

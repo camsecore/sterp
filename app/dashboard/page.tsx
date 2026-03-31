@@ -257,7 +257,7 @@ function CropModal({ imageSrc, aspect, onDone, onCancel }: CropModalProps) {
           showGrid={true}
         />
       </div>
-      <div className="flex items-center gap-4 px-6 py-4 bg-black">
+      <div className="flex items-center gap-4 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-black">
         <input
           type="range"
           min={1}
@@ -841,7 +841,7 @@ function ProductModal({
                   if (errors.one_liner) setErrors((prev) => { const next = { ...prev }; delete next.one_liner; return next; });
                 }
               }}
-              rows={3}
+              rows={4}
               className={`${inputClass} resize-none${errors.one_liner ? " border-[#C0392B]" : ""}`}
               placeholder="What would you tell a friend about this?"
             />

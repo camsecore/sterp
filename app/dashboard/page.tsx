@@ -1777,12 +1777,14 @@ export default function DashboardPage() {
                 <span className="text-[14px] font-medium text-neutral-900 truncate block leading-none max-w-[300px]">
                   {profile.name || profile.username}
                 </span>
-                <button
-                  onClick={handleCopyLink}
+                <a
+                  href={`/${profile.username}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className={`text-[11px] leading-none mt-1 block p-0 text-left ml-[1px] truncate max-w-[300px] transition-colors ${copied ? "text-emerald-600" : "text-neutral-400 hover:text-neutral-600 hover:underline"}`}
                 >
                   {copied ? "Copied!" : `sterp.com/${profile.username}`}
-                </button>
+                </a>
               </div>
               {currentProducts.length >= 2 && (
                 <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5 flex-shrink-0">Live</span>
@@ -1837,12 +1839,14 @@ export default function DashboardPage() {
               </div>
               {/* Row 2: URL | Log out */}
               <div className="flex items-center justify-between pl-10">
-                <button
-                  onClick={handleCopyLink}
+                <a
+                  href={`/${profile.username}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className={`text-[11px] p-0 text-left transition-colors ${copied ? "text-emerald-600" : "text-neutral-400 hover:text-neutral-600 hover:underline"}`}
                 >
                   {copied ? "Copied!" : `sterp.com/${profile.username}`}
-                </button>
+                </a>
                 <button
                   onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); }}
                   className="text-[12px] text-neutral-300 hover:text-neutral-500 transition-colors"
@@ -1871,12 +1875,14 @@ export default function DashboardPage() {
                   ×
                 </button>
                 <h3 className="text-[17px] font-semibold text-neutral-900 mb-2">Your page is live.</h3>
-                <button
-                  onClick={handleCopyLink}
+                <a
+                  href={`/${profile.username}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className={`text-[15px] font-medium transition-colors ${copied ? "text-emerald-600" : "text-[#C0392B] hover:opacity-80"}`}
                 >
                   {copied ? "Copied!" : `sterp.com/${profile.username}`}
-                </button>
+                </a>
                 <p className="text-[13px] text-neutral-400 mt-2 leading-relaxed">
                   Drop it in your X bio, text it to the group chat, or send it to the friend who always asks what you use.
                 </p>
@@ -2087,6 +2093,23 @@ export default function DashboardPage() {
                                 <span className="text-[15px] font-semibold text-neutral-300 w-5 text-center flex-shrink-0">
                                   {i + 1}
                                 </span>
+                                <button
+                                  type="button"
+                                  className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                                  onClick={() => {
+                                    const product = products.find((p) => p.id === tp.product_id);
+                                    if (product) {
+                                      setCollapsedCollections((prev) => {
+                                        const next = new Set(prev);
+                                        next.delete(product.collection_id);
+                                        return next;
+                                      });
+                                      setTimeout(() => {
+                                        document.querySelector(`[data-product-id="${tp.product_id}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+                                      }, 50);
+                                    }
+                                  }}
+                                >
                                 <Thumbnail
                                   src={tp.products?.photo_url ?? null}
                                   alt={tp.products?.name ?? ""}
@@ -2103,6 +2126,7 @@ export default function DashboardPage() {
                                     ) : null;
                                   })()}
                                 </div>
+                                </button>
                                 <button
                                   onClick={() => handleRemoveTopPick(tp.product_id)}
                                   className="text-[13px] text-neutral-400 hover:text-[#C0392B] transition-colors flex-shrink-0"
@@ -2378,6 +2402,7 @@ export default function DashboardPage() {
                                             <SortableProduct key={p.id} id={p.id}>
                                               {({ handle }) => (
                                                 <div
+                                                  data-product-id={p.id}
                                                   className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-neutral-50 transition-colors cursor-pointer"
                                                   onClick={() => setProductModal({ mode: "edit", product: p })}
                                                 >

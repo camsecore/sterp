@@ -1858,7 +1858,7 @@ export default function DashboardPage() {
           <div className="space-y-6">
             {/* ─── Section 1: Share Card (page live) ──────────────── */}
             {profile?.username && currentProducts.length >= 2 && !liveBannerDismissed && (
-              <div className="relative rounded-lg border border-red-100 bg-red-50 px-5 py-5 mx-auto w-full sm:max-w-[600px] text-center animate-[celebrationIn_0.4s_ease-out]">
+              <div className="relative rounded-lg bg-white px-5 py-5 mx-auto w-full sm:max-w-[600px] text-center animate-[celebrationIn_0.4s_ease-out]" style={{ border: "1.5px solid #1D9E75" }}>
                 <button
                   onClick={() => { localStorage.setItem("sterp_live_banner_dismissed", "true"); setLiveBannerDismissed(true); }}
                   className="absolute top-3 right-3 text-neutral-300 hover:text-neutral-500 transition-colors text-[18px] leading-none p-1"
@@ -1866,38 +1866,34 @@ export default function DashboardPage() {
                 >
                   ×
                 </button>
-                <h3 className="text-[15px] font-bold text-neutral-900">Your page is live</h3>
-                <p className="text-[13px] text-neutral-400 mt-1">
-                  Send your link to the group chat and add it to your bio. Or add more products to your page.
-                </p>
                 <a
                   href={`/${profile.username}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-[15px] font-semibold text-[#C0392B] hover:opacity-80 transition-opacity mt-3"
+                  className="inline-flex items-center gap-1 text-[17px] font-medium text-[#1D9E75] hover:opacity-80 transition-opacity"
                 >
                   sterp.com/{profile.username}
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h7v7" /><path d="M13 3L6 10" /></svg>
+                  <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h7v7" /><path d="M13 3L6 10" /></svg>
                 </a>
+                <p className="text-[13px] text-neutral-400 mt-1.5">
+                  Send it to the group chat. Add it to your bio.
+                </p>
                 <div className="flex gap-2 mt-4">
                   <button
                     onClick={handleCopyLink}
-                    className={`flex-1 flex items-center justify-center gap-1.5 text-[13px] font-medium py-2 rounded-md border transition-colors ${
+                    className={`flex-1 text-[13px] font-medium py-2 rounded-md transition-colors ${
                       copied
-                        ? "bg-emerald-600 border-emerald-600 text-white"
-                        : "bg-white border-gray-200 text-neutral-700 hover:bg-neutral-50"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-[#C0392B] text-white hover:opacity-90"
                     }`}
                   >
-                    {copied ? "Copied!" : (<>
-                      <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5" /><path d="M10.5 5.5V3.5a1.5 1.5 0 00-1.5-1.5H3.5A1.5 1.5 0 002 3.5V9a1.5 1.5 0 001.5 1.5h2" /></svg>
-                      Copy link
-                    </>)}
+                    {copied ? "Copied!" : "Copy link"}
                   </button>
                   <a
                     href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out my Sterp — the stuff I actually own and use: sterp.com/${profile.username}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 flex items-center justify-center gap-1.5 text-[13px] font-medium py-2 rounded-md border border-gray-200 bg-white text-neutral-700 hover:bg-neutral-50 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-1.5 text-[13px] font-medium py-2 rounded-md border border-gray-200 text-neutral-700 hover:bg-neutral-50 transition-colors"
                   >
                     <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
                     Share on X
@@ -1907,9 +1903,9 @@ export default function DashboardPage() {
                   href="https://sterp.com/cam"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block mt-3 text-[12px] text-neutral-400 hover:text-neutral-600 transition-colors"
+                  className="inline-block mt-3 text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors"
                 >
-                  Need inspiration? See a fully built Sterp →
+                  See a fully built Sterp →
                 </a>
               </div>
             )}

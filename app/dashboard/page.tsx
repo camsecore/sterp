@@ -586,6 +586,7 @@ function ProductModal({
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) handleFileSelect(file);
+    e.target.value = "";
   }
 
   function handleDragOver(e: React.DragEvent) {
@@ -1808,51 +1809,42 @@ export default function DashboardPage() {
             />
           </div>
           {profile && (
-            <div className="space-y-1">
-              {/* Row 1: avatar + name + Live | Edit View */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="h-8 w-8 rounded-full overflow-hidden bg-neutral-200 flex-shrink-0">
-                    {profile.avatar_url ? (
-                      <Image
-                        src={profile.avatar_url}
-                        alt={profile.name || profile.username}
-                        width={32}
-                        height={32}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="h-full w-full flex items-center justify-center text-neutral-400 text-[10px]">—</div>
-                    )}
-                  </div>
-                  <span className="text-[14px] font-medium text-neutral-900 truncate leading-none max-w-[180px]">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full overflow-hidden bg-neutral-200 flex-shrink-0">
+                {profile.avatar_url ? (
+                  <Image
+                    src={profile.avatar_url}
+                    alt={profile.name || profile.username}
+                    width={40}
+                    height={40}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center text-neutral-400 text-[10px]">—</div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[14px] font-medium text-neutral-900 truncate leading-none">
                     {profile.name || profile.username}
                   </span>
                   {currentProducts.length >= 2 && (
                     <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5 flex-shrink-0">Live</span>
                   )}
                 </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <button onClick={() => openProfileModal()} className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors">Edit</button>
-                  <a href={`/${profile.username}`} target="_blank" rel="noopener noreferrer" className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors">View</a>
-                </div>
-              </div>
-              {/* Row 2: URL | Log out */}
-              <div className="flex items-center justify-between pl-10">
                 <a
                   href={`/${profile.username}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`text-[11px] p-0 text-left transition-colors ${copied ? "text-emerald-600" : "text-neutral-400 hover:text-neutral-600 hover:underline"}`}
+                  className={`text-[11px] leading-none mt-1 block transition-colors ${copied ? "text-emerald-600" : "text-neutral-400 hover:text-neutral-600 hover:underline"}`}
                 >
                   {copied ? "Copied!" : `sterp.com/${profile.username}`}
                 </a>
-                <button
-                  onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); }}
-                  className="text-[12px] text-neutral-300 hover:text-neutral-500 transition-colors"
-                >
-                  Log out
-                </button>
+              </div>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <button onClick={() => openProfileModal()} className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors">Edit</button>
+                <a href={`/${profile.username}`} target="_blank" rel="noopener noreferrer" className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors">View</a>
+                <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); }} className="text-[12px] text-neutral-300 hover:text-neutral-500 transition-colors">Log out</button>
               </div>
             </div>
           )}

@@ -1870,12 +1870,12 @@ export default function DashboardPage() {
                   href={`/${profile.username}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-[17px] font-medium text-[#1D9E75] hover:opacity-80 transition-opacity"
+                  className="inline-flex items-center gap-1 text-[17px] font-medium text-neutral-900 hover:opacity-70 transition-opacity"
                 >
                   sterp.com/{profile.username}
                   <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h7v7" /><path d="M13 3L6 10" /></svg>
                 </a>
-                <p className="text-[13px] text-neutral-400 mt-1.5">
+                <p className="text-[13px] text-neutral-500 mt-1.5">
                   Send it to the group chat. Add it to your bio.
                 </p>
                 <div className="flex gap-2 mt-4">
@@ -1884,7 +1884,7 @@ export default function DashboardPage() {
                     className={`flex-1 flex items-center justify-center gap-1.5 text-[13px] font-medium py-2 rounded-md transition-colors ${
                       copied
                         ? "bg-emerald-600 text-white"
-                        : "bg-[#C0392B] text-white hover:opacity-90"
+                        : "bg-white border border-gray-200 text-neutral-700 hover:bg-neutral-50"
                     }`}
                   >
                     {copied ? "Copied!" : (<>
@@ -1896,7 +1896,7 @@ export default function DashboardPage() {
                     href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out my Sterp — the stuff I actually own and use: sterp.com/${profile.username}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 flex items-center justify-center gap-1.5 text-[13px] font-medium py-2 rounded-md border border-gray-200 text-neutral-700 hover:bg-neutral-50 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-1.5 text-[13px] font-medium py-2 rounded-md bg-white border border-gray-200 text-neutral-700 hover:bg-neutral-50 transition-colors"
                   >
                     Share on
                     <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
@@ -1906,7 +1906,7 @@ export default function DashboardPage() {
                   href="https://sterp.com/cam"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block mt-3 text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors"
+                  className="inline-block mt-3 text-[13px] text-neutral-500 hover:text-neutral-700 transition-colors"
                 >
                   See a fully built Sterp →
                 </a>

@@ -181,33 +181,52 @@ async function getCroppedBlob(imageSrc: string, cropArea: Area, rotation = 0): P
   return new Promise((resolve, reject) => {
     const img = new globalThis.Image();
     img.onload = () => {
-      // First draw the full image rotated onto an intermediate canvas
-      const radians = (rotation * Math.PI) / 180;
-      const sin = Math.abs(Math.sin(radians));
-      const cos = Math.abs(Math.cos(radians));
-      const rotW = Math.floor(img.width * cos + img.height * sin);
-      const rotH = Math.floor(img.width * sin + img.height * cos);
-
-      const rotCanvas = document.createElement("canvas");
-      rotCanvas.width = rotW;
-      rotCanvas.height = rotH;
-      const rotCtx = rotCanvas.getContext("2d");
-      if (!rotCtx) return reject(new Error("Canvas not supported"));
-      rotCtx.translate(rotW / 2, rotH / 2);
-      rotCtx.rotate(radians);
-      rotCtx.drawImage(img, -img.width / 2, -img.height / 2);
-
-      // Then crop from the rotated canvas
       const canvas = document.createElement("canvas");
-      canvas.width = cropArea.width;
-      canvas.height = cropArea.height;
       const ctx = canvas.getContext("2d");
       if (!ctx) return reject(new Error("Canvas not supported"));
-      ctx.drawImage(
-        rotCanvas,
-        cropArea.x, cropArea.y, cropArea.width, cropArea.height,
-        0, 0, cropArea.width, cropArea.height
-      );
+
+      if (rotation === 0) {
+        // No rotation — simple crop
+        canvas.width = cropArea.width;
+        canvas.height = cropArea.height;
+        ctx.drawImage(
+          img,
+          cropArea.x, cropArea.y, cropArea.width, cropArea.height,
+          0, 0, cropArea.width, cropArea.height
+        );
+      } else {
+        // Match react-easy-crop's bounding box calculation exactly
+        const radians = (rotation * Math.PI) / 180;
+        const bBoxWidth = Math.abs(Math.cos(radians) * img.width) + Math.abs(Math.sin(radians) * img.height);
+        const bBoxHeight = Math.abs(Math.sin(radians) * img.width) + Math.abs(Math.cos(radians) * img.height);
+
+        // Draw rotated image at full size, then extract crop
+        canvas.width = bBoxWidth;
+        canvas.height = bBoxHeight;
+        ctx.translate(bBoxWidth / 2, bBoxHeight / 2);
+        ctx.rotate(radians);
+        ctx.translate(-img.width / 2, -img.height / 2);
+        ctx.drawImage(img, 0, 0);
+
+        // Extract the crop area into a second canvas
+        const cropCanvas = document.createElement("canvas");
+        cropCanvas.width = cropArea.width;
+        cropCanvas.height = cropArea.height;
+        const cropCtx = cropCanvas.getContext("2d");
+        if (!cropCtx) return reject(new Error("Canvas not supported"));
+        cropCtx.drawImage(
+          canvas,
+          cropArea.x, cropArea.y, cropArea.width, cropArea.height,
+          0, 0, cropArea.width, cropArea.height
+        );
+        cropCanvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error("Crop failed"))),
+          "image/jpeg",
+          0.95
+        );
+        return;
+      }
+
       canvas.toBlob(
         (blob) => (blob ? resolve(blob) : reject(new Error("Crop failed"))),
         "image/jpeg",

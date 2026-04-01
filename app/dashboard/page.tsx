@@ -177,56 +177,20 @@ async function convertToWebP(file: File): Promise<Blob> {
   });
 }
 
-async function getCroppedBlob(imageSrc: string, cropArea: Area, rotation = 0): Promise<Blob> {
+async function getCroppedBlob(imageSrc: string, cropArea: Area): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new globalThis.Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
+      canvas.width = cropArea.width;
+      canvas.height = cropArea.height;
       const ctx = canvas.getContext("2d");
       if (!ctx) return reject(new Error("Canvas not supported"));
-
-      if (rotation === 0) {
-        // No rotation — simple crop
-        canvas.width = cropArea.width;
-        canvas.height = cropArea.height;
-        ctx.drawImage(
-          img,
-          cropArea.x, cropArea.y, cropArea.width, cropArea.height,
-          0, 0, cropArea.width, cropArea.height
-        );
-      } else {
-        // Match react-easy-crop's bounding box calculation exactly
-        const radians = (rotation * Math.PI) / 180;
-        const bBoxWidth = Math.abs(Math.cos(radians) * img.width) + Math.abs(Math.sin(radians) * img.height);
-        const bBoxHeight = Math.abs(Math.sin(radians) * img.width) + Math.abs(Math.cos(radians) * img.height);
-
-        // Draw rotated image at full size, then extract crop
-        canvas.width = bBoxWidth;
-        canvas.height = bBoxHeight;
-        ctx.translate(bBoxWidth / 2, bBoxHeight / 2);
-        ctx.rotate(radians);
-        ctx.translate(-img.width / 2, -img.height / 2);
-        ctx.drawImage(img, 0, 0);
-
-        // Extract the crop area into a second canvas
-        const cropCanvas = document.createElement("canvas");
-        cropCanvas.width = cropArea.width;
-        cropCanvas.height = cropArea.height;
-        const cropCtx = cropCanvas.getContext("2d");
-        if (!cropCtx) return reject(new Error("Canvas not supported"));
-        cropCtx.drawImage(
-          canvas,
-          cropArea.x, cropArea.y, cropArea.width, cropArea.height,
-          0, 0, cropArea.width, cropArea.height
-        );
-        cropCanvas.toBlob(
-          (blob) => (blob ? resolve(blob) : reject(new Error("Crop failed"))),
-          "image/jpeg",
-          0.95
-        );
-        return;
-      }
-
+      ctx.drawImage(
+        img,
+        cropArea.x, cropArea.y, cropArea.width, cropArea.height,
+        0, 0, cropArea.width, cropArea.height
+      );
       canvas.toBlob(
         (blob) => (blob ? resolve(blob) : reject(new Error("Crop failed"))),
         "image/jpeg",
@@ -265,18 +229,42 @@ interface CropModalProps {
 }
 
 function CropModal({ imageSrc, aspect, onDone, onCancel }: CropModalProps) {
+  const [currentSrc, setCurrentSrc] = useState(imageSrc);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [rotation, setRotation] = useState(0);
   const [croppedArea, setCroppedArea] = useState<Area | null>(null);
 
   const handleCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
     setCroppedArea(croppedAreaPixels);
   }, []);
 
+  function handleRotate() {
+    const img = new globalThis.Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.height;
+      canvas.height = img.width;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(Math.PI / 2);
+      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        if (currentSrc !== imageSrc) URL.revokeObjectURL(currentSrc);
+        const url = URL.createObjectURL(blob);
+        setCurrentSrc(url);
+        setCrop({ x: 0, y: 0 });
+        setZoom(1);
+      }, "image/jpeg", 0.95);
+    };
+    img.src = currentSrc;
+  }
+
   async function handleDone() {
     if (!croppedArea) return;
-    const blob = await getCroppedBlob(imageSrc, croppedArea, rotation);
+    const blob = await getCroppedBlob(currentSrc, croppedArea);
+    if (currentSrc !== imageSrc) URL.revokeObjectURL(currentSrc);
     onDone(blob);
   }
 
@@ -284,10 +272,9 @@ function CropModal({ imageSrc, aspect, onDone, onCancel }: CropModalProps) {
     <div role="dialog" aria-modal="true" aria-label="Crop image" className="fixed inset-0 z-[60] bg-black flex flex-col">
       <div className="relative flex-1">
         <Cropper
-          image={imageSrc}
+          image={currentSrc}
           crop={crop}
           zoom={zoom}
-          rotation={rotation}
           aspect={aspect}
           onCropChange={setCrop}
           onZoomChange={setZoom}
@@ -298,7 +285,7 @@ function CropModal({ imageSrc, aspect, onDone, onCancel }: CropModalProps) {
       <div className="flex items-center gap-4 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-black">
         <button
           type="button"
-          onClick={() => setRotation((r) => (r + 90) % 360)}
+          onClick={handleRotate}
           className="text-white/70 hover:text-white p-1"
           aria-label="Rotate 90°"
         >

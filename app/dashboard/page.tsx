@@ -1884,7 +1884,7 @@ export default function DashboardPage() {
                     className={`flex-1 flex items-center justify-center gap-1.5 text-[13px] font-medium py-2 rounded-md transition-colors ${
                       copied
                         ? "bg-emerald-600 text-white"
-                        : "bg-white border border-gray-200 text-neutral-700 hover:bg-neutral-50"
+                        : "bg-[#1D9E75] text-white hover:opacity-90"
                     }`}
                   >
                     {copied ? "Copied!" : (<>

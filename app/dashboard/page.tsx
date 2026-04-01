@@ -2372,7 +2372,10 @@ export default function DashboardPage() {
                                           {colProducts.map((p) => (
                                             <SortableProduct key={p.id} id={p.id}>
                                               {({ handle }) => (
-                                                <div className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-neutral-50 transition-colors">
+                                                <div
+                                                  className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-neutral-50 transition-colors cursor-pointer"
+                                                  onClick={() => setProductModal({ mode: "edit", product: p })}
+                                                >
                                                   {handle}
                                                   <Thumbnail src={p.photo_url} alt={p.name} />
                                                   <div className="flex-1 min-w-0">
@@ -2388,12 +2391,9 @@ export default function DashboardPage() {
                                                       </span>
                                                     )}
                                                   </div>
-                                                  <button
-                                                    onClick={() => setProductModal({ mode: "edit", product: p })}
-                                                    className="text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0"
-                                                  >
+                                                  <span className="text-[12px] text-neutral-500 flex-shrink-0">
                                                     Edit
-                                                  </button>
+                                                  </span>
                                                 </div>
                                               )}
                                             </SortableProduct>

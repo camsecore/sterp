@@ -1858,7 +1858,7 @@ export default function DashboardPage() {
           <div className="space-y-6">
             {/* ─── Section 1: Share Card (page live) ──────────────── */}
             {profile?.username && currentProducts.length >= 2 && !liveBannerDismissed && (
-              <div className="relative rounded-lg border border-red-100 bg-red-50 px-5 py-5 mx-auto w-full sm:max-w-[600px] text-center">
+              <div className="relative rounded-lg border border-red-100 bg-red-50 px-5 py-5 mx-auto w-full sm:max-w-[600px] text-center animate-[celebrationIn_0.4s_ease-out]">
                 <button
                   onClick={() => { localStorage.setItem("sterp_live_banner_dismissed", "true"); setLiveBannerDismissed(true); }}
                   className="absolute top-3 right-3 text-neutral-300 hover:text-neutral-500 transition-colors text-[18px] leading-none p-1"
@@ -1868,7 +1868,7 @@ export default function DashboardPage() {
                 </button>
                 <h3 className="text-[15px] font-bold text-neutral-900">Your page is live</h3>
                 <p className="text-[13px] text-neutral-400 mt-1">
-                  Send it to the group chat. Add it to your bio.
+                  Your link is live! Share it with friends, or keep adding products to build out your collections.
                 </p>
                 <a
                   href={`/${profile.username}`}
@@ -1903,6 +1903,14 @@ export default function DashboardPage() {
                     Share on X
                   </a>
                 </div>
+                <a
+                  href="https://sterp.com/cam"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block mt-3 text-[12px] text-neutral-400 hover:text-neutral-600 transition-colors"
+                >
+                  Need inspiration? See a fully built Sterp →
+                </a>
               </div>
             )}
             {profile?.username && currentProducts.length === 1 && (

@@ -291,7 +291,6 @@ function CropModal({ imageSrc, aspect, onDone, onCancel }: CropModalProps) {
           aspect={aspect}
           onCropChange={setCrop}
           onZoomChange={setZoom}
-          onRotationChange={setRotation}
           onCropComplete={handleCropComplete}
           showGrid={true}
         />

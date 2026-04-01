@@ -1868,7 +1868,7 @@ export default function DashboardPage() {
                 </button>
                 <h3 className="text-[15px] font-bold text-neutral-900">Your page is live</h3>
                 <p className="text-[13px] text-neutral-400 mt-1">
-                  Your link is live! Share it with friends, or keep adding products to build out your collections.
+                  Send your link to the group chat and add it to your bio. Or add more products to your page.
                 </p>
                 <a
                   href={`/${profile.username}`}

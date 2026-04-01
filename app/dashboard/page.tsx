@@ -1876,7 +1876,7 @@ export default function DashboardPage() {
                   <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h7v7" /><path d="M13 3L6 10" /></svg>
                 </a>
                 <p className="text-[13px] text-neutral-500 mt-1.5">
-                  Send it to the group chat. Add it to your bio.
+                  Send your link to the group chat. Add it to your bio.
                 </p>
                 <div className="flex gap-2 mt-4">
                   <button

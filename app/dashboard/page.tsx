@@ -489,7 +489,7 @@ function ProductModal({
   const [collectionId, setCollectionId] = useState(
     product?.collection_id || defaultCollectionId || (collections[0]?.id ?? "")
   );
-  const existingDate = product?.acquired_at ? new Date(product.acquired_at) : null;
+  const existingDate = product?.acquired_at ? new Date(product.acquired_at) : product?.created_at ? new Date(product.created_at) : null;
   const [acquiredMonth, setAcquiredMonth] = useState<string>(existingDate ? String(existingDate.getUTCMonth() + 1) : "");
   const [acquiredYear, setAcquiredYear] = useState<string>(existingDate ? String(existingDate.getUTCFullYear()) : "");
   const [pendingBlob, setPendingBlob] = useState<Blob | null>(null);

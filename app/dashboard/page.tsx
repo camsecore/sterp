@@ -1787,8 +1787,10 @@ export default function DashboardPage() {
                   {copied ? "Copied!" : `sterp.com/${profile.username}`}
                 </a>
               </div>
-              {currentProducts.length >= 2 && (
+              {currentProducts.length >= 2 ? (
                 <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5 flex-shrink-0">Live</span>
+              ) : (
+                <span className="text-[10px] font-medium text-yellow-700 bg-yellow-100 rounded-full px-2 py-0.5 flex-shrink-0">Building</span>
               )}
               <button onClick={() => openProfileModal()} className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0">Edit</button>
               <a href={`/${profile.username}`} target="_blank" rel="noopener noreferrer" className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0">View</a>
@@ -1828,8 +1830,10 @@ export default function DashboardPage() {
                   <span className="text-[14px] font-medium text-neutral-900 truncate leading-none">
                     {profile.name || profile.username}
                   </span>
-                  {currentProducts.length >= 2 && (
+                  {currentProducts.length >= 2 ? (
                     <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5 flex-shrink-0">Live</span>
+                  ) : (
+                    <span className="text-[10px] font-medium text-yellow-700 bg-yellow-100 rounded-full px-2 py-0.5 flex-shrink-0">Building</span>
                   )}
                 </div>
                 <a

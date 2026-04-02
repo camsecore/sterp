@@ -2094,9 +2094,9 @@ export default function DashboardPage() {
                                 </button>
                                 <button
                                   onClick={() => { setProductMenuOpen(null); setArchiveTarget(p); }}
-                                  className="w-full text-left px-4 py-2 text-[14px] text-[#C0392B] hover:bg-neutral-50 transition-colors"
+                                  className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
                                 >
-                                  Remove
+                                  Archive
                                 </button>
                               </div>
                             </>
@@ -2259,12 +2259,6 @@ export default function DashboardPage() {
                                         >
                                           Remove from Top Picks
                                         </button>
-                                        <button
-                                          onClick={() => { setProductMenuOpen(null); if (tpProduct) setArchiveTarget(tpProduct); }}
-                                          className="w-full text-left px-4 py-2 text-[14px] text-[#C0392B] hover:bg-neutral-50 transition-colors"
-                                        >
-                                          Remove
-                                        </button>
                                       </div>
                                     </>
                                   )}
@@ -2337,9 +2331,9 @@ export default function DashboardPage() {
                                 </button>
                                 <button
                                   onClick={() => { setProductMenuOpen(null); setArchiveTarget(p); }}
-                                  className="w-full text-left px-4 py-2 text-[14px] text-[#C0392B] hover:bg-neutral-50 transition-colors"
+                                  className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
                                 >
-                                  Remove
+                                  Archive
                                 </button>
                               </div>
                             </>
@@ -2481,9 +2475,9 @@ export default function DashboardPage() {
                                   </button>
                                   <button
                                     onClick={() => { setProductMenuOpen(null); setArchiveTarget(p); }}
-                                    className="w-full text-left px-4 py-2 text-[14px] text-[#C0392B] hover:bg-neutral-50 transition-colors"
+                                    className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
                                   >
-                                    Remove
+                                    Archive
                                   </button>
                                 </div>
                               </>
@@ -2723,9 +2717,9 @@ export default function DashboardPage() {
                                                           </button>
                                                           <button
                                                             onClick={() => { setProductMenuOpen(null); setArchiveTarget(p); }}
-                                                            className="w-full text-left px-4 py-2 text-[14px] text-[#C0392B] hover:bg-neutral-50 transition-colors"
+                                                            className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
                                                           >
-                                                            Remove
+                                                            Archive
                                                           </button>
                                                         </div>
                                                       </>

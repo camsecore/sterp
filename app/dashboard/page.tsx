@@ -1970,7 +1970,7 @@ export default function DashboardPage() {
                 >
                   + Add Product
                 </button>
-                {phase >= 2 && collections.length < 2 && (
+                {phase >= 3 && collections.length < 2 && (
                   <div>
                     <button
                       onClick={() => { setShowAddCollection(true); setAddCollectionError(""); }}
@@ -1984,7 +1984,7 @@ export default function DashboardPage() {
             )}
 
             {/* ─── Add Collection form (when Collections section is hidden) ── */}
-            {products.length > 0 && phase >= 2 && collections.length < 2 && showAddCollection && (
+            {products.length > 0 && phase >= 3 && collections.length < 2 && showAddCollection && (
               <form
                 onSubmit={handleAddCollection}
                 className="bg-white rounded-lg border border-gray-200 p-4 flex items-end gap-3"
@@ -2175,54 +2175,76 @@ export default function DashboardPage() {
                         .slice(0, 5)
                         .map((tp, i) => (
                           <SortableTopPick key={tp.product_id} id={tp.product_id}>
-                            {({ handle }) => (
+                            {({ handle }) => {
+                              const tpProduct = products.find((p) => p.id === tp.product_id);
+                              return (
                               <div className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-gray-200 transition-all">
                                 {handle}
                                 <span className="text-[15px] font-semibold text-neutral-300 w-5 text-center flex-shrink-0">
                                   {i + 1}
                                 </span>
-                                <button
-                                  type="button"
-                                  className="flex items-center gap-3 flex-1 min-w-0 text-left"
-                                  onClick={() => {
-                                    const product = products.find((p) => p.id === tp.product_id);
-                                    if (product) {
-                                      setCollapsedCollections((prev) => {
-                                        const next = new Set(prev);
-                                        next.delete(product.collection_id);
-                                        return next;
-                                      });
-                                      setTimeout(() => {
-                                        document.querySelector(`[data-product-id="${tp.product_id}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-                                      }, 50);
-                                    }
-                                  }}
-                                >
                                 <Thumbnail
                                   src={tp.products?.photo_url ?? null}
                                   alt={tp.products?.name ?? ""}
                                 />
-                                <div className="flex-1 min-w-0">
+                                <div
+                                  className="flex-1 min-w-0 cursor-pointer"
+                                  onClick={() => {
+                                    if (tpProduct) setProductModal({ mode: "edit", product: tpProduct });
+                                  }}
+                                >
                                   <span className="text-[15px] font-medium text-neutral-900 truncate block">
                                     {tp.products?.name ?? "Unknown product"}
                                   </span>
                                   {(() => {
-                                    const product = products.find((p) => p.id === tp.product_id);
-                                    const col = product ? collectionMap.get(product.collection_id) : null;
+                                    const col = tpProduct ? collectionMap.get(tpProduct.collection_id) : null;
                                     return col ? (
-                                      <span className="text-[12px] text-neutral-400">{col.name}</span>
+                                      <span className="text-[12px] text-neutral-400">{col.name === "Products" && collections.length >= 2 ? "Uncategorized" : col.name}</span>
                                     ) : null;
                                   })()}
                                 </div>
-                                </button>
-                                <button
-                                  onClick={() => handleRemoveTopPick(tp.product_id)}
-                                  className="text-[13px] text-neutral-400 hover:text-[#C0392B] transition-colors flex-shrink-0"
-                                >
-                                  Remove
-                                </button>
+                                <div className="relative flex-shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => setProductMenuOpen(productMenuOpen === tp.product_id ? null : tp.product_id)}
+                                    aria-label={`${tp.products?.name ?? "Product"} options`}
+                                    className="p-1 hover:bg-neutral-100 rounded transition-colors"
+                                  >
+                                    <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
+                                      <circle cx="8" cy="3" r="1.5" />
+                                      <circle cx="8" cy="8" r="1.5" />
+                                      <circle cx="8" cy="13" r="1.5" />
+                                    </svg>
+                                  </button>
+                                  {productMenuOpen === tp.product_id && (
+                                    <>
+                                      <div className="fixed inset-0 z-10" onClick={() => setProductMenuOpen(null)} />
+                                      <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-48">
+                                        <button
+                                          onClick={() => { setProductMenuOpen(null); if (tpProduct) setProductModal({ mode: "edit", product: tpProduct }); }}
+                                          className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                        >
+                                          Edit
+                                        </button>
+                                        <button
+                                          onClick={() => { setProductMenuOpen(null); handleRemoveTopPick(tp.product_id); }}
+                                          className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                        >
+                                          Remove from Top Picks
+                                        </button>
+                                        <button
+                                          onClick={() => { setProductMenuOpen(null); if (tpProduct) setArchiveTarget(tpProduct); }}
+                                          className="w-full text-left px-4 py-2 text-[14px] text-[#C0392B] hover:bg-neutral-50 transition-colors"
+                                        >
+                                          Remove
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
                               </div>
-                            )}
+                              );
+                            }}
                           </SortableTopPick>
                         ))}
                     </div>
@@ -2306,6 +2328,72 @@ export default function DashboardPage() {
                     + Add Collection
                   </button>
                 </div>
+              ) : collections.length === 1 && collections[0].name === "Products" ? (
+                /* Default collection only — show products in a flat list, hide the collection chrome */
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="px-4 py-3 space-y-2">
+                    {products
+                      .filter((p) => p.status === "current" || p.status === "draft")
+                      .sort((a, b) => a.sort_order - b.sort_order)
+                      .map((p) => (
+                        <div
+                          key={p.id}
+                          className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-neutral-50 transition-colors"
+                        >
+                          <Thumbnail src={p.photo_url} alt={p.name} />
+                          <div
+                            className="flex-1 min-w-0 cursor-pointer"
+                            onClick={() => setProductModal({ mode: "edit", product: p })}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-[15px] font-medium text-neutral-900 truncate">
+                                {p.name}
+                              </span>
+                              <span className="hidden sm:inline flex-shrink-0"><StatusBadge status={p.status} /></span>
+                            </div>
+                            {p.one_liner && (
+                              <span className="text-[13px] text-neutral-400 truncate block">
+                                {p.one_liner}
+                              </span>
+                            )}
+                          </div>
+                          <div className="relative flex-shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => setProductMenuOpen(productMenuOpen === p.id ? null : p.id)}
+                              aria-label={`${p.name} options`}
+                              className="p-1 hover:bg-neutral-100 rounded transition-colors"
+                            >
+                              <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
+                                <circle cx="8" cy="3" r="1.5" />
+                                <circle cx="8" cy="8" r="1.5" />
+                                <circle cx="8" cy="13" r="1.5" />
+                              </svg>
+                            </button>
+                            {productMenuOpen === p.id && (
+                              <>
+                                <div className="fixed inset-0 z-10" onClick={() => setProductMenuOpen(null)} />
+                                <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-40">
+                                  <button
+                                    onClick={() => { setProductMenuOpen(null); setProductModal({ mode: "edit", product: p }); }}
+                                    className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => { setProductMenuOpen(null); setArchiveTarget(p); }}
+                                    className="w-full text-left px-4 py-2 text-[14px] text-[#C0392B] hover:bg-neutral-50 transition-colors"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
               ) : (
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCollectionDragEnd}>
                   <SortableContext items={[...collections].sort((a, b) => a.sort_order - b.sort_order).map((c) => c.id)} strategy={verticalListSortingStrategy}>
@@ -2375,7 +2463,7 @@ export default function DashboardPage() {
                                     ) : (
                                       <>
                                         <span className="text-[15px] font-medium text-neutral-900 flex-1 min-w-0 truncate">
-                                          {c.name}
+                                          {c.name === "Products" && collections.length >= 2 ? "Uncategorized" : c.name}
                                         </span>
                                         <span className="text-[13px] text-neutral-400 flex-shrink-0">
                                           {productCount} {productCount === 1 ? "product" : "products"}
@@ -2660,7 +2748,7 @@ export default function DashboardPage() {
                 </div>
               </section>
             )}
-            {/* ─── Phase 2 Nudge: Top 5 complete, introduce collections ──────── */}
+            {/* ─── Phase 2 Nudge: Top 5 complete ──────── */}
             {phase === 2 && !nudgeDismissed && (
               <div className="relative rounded-lg border border-neutral-200 bg-neutral-50 px-5 py-4">
                 <button
@@ -2671,23 +2759,14 @@ export default function DashboardPage() {
                   ×
                 </button>
                 <p className="text-[15px] font-medium text-neutral-800 mb-1.5 pr-6">
-                  Your Top 5 is set. Now organize your products into collections.
+                  Your Top 5 is set.
                 </p>
                 <p className="text-[14px] text-neutral-500 leading-relaxed">
-                  The speaker on your desk. The protein powder in your cabinet. Group them however you want.
+                  Keep adding products — you&apos;ll be able to organize them into collections.
                 </p>
-                <button
-                  onClick={() => {
-                    setShowAddCollection(true);
-                    setAddCollectionError("");
-                  }}
-                  className="mt-3 text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
-                >
-                  + Add Collection
-                </button>
               </div>
             )}
-            {/* ─── Phase 3 Nudge: Keep adding products ──────── */}
+            {/* ─── Phase 3 Nudge: Collections unlock ──────── */}
             {phase >= 3 && !nudgeDismissed && (
               <div className="relative rounded-lg border border-neutral-200 bg-neutral-50 px-5 py-4">
                 <button
@@ -2698,24 +2777,20 @@ export default function DashboardPage() {
                   ×
                 </button>
                 <p className="text-[15px] font-medium text-neutral-800 mb-1.5 pr-6">
-                  Your top picks are set. Now add the rest.
+                  You&apos;ve got {productCount} products — group similar ones into a collection.
                 </p>
                 <p className="text-[14px] text-neutral-500 leading-relaxed">
-                  The speaker on your desk. The protein powder in your cabinet. Even the stuff
-                  you&apos;re not thrilled about. That&apos;s what makes a Sterp page real.
+                  Try something like &ldquo;Home Office&rdquo; or &ldquo;Gym Setup.&rdquo;
                 </p>
-                <div className="flex items-center gap-2 mt-3">
-                  <span className="text-[13px] text-neutral-500">Group them however you want.</span>
-                  <button
-                    onClick={() => {
-                      setShowAddCollection(true);
-                      setAddCollectionError("");
-                    }}
-                    className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
-                  >
-                    + Add Collection
-                  </button>
-                </div>
+                <button
+                  onClick={() => {
+                    setShowAddCollection(true);
+                    setAddCollectionError("");
+                  }}
+                  className="mt-3 text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
+                >
+                  + Create Collection
+                </button>
               </div>
             )}
           </div>

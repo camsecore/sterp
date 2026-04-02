@@ -646,7 +646,7 @@ function ProductModal({
     if (!name.trim()) newErrors.name = "Name is required";
     if (!oneLiner.trim()) newErrors.one_liner = "One-liner is required";
     // Collection validation when dropdown is visible
-    if ((collections.length >= 2 || (phase >= 3 && mode === "add")) && !collectionId) newErrors.collection = "Collection is required";
+    if ((collections.length >= 2 || (phase >= 4 && mode === "add")) && !collectionId) newErrors.collection = "Collection is required";
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       // Focus the first field with an error so the user can fix it
@@ -933,7 +933,7 @@ function ProductModal({
 
           {/* Collection — shown when 2+ collections, or Phase 3 add mode to prompt organization */}
           <div>
-            {(collections.length >= 2 || (phase >= 3 && mode === "add")) && (
+            {(collections.length >= 2 || (phase >= 4 && mode === "add")) && (
               creatingCollection ? (
               <div className="flex items-center gap-2">
                 <input
@@ -1715,7 +1715,8 @@ export default function DashboardPage() {
   const collectionMap = new Map(collections.map((c) => [c.id, c]));
   const currentProducts = products.filter((p) => p.status === "current");
   const productCount = currentProducts.length;
-  const phase = productCount < 5 ? 1 : productCount === 5 ? 2 : 3;
+  const hasNamedCollection = collections.some((c) => c.name !== "Products");
+  const phase = productCount < 5 ? 1 : productCount === 5 ? 2 : hasNamedCollection ? 4 : 3;
   const [liveBannerDismissed, setLiveBannerDismissed] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("sterp_live_banner_dismissed") === "true";
@@ -1867,79 +1868,115 @@ export default function DashboardPage() {
           <p className="text-neutral-400 text-[15px]">Loading data...</p>
         ) : (
           <div className="space-y-6">
-            {/* ─── Section 1: Share Card (page live) ──────────────── */}
-            {profile?.username && currentProducts.length >= 2 && !liveBannerDismissed && (
-              <div className="relative rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-5 mx-auto w-full sm:max-w-[600px] text-center animate-[celebrationIn_0.4s_ease-out]">
-                <button
-                  onClick={() => { localStorage.setItem("sterp_live_banner_dismissed", "true"); setLiveBannerDismissed(true); }}
-                  className="absolute top-3 right-3 text-neutral-300 hover:text-neutral-500 transition-colors text-[18px] leading-none p-1"
-                  aria-label="Dismiss"
-                >
-                  ×
-                </button>
-                <a
-                  href={`/${profile.username}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-[17px] font-medium text-neutral-900 hover:opacity-70 transition-opacity"
-                >
-                  sterp.com/{profile.username}
-                  <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h7v7" /><path d="M13 3L6 10" /></svg>
-                </a>
-                <p className="text-[13px] text-neutral-500 mt-1.5">
-                  Send your link to the group chat. Add it to your bio.
-                </p>
-                <div className="flex gap-2 mt-4">
-                  <button
-                    onClick={handleCopyLink}
-                    className={`flex-1 flex items-center justify-center gap-1.5 text-[13px] font-medium py-2 rounded-md transition-colors ${
-                      copied
-                        ? "bg-emerald-600 text-white"
-                        : "bg-[#1D9E75] text-white hover:opacity-90"
-                    }`}
-                  >
-                    {copied ? "Copied!" : (<>
-                      <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5" /><path d="M10.5 5.5V3.5a1.5 1.5 0 00-1.5-1.5H3.5A1.5 1.5 0 002 3.5V9a1.5 1.5 0 001.5 1.5h2" /></svg>
-                      Copy link
-                    </>)}
-                  </button>
-                  <a
-                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out my Sterp — the stuff I actually own and use: sterp.com/${profile.username}`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 flex items-center justify-center gap-1.5 text-[13px] font-medium py-2 rounded-md bg-white border border-gray-200 text-neutral-700 hover:bg-neutral-50 transition-colors"
-                  >
-                    Share on
-                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
-                  </a>
-                </div>
-                <a
-                  href="https://sterp.com/cam"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block mt-3 text-[13px] text-neutral-500 hover:text-neutral-700 transition-colors"
-                >
-                  See a fully built Sterp →
-                </a>
-              </div>
-            )}
-            {profile?.username && phase === 1 && productCount >= 1 && !nudgeDismissed && (
-              <div className="relative rounded-lg border border-amber-200 bg-amber-50 px-5 py-3">
-                <button
-                  onClick={dismissNudge}
-                  className="absolute top-2.5 right-3 text-amber-400 hover:text-amber-600 transition-colors text-[16px] leading-none"
-                  aria-label="Dismiss"
-                >
-                  ×
-                </button>
-                <p className="text-[14px] text-amber-800 pr-6">
-                  {productCount < 2
-                    ? <>Add at least 2 products to make your page live at{" "}<span className="font-medium">sterp.com/{profile.username}</span></>
-                    : <>{productCount} down, {5 - productCount} to go. Fill out your Top 5.</>
-                  }
-                </p>
-              </div>
-            )}
+            {/* ─── Green Banner System (one banner at a time, priority-ordered) ──── */}
+            {profile?.username && (() => {
+              // Priority 1: Celebration card (page just went live, 2+ products, not dismissed)
+              if (currentProducts.length >= 2 && !liveBannerDismissed) {
+                return (
+                  <div className="relative rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-5 mx-auto w-full sm:max-w-[600px] text-center animate-[celebrationIn_0.4s_ease-out]">
+                    <button
+                      onClick={() => { localStorage.setItem("sterp_live_banner_dismissed", "true"); setLiveBannerDismissed(true); }}
+                      className="absolute top-3 right-3 text-neutral-300 hover:text-neutral-500 transition-colors text-[18px] leading-none p-1"
+                      aria-label="Dismiss"
+                    >
+                      ×
+                    </button>
+                    <a
+                      href={`/${profile.username}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[17px] font-medium text-neutral-900 hover:opacity-70 transition-opacity"
+                    >
+                      sterp.com/{profile.username}
+                      <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h7v7" /><path d="M13 3L6 10" /></svg>
+                    </a>
+                    <p className="text-[13px] text-neutral-500 mt-1.5">
+                      Send your link to the group chat. Add it to your bio.
+                    </p>
+                    <div className="flex gap-2 mt-4">
+                      <button
+                        onClick={handleCopyLink}
+                        className={`flex-1 flex items-center justify-center gap-1.5 text-[13px] font-medium py-2 rounded-md transition-colors ${
+                          copied
+                            ? "bg-emerald-600 text-white"
+                            : "bg-[#1D9E75] text-white hover:opacity-90"
+                        }`}
+                      >
+                        {copied ? "Copied!" : (<>
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5" /><path d="M10.5 5.5V3.5a1.5 1.5 0 00-1.5-1.5H3.5A1.5 1.5 0 002 3.5V9a1.5 1.5 0 001.5 1.5h2" /></svg>
+                          Copy link
+                        </>)}
+                      </button>
+                      <a
+                        href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out my Sterp — the stuff I actually own and use: sterp.com/${profile.username}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 flex items-center justify-center gap-1.5 text-[13px] font-medium py-2 rounded-md bg-white border border-gray-200 text-neutral-700 hover:bg-neutral-50 transition-colors"
+                      >
+                        Share on
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+                      </a>
+                    </div>
+                    <a
+                      href="https://sterp.com/cam"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block mt-3 text-[13px] text-neutral-500 hover:text-neutral-700 transition-colors"
+                    >
+                      See a fully built Sterp →
+                    </a>
+                  </div>
+                );
+              }
+              // Priority 2: Phase-specific green banner messages
+              if (phase === 1 && productCount >= 1) {
+                return (
+                  <div className="relative rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-3">
+                    <p className="text-[14px] text-emerald-800">
+                      {productCount} down, {5 - productCount} to go. Fill out your Top 5.
+                    </p>
+                  </div>
+                );
+              }
+              if (phase === 2) {
+                return (
+                  <div className="relative rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-3">
+                    <p className="text-[14px] text-emerald-800">
+                      Your Top 5 is set. Keep adding products — you&apos;ll be able to organize them into collections.
+                    </p>
+                  </div>
+                );
+              }
+              if (phase === 3 && !nudgeDismissed) {
+                return (
+                  <div className="relative rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-4">
+                    <button
+                      onClick={dismissNudge}
+                      className="absolute top-3 right-3 text-emerald-400 hover:text-emerald-600 transition-colors text-[16px] leading-none"
+                      aria-label="Dismiss"
+                    >
+                      ×
+                    </button>
+                    <p className="text-[14px] font-medium text-emerald-800 pr-6">
+                      You&apos;ve got {productCount} products — group similar ones into a collection.
+                    </p>
+                    <p className="text-[13px] text-emerald-700 mt-1">
+                      Try something like &ldquo;Home Office&rdquo; or &ldquo;Gym Setup.&rdquo;
+                    </p>
+                    <button
+                      onClick={() => {
+                        setShowAddCollection(true);
+                        setAddCollectionError("");
+                      }}
+                      className="mt-3 text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
+                    >
+                      + Create Collection
+                    </button>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
             {/* ─── First-run composition (zero products) ── */}
             {products.length === 0 && (
@@ -1962,7 +1999,7 @@ export default function DashboardPage() {
 
             {/* ─── Persistent Add Product button ── */}
             {products.length > 0 && (
-              <div className="text-center space-y-2">
+              <div className="text-center">
                 <button
                   onClick={() => setProductModal({ mode: "add" })}
                   className="w-[60%] text-white text-[15px] font-semibold py-3 rounded-lg hover:opacity-90 transition-opacity"
@@ -1970,21 +2007,11 @@ export default function DashboardPage() {
                 >
                   + Add Product
                 </button>
-                {phase >= 3 && collections.length < 2 && (
-                  <div>
-                    <button
-                      onClick={() => { setShowAddCollection(true); setAddCollectionError(""); }}
-                      className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
-                    >
-                      + Add Collection
-                    </button>
-                  </div>
-                )}
               </div>
             )}
 
-            {/* ─── Add Collection form (when Collections section is hidden) ── */}
-            {products.length > 0 && phase >= 3 && collections.length < 2 && showAddCollection && (
+            {/* ─── Add Collection form (triggered from green banner CTA in Phase 3) ── */}
+            {products.length > 0 && phase === 3 && showAddCollection && (
               <form
                 onSubmit={handleAddCollection}
                 className="bg-white rounded-lg border border-gray-200 p-4 flex items-end gap-3"
@@ -1998,7 +2025,7 @@ export default function DashboardPage() {
                     value={newCollectionName}
                     onChange={(e) => setNewCollectionName(e.target.value)}
                     className={inputClass}
-                    placeholder="e.g. Kitchen, Tech, Travel"
+                    placeholder="e.g. Home Office, Gym Setup"
                   />
                   {addCollectionError && (
                     <p className="text-[13px] text-[#C0392B] mt-1">{addCollectionError}</p>
@@ -2253,8 +2280,80 @@ export default function DashboardPage() {
               )}
             </section>}
 
-            {/* ─── Section 4: Collections (Phase 3) ── */}
-            {products.length > 0 && phase >= 3 && <section>
+            {/* ─── Phase 3: Flat list for non-top-pick products (no collections section yet) ── */}
+            {products.length > 0 && phase === 3 && (() => {
+              const topPickIds = new Set(topPicks.map((tp) => tp.product_id));
+              const nonTopProducts = products
+                .filter((p) => (p.status === "current" || p.status === "draft") && !topPickIds.has(p.id))
+                .sort((a, b) => a.sort_order - b.sort_order);
+              if (nonTopProducts.length === 0) return null;
+              return (
+                <section>
+                  <div className="space-y-2">
+                    {nonTopProducts.map((p) => (
+                      <div
+                        key={p.id}
+                        className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-gray-200"
+                      >
+                        <Thumbnail src={p.photo_url} alt={p.name} />
+                        <div
+                          className="flex-1 min-w-0 cursor-pointer"
+                          onClick={() => setProductModal({ mode: "edit", product: p })}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-[15px] font-medium text-neutral-900 truncate">
+                              {p.name}
+                            </span>
+                            <span className="hidden sm:inline flex-shrink-0"><StatusBadge status={p.status} /></span>
+                          </div>
+                          {p.one_liner && (
+                            <span className="text-[13px] text-neutral-400 truncate block">
+                              {p.one_liner}
+                            </span>
+                          )}
+                        </div>
+                        <div className="relative flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setProductMenuOpen(productMenuOpen === p.id ? null : p.id)}
+                            aria-label={`${p.name} options`}
+                            className="p-1 hover:bg-neutral-100 rounded transition-colors"
+                          >
+                            <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
+                              <circle cx="8" cy="3" r="1.5" />
+                              <circle cx="8" cy="8" r="1.5" />
+                              <circle cx="8" cy="13" r="1.5" />
+                            </svg>
+                          </button>
+                          {productMenuOpen === p.id && (
+                            <>
+                              <div className="fixed inset-0 z-10" onClick={() => setProductMenuOpen(null)} />
+                              <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-40">
+                                <button
+                                  onClick={() => { setProductMenuOpen(null); setProductModal({ mode: "edit", product: p }); }}
+                                  className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => { setProductMenuOpen(null); setArchiveTarget(p); }}
+                                  className="w-full text-left px-4 py-2 text-[14px] text-[#C0392B] hover:bg-neutral-50 transition-colors"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              );
+            })()}
+
+            {/* ─── Section 4: Collections (Phase 4 — first named collection created) ── */}
+            {products.length > 0 && phase >= 4 && <section>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[17px] font-medium text-neutral-900">
                   Collections
@@ -2748,51 +2847,7 @@ export default function DashboardPage() {
                 </div>
               </section>
             )}
-            {/* ─── Phase 2 Nudge: Top 5 complete ──────── */}
-            {phase === 2 && !nudgeDismissed && (
-              <div className="relative rounded-lg border border-neutral-200 bg-neutral-50 px-5 py-4">
-                <button
-                  onClick={dismissNudge}
-                  className="absolute top-3 right-3 text-neutral-300 hover:text-neutral-500 transition-colors text-[16px] leading-none"
-                  aria-label="Dismiss"
-                >
-                  ×
-                </button>
-                <p className="text-[15px] font-medium text-neutral-800 mb-1.5 pr-6">
-                  Your Top 5 is set.
-                </p>
-                <p className="text-[14px] text-neutral-500 leading-relaxed">
-                  Keep adding products — you&apos;ll be able to organize them into collections.
-                </p>
-              </div>
-            )}
-            {/* ─── Phase 3 Nudge: Collections unlock ──────── */}
-            {phase >= 3 && !nudgeDismissed && (
-              <div className="relative rounded-lg border border-neutral-200 bg-neutral-50 px-5 py-4">
-                <button
-                  onClick={dismissNudge}
-                  className="absolute top-3 right-3 text-neutral-300 hover:text-neutral-500 transition-colors text-[16px] leading-none"
-                  aria-label="Dismiss"
-                >
-                  ×
-                </button>
-                <p className="text-[15px] font-medium text-neutral-800 mb-1.5 pr-6">
-                  You&apos;ve got {productCount} products — group similar ones into a collection.
-                </p>
-                <p className="text-[14px] text-neutral-500 leading-relaxed">
-                  Try something like &ldquo;Home Office&rdquo; or &ldquo;Gym Setup.&rdquo;
-                </p>
-                <button
-                  onClick={() => {
-                    setShowAddCollection(true);
-                    setAddCollectionError("");
-                  }}
-                  className="mt-3 text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
-                >
-                  + Create Collection
-                </button>
-              </div>
-            )}
+            {/* All nudges now live in the Green Banner System at the top */}
           </div>
         )}
       </div>

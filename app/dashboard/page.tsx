@@ -2231,8 +2231,8 @@ export default function DashboardPage() {
               )}
             </section>}
 
-            {/* ─── Section 4: Collections (Phase 3, hidden until user has 2+ collections) ── */}
-            {products.length > 0 && phase >= 3 && collections.length >= 2 && <section>
+            {/* ─── Section 4: Collections (Phase 3) ── */}
+            {products.length > 0 && phase >= 3 && <section>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[17px] font-medium text-neutral-900">
                   Collections

@@ -333,18 +333,18 @@ function ArchiveModal({
   const [note, setNote] = useState("");
   const now = new Date();
 
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const yearOptions = Array.from({ length: now.getFullYear() - 1999 }, (_, i) => now.getFullYear() - i);
+  const selectClass = "rounded-md border border-gray-200 px-2 py-1.5 text-[13px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-neutral-400";
+
   // Started using — defaults to product's acquired_at or created_at
   const startDate = product.acquired_at ? new Date(product.acquired_at) : new Date(product.created_at);
-  const [startValue, setStartValue] = useState(
-    `${startDate.getUTCFullYear()}-${String(startDate.getUTCMonth() + 1).padStart(2, "0")}`
-  );
+  const [startMonth, setStartMonth] = useState(String(startDate.getUTCMonth() + 1));
+  const [startYear, setStartYear] = useState(String(startDate.getUTCFullYear()));
 
   // Stopped using — defaults to current month/year
-  const [stopValue, setStopValue] = useState(
-    `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
-  );
-
-  const monthInputClass = "rounded-md border border-gray-200 px-2.5 py-1.5 text-[13px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-neutral-400";
+  const [stopMonth, setStopMonth] = useState(String(now.getMonth() + 1));
+  const [stopYear, setStopYear] = useState(String(now.getFullYear()));
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === "Escape") onCancel(); }
@@ -383,23 +383,25 @@ function ArchiveModal({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[13px] font-medium text-neutral-500">Started using</span>
-            <input
-              type="month"
-              value={startValue}
-              onChange={(e) => setStartValue(e.target.value)}
-              max={stopValue}
-              className={monthInputClass}
-            />
+            <div className="flex items-center gap-1.5">
+              <select value={startMonth} onChange={(e) => setStartMonth(e.target.value)} className={selectClass}>
+                {monthNames.map((m, i) => <option key={i + 1} value={String(i + 1)}>{m}</option>)}
+              </select>
+              <select value={startYear} onChange={(e) => setStartYear(e.target.value)} className={selectClass}>
+                {yearOptions.map((y) => <option key={y} value={String(y)}>{y}</option>)}
+              </select>
+            </div>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[13px] font-medium text-neutral-500">Stopped using</span>
-            <input
-              type="month"
-              value={stopValue}
-              onChange={(e) => setStopValue(e.target.value)}
-              min={startValue}
-              className={monthInputClass}
-            />
+            <div className="flex items-center gap-1.5">
+              <select value={stopMonth} onChange={(e) => setStopMonth(e.target.value)} className={selectClass}>
+                {monthNames.map((m, i) => <option key={i + 1} value={String(i + 1)}>{m}</option>)}
+              </select>
+              <select value={stopYear} onChange={(e) => setStopYear(e.target.value)} className={selectClass}>
+                {yearOptions.map((y) => <option key={y} value={String(y)}>{y}</option>)}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -408,8 +410,8 @@ function ArchiveModal({
           <button
             onClick={() => onConfirm(
               note.trim() || null,
-              `${stopValue}-01T00:00:00Z`,
-              `${startValue}-01T00:00:00Z`
+              `${stopYear}-${stopMonth.padStart(2, "0")}-01T00:00:00Z`,
+              `${startYear}-${startMonth.padStart(2, "0")}-01T00:00:00Z`
             )}
             className="text-[14px] font-medium text-white px-5 py-2 rounded-md hover:opacity-90 bg-neutral-700"
           >

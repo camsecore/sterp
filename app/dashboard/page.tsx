@@ -327,15 +327,26 @@ function ArchiveModal({
   onCancel,
 }: {
   product: Product;
-  onConfirm: (note: string | null, archivedAt: string) => void;
+  onConfirm: (note: string | null, archivedAt: string, acquiredAt: string | null) => void;
   onCancel: () => void;
 }) {
   const [note, setNote] = useState("");
   const now = new Date();
-  const [editingDate, setEditingDate] = useState(false);
-  const [archiveMonth, setArchiveMonth] = useState(String(now.getMonth() + 1));
-  const [archiveYear, setArchiveYear] = useState(String(now.getFullYear()));
   const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+  // Started using — defaults to product's acquired_at or created_at
+  const startDate = product.acquired_at ? new Date(product.acquired_at) : new Date(product.created_at);
+  const [startMonth, setStartMonth] = useState(String(startDate.getUTCMonth() + 1));
+  const [startYear, setStartYear] = useState(String(startDate.getUTCFullYear()));
+  const [editingStart, setEditingStart] = useState(false);
+
+  // Stopped using — defaults to current month/year
+  const [stopMonth, setStopMonth] = useState(String(now.getMonth() + 1));
+  const [stopYear, setStopYear] = useState(String(now.getFullYear()));
+  const [editingStop, setEditingStop] = useState(false);
+
+  const yearOptions = Array.from({ length: now.getFullYear() - 2009 }, (_, i) => now.getFullYear() - i);
+  const dateSelectClass = "flex-1 rounded-md border border-gray-200 px-2 py-1.5 text-[13px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40 appearance-none";
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === "Escape") onCancel(); }
@@ -371,44 +382,56 @@ function ArchiveModal({
             This is a personal note, not a review.
           </p>
         </div>
-        <div>
-          {editingDate ? (
-            <div className="flex items-center gap-2">
-              <select
-                value={archiveMonth}
-                onChange={(e) => setArchiveMonth(e.target.value)}
-                className="flex-1 rounded-md border border-gray-200 px-2 py-1.5 text-[13px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40 appearance-none"
-              >
-                {monthNames.map((m, i) => (
-                  <option key={i + 1} value={String(i + 1)}>{m}</option>
-                ))}
+
+        {/* Started using */}
+        <div className="flex items-center justify-between">
+          <span className="text-[13px] font-medium text-neutral-600">Started using</span>
+          {editingStart ? (
+            <div className="flex items-center gap-1.5">
+              <select value={startMonth} onChange={(e) => setStartMonth(e.target.value)} className={dateSelectClass}>
+                {monthNames.map((m, i) => <option key={i + 1} value={String(i + 1)}>{m}</option>)}
               </select>
-              <select
-                value={archiveYear}
-                onChange={(e) => setArchiveYear(e.target.value)}
-                className="flex-1 rounded-md border border-gray-200 px-2 py-1.5 text-[13px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40 appearance-none"
-              >
-                {Array.from({ length: now.getFullYear() - 2009 }, (_, i) => now.getFullYear() - i).map((y) => (
-                  <option key={y} value={String(y)}>{y}</option>
-                ))}
+              <select value={startYear} onChange={(e) => setStartYear(e.target.value)} className={dateSelectClass}>
+                {yearOptions.map((y) => <option key={y} value={String(y)}>{y}</option>)}
               </select>
+              <button type="button" onClick={() => setEditingStart(false)} className="text-[12px] text-neutral-500 hover:text-neutral-800 ml-1">Done</button>
             </div>
           ) : (
             <p className="text-[13px] text-neutral-400">
-              {monthNames[Number(archiveMonth) - 1]} {archiveYear}
-              <button
-                type="button"
-                onClick={() => setEditingDate(true)}
-                className="ml-2 text-[12px] text-[#C0392B] hover:opacity-70 transition-opacity"
-              >
-                Change
-              </button>
+              {monthNames[Number(startMonth) - 1]} {startYear}
+              <button type="button" onClick={() => setEditingStart(true)} className="ml-2 text-[12px] text-[#C0392B] hover:opacity-70 transition-opacity">Change</button>
             </p>
           )}
         </div>
+
+        {/* Stopped using */}
+        <div className="flex items-center justify-between">
+          <span className="text-[13px] font-medium text-neutral-600">Stopped using</span>
+          {editingStop ? (
+            <div className="flex items-center gap-1.5">
+              <select value={stopMonth} onChange={(e) => setStopMonth(e.target.value)} className={dateSelectClass}>
+                {monthNames.map((m, i) => <option key={i + 1} value={String(i + 1)}>{m}</option>)}
+              </select>
+              <select value={stopYear} onChange={(e) => setStopYear(e.target.value)} className={dateSelectClass}>
+                {yearOptions.map((y) => <option key={y} value={String(y)}>{y}</option>)}
+              </select>
+              <button type="button" onClick={() => setEditingStop(false)} className="text-[12px] text-neutral-500 hover:text-neutral-800 ml-1">Done</button>
+            </div>
+          ) : (
+            <p className="text-[13px] text-neutral-400">
+              {monthNames[Number(stopMonth) - 1]} {stopYear}
+              <button type="button" onClick={() => setEditingStop(true)} className="ml-2 text-[12px] text-[#C0392B] hover:opacity-70 transition-opacity">Change</button>
+            </p>
+          )}
+        </div>
+
         <div className="flex items-center gap-3 pt-1">
           <button
-            onClick={() => onConfirm(note.trim() || null, `${archiveYear}-${archiveMonth.padStart(2, "0")}-01T00:00:00Z`)}
+            onClick={() => onConfirm(
+              note.trim() || null,
+              `${stopYear}-${stopMonth.padStart(2, "0")}-01T00:00:00Z`,
+              `${startYear}-${startMonth.padStart(2, "0")}-01T00:00:00Z`
+            )}
             className="text-[14px] font-medium text-white px-5 py-2 rounded-md hover:opacity-90 bg-neutral-700"
           >
             Archive
@@ -1455,12 +1478,12 @@ export default function DashboardPage() {
 
   // ─── Product actions ────────────────────────────────────────────
 
-  async function handleArchiveConfirm(note: string | null, archivedAt: string) {
+  async function handleArchiveConfirm(note: string | null, archivedAt: string, acquiredAt: string | null) {
     if (!archiveTarget) return;
     const res = await fetch(`/api/products/${archiveTarget.id}/archive`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ archive_note: note, archived_at: archivedAt }),
+      body: JSON.stringify({ archive_note: note, archived_at: archivedAt, acquired_at: acquiredAt }),
     });
     if (res.ok) {
       await Promise.all([fetchProducts(), fetchTopPicks()]);
@@ -1698,16 +1721,14 @@ export default function DashboardPage() {
     }
   }
 
-  function formatDuration(createdAt: string, archivedAt: string): string {
+  function formatDateRange(createdAt: string, archivedAt: string): string {
+    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     const start = new Date(createdAt);
     const end = new Date(archivedAt);
-    const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
-    if (months < 1) return "< 1 month";
-    if (months < 12) return `${months} month${months === 1 ? "" : "s"}`;
-    const years = Math.floor(months / 12);
-    const rem = months % 12;
-    if (rem === 0) return `${years} year${years === 1 ? "" : "s"}`;
-    return `${years} year${years === 1 ? "" : "s"}, ${rem} month${rem === 1 ? "" : "s"}`;
+    const startStr = `${monthNames[start.getUTCMonth()]} ${start.getUTCFullYear()}`;
+    const endStr = `${monthNames[end.getUTCMonth()]} ${end.getUTCFullYear()}`;
+    if (startStr === endStr) return startStr;
+    return `${startStr} – ${endStr}`;
   }
 
   // ─── Lookups ────────────────────────────────────────────────────
@@ -2815,7 +2836,7 @@ export default function DashboardPage() {
                               </span>
                               {p.created_at && p.archived_at && (
                                 <span className="text-[11px] font-medium text-amber-700 bg-amber-100 rounded-full px-2 py-0.5 flex-shrink-0">
-                                  {formatDuration(p.acquired_at ?? p.created_at, p.archived_at)}
+                                  {formatDateRange(p.acquired_at ?? p.created_at, p.archived_at)}
                                 </span>
                               )}
                             </div>

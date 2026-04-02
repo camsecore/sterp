@@ -145,18 +145,14 @@ function ProductCard({
   );
 }
 
-function formatDuration(createdAt: string, archivedAt: string): string {
+function formatDateRange(createdAt: string, archivedAt: string): string {
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const start = new Date(createdAt);
   const end = new Date(archivedAt);
-  const totalMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
-  if (totalMonths < 1) return "Owned for < 1 month";
-  if (totalMonths < 12) return `Owned for ${totalMonths} month${totalMonths === 1 ? "" : "s"}`;
-  const years = totalMonths / 12;
-  // Clean half-year fractions (e.g. 1.5 years), otherwise round to whole
-  const cleanHalf = totalMonths % 6 === 0;
-  if (cleanHalf && totalMonths % 12 !== 0) return `Owned for ${years} years`;
-  const wholeYears = Math.round(years);
-  return `Owned for ${wholeYears} year${wholeYears === 1 ? "" : "s"}`;
+  const startStr = `${months[start.getUTCMonth()]} ${start.getUTCFullYear()}`;
+  const endStr = `${months[end.getUTCMonth()]} ${end.getUTCFullYear()}`;
+  if (startStr === endStr) return startStr;
+  return `${startStr} – ${endStr}`;
 }
 
 function ArchiveCard({
@@ -189,7 +185,7 @@ function ArchiveCard({
         </h3>
         {archivedAt && (
           <span className="inline-block mt-1 text-xs text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full w-fit">
-            {formatDuration(createdAt, archivedAt)}
+            {formatDateRange(createdAt, archivedAt)}
           </span>
         )}
         {archiveNote && (

@@ -17,15 +17,19 @@ export async function POST(
   const body = await request.json().catch(() => ({}));
   const archive_note = body.archive_note?.trim() || null;
   const archived_at = body.archived_at || new Date().toISOString();
+  const acquired_at = body.acquired_at || undefined;
 
   // Archive the product
+  const updates: Record<string, unknown> = {
+    status: "archived",
+    archived_at,
+    archive_note,
+  };
+  if (acquired_at !== undefined) updates.acquired_at = acquired_at;
+
   const { data, error: dbError } = await supabase
     .from("products")
-    .update({
-      status: "archived",
-      archived_at,
-      archive_note,
-    })
+    .update(updates)
     .eq("id", id)
     .eq("user_id", user!.id)
     .in("status", ["current", "draft"])

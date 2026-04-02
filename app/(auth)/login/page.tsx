@@ -117,7 +117,7 @@ function LoginContent() {
       <div className="w-full max-w-[420px] flex flex-col items-center gap-8">
         {/* Logo */}
         <Image
-          src="/logo-black.png"
+          src="/logo-charcoal.png"
           alt="Sterp"
           width={120}
           height={40}

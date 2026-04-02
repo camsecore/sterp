@@ -155,7 +155,7 @@ function OnboardingUsernamePage() {
       <div className="w-full max-w-sm mx-auto flex flex-col items-center">
         {/* Logo */}
         <Image
-          src="/logo-black.png"
+          src="/logo-charcoal.png"
           alt="Sterp"
           width={100}
           height={32}

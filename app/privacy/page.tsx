@@ -15,7 +15,7 @@ export default function PrivacyPage() {
         <div className="flex justify-center mb-10">
           <Link href="/">
             <Image
-              src="/logo-black.png"
+              src="/logo-charcoal.png"
               alt="Sterp"
               width={150}
               height={50}

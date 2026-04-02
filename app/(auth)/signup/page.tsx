@@ -132,7 +132,7 @@ export default function SignupPage() {
 
         <div className="center-content">
           <Image
-            src="/logo-black.png"
+            src="/logo-charcoal.png"
             alt="Sterp"
             width={120}
             height={40}

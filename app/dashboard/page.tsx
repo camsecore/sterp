@@ -470,7 +470,7 @@ function ArchiveModal({
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          rows={3}
+          rows={4}
           className="w-full rounded-md border border-gray-200 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-neutral-400 resize-none"
           placeholder="Any memories with this one? (optional)"
           autoFocus
@@ -635,10 +635,23 @@ function ProductModal({
   const nameInputRef = useRef<HTMLInputElement>(null);
   const oneLinerRef = useRef<HTMLTextAreaElement>(null);
 
+  // Track whether the form has unsaved changes
+  const hasChanges = Boolean(
+    name.trim() || oneLiner.trim() || originalUrl.trim() || photoUrl || pendingBlob
+  );
+
+  function handleDismiss() {
+    if (!hasChanges || mode === "edit") {
+      onClose();
+    } else if (window.confirm("You have unsaved changes. Discard them?")) {
+      onClose();
+    }
+  }
+
   // Close on Escape (but not while crop modal is open)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && !cropSrc && !creatingCollection) onClose();
+      if (e.key === "Escape" && !cropSrc && !creatingCollection) handleDismiss();
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
@@ -850,7 +863,7 @@ function ProductModal({
       aria-modal="true"
       aria-label={mode === "edit" ? "Edit product" : "Add product"}
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-      onClick={onClose}
+      onClick={handleDismiss}
     >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50" />
@@ -867,7 +880,7 @@ function ProductModal({
           </h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleDismiss}
             aria-label="Close"
             className="text-neutral-400 hover:text-neutral-600 transition-colors p-1"
           >
@@ -1839,7 +1852,7 @@ export default function DashboardPage() {
         <div className="hidden md:flex items-center justify-between">
           <div className="mt-1">
             <Image
-              src="/logo-black.png"
+              src="/logo-charcoal.png"
               alt="Sterp"
               width={150}
               height={50}
@@ -1890,7 +1903,7 @@ export default function DashboardPage() {
         <div className="md:hidden space-y-3">
           <div className="text-center">
             <Image
-              src="/logo-black.png"
+              src="/logo-charcoal.png"
               alt="Sterp"
               width={120}
               height={40}
@@ -2845,7 +2858,7 @@ export default function DashboardPage() {
                           <textarea
                             value={editNoteValue}
                             onChange={(e) => setEditNoteValue(e.target.value)}
-                            rows={3}
+                            rows={4}
                             className="w-full rounded-md border border-gray-200 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40 resize-none"
                             placeholder="Archive note..."
                             autoFocus

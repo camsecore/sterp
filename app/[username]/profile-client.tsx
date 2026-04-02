@@ -493,7 +493,7 @@ export default function ProfileClient({
 
       <footer className="mt-16 mb-8 flex flex-col items-center gap-3">
         <Image
-          src="/logo-black.png"
+          src="/logo-charcoal.png"
           alt="Sterp"
           width={72}
           height={24}

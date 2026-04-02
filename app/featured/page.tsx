@@ -74,7 +74,7 @@ export default async function FeaturedPage() {
         {/* Logo */}
         <div className="flex justify-center mb-10">
           <Image
-            src="/logo-black.png"
+            src="/logo-charcoal.png"
             alt="Sterp"
             width={150}
             height={50}

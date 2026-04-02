@@ -319,13 +319,16 @@ function CropModal({ imageSrc, aspect, onDone, onCancel }: CropModalProps) {
   );
 }
 
-// ─── Custom Dropdown ────────────────────────────────────────────────
-// Desktop: custom styled menu. Mobile/touch: native <select> for the iOS picker.
+// ─── Hybrid Dropdown ────────────────────────────────────────────────
+// Identical trigger UI on all devices. Desktop: custom menu. Mobile: native
+// <select> overlaid invisibly on the trigger to invoke the OS scroll picker.
 
 function useIsTouchDevice() {
   const [isTouch, setIsTouch] = useState(false);
   useEffect(() => {
-    setIsTouch("ontouchstart" in window || navigator.maxTouchPoints > 0);
+    setIsTouch(
+      window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0
+    );
   }, []);
   return isTouch;
 }
@@ -354,40 +357,12 @@ function CustomDropdown({
 
   const selectedLabel = options.find((o) => o.value === value)?.label ?? value;
 
-  // Mobile: styled native select for iOS/Android picker
-  if (isTouch) {
-    return (
-      <div className="relative">
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="appearance-none bg-gray-50 border border-gray-200 rounded-md pl-3 pr-7 py-1.5 text-[13px] text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-300"
-        >
-          {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-        <svg
-          className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400"
-          viewBox="0 0 16 16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M4 6l4 4 4-4" />
-        </svg>
-      </div>
-    );
-  }
-
-  // Desktop: custom dropdown
   return (
     <div ref={ref} className="relative">
+      {/* Shared trigger — always visible */}
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={isTouch ? undefined : () => setOpen(!open)}
         className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5 text-[13px] text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-300 transition-colors hover:bg-gray-100"
       >
         {selectedLabel}
@@ -403,23 +378,38 @@ function CustomDropdown({
           <path d="M4 6l4 4 4-4" />
         </svg>
       </button>
-      {open && (
-        <div className="absolute z-30 mt-1 left-0 min-w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+
+      {/* Mobile: invisible native select overlaid on trigger for OS picker */}
+      {isTouch && (
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          aria-label={selectedLabel}
+        >
           {options.map((opt) => (
-            <button
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      )}
+
+      {/* Desktop: custom dropdown menu */}
+      {!isTouch && open && (
+        <ul className="absolute z-30 mt-1 left-0 min-w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+          {options.map((opt) => (
+            <li
               key={opt.value}
-              type="button"
               onClick={() => { onChange(opt.value); setOpen(false); }}
-              className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors ${
+              className={`px-3 py-1.5 text-[13px] cursor-pointer transition-colors ${
                 opt.value === value
                   ? "bg-gray-50 font-medium text-gray-900"
                   : "text-gray-700 hover:bg-gray-100"
               }`}
             >
               {opt.label}
-            </button>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

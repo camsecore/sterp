@@ -320,6 +320,15 @@ function CropModal({ imageSrc, aspect, onDone, onCancel }: CropModalProps) {
 }
 
 // ─── Custom Dropdown ────────────────────────────────────────────────
+// Desktop: custom styled menu. Mobile/touch: native <select> for the iOS picker.
+
+function useIsTouchDevice() {
+  const [isTouch, setIsTouch] = useState(false);
+  useEffect(() => {
+    setIsTouch("ontouchstart" in window || navigator.maxTouchPoints > 0);
+  }, []);
+  return isTouch;
+}
 
 function CustomDropdown({
   value,
@@ -330,6 +339,7 @@ function CustomDropdown({
   options: { value: string; label: string }[];
   onChange: (value: string) => void;
 }) {
+  const isTouch = useIsTouchDevice();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -344,6 +354,35 @@ function CustomDropdown({
 
   const selectedLabel = options.find((o) => o.value === value)?.label ?? value;
 
+  // Mobile: styled native select for iOS/Android picker
+  if (isTouch) {
+    return (
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="appearance-none bg-gray-50 border border-gray-200 rounded-md pl-3 pr-7 py-1.5 text-[13px] text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-300"
+        >
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+        <svg
+          className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M4 6l4 4 4-4" />
+        </svg>
+      </div>
+    );
+  }
+
+  // Desktop: custom dropdown
   return (
     <div ref={ref} className="relative">
       <button

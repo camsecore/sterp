@@ -490,6 +490,7 @@ interface ProductModalProps {
   collections: Collection[];
   topPicks: TopPick[];
   userId: string;
+  phase?: number;
   onSave: () => Promise<void>;
   onClose: () => void;
   onCollectionCreated: () => Promise<void>;
@@ -504,6 +505,7 @@ function ProductModal({
   collections,
   topPicks,
   userId,
+  phase = 3,
   onSave,
   onClose,
   onCollectionCreated,
@@ -643,8 +645,8 @@ function ProductModal({
     // Photo is optional — products without photos save as drafts
     if (!name.trim()) newErrors.name = "Name is required";
     if (!oneLiner.trim()) newErrors.one_liner = "One-liner is required";
-    // Collection validation only needed when user has 2+ collections (dropdown visible)
-    if (collections.length >= 2 && !collectionId) newErrors.collection = "Collection is required";
+    // Collection validation when dropdown is visible
+    if ((collections.length >= 2 || (phase >= 3 && mode === "add")) && !collectionId) newErrors.collection = "Collection is required";
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       // Focus the first field with an error so the user can fix it
@@ -929,9 +931,9 @@ function ProductModal({
             </div>
           )}
 
-          {/* Collection — hidden for 0-1 collections, shown as dropdown for 2+ */}
+          {/* Collection — shown when 2+ collections, or Phase 3 add mode to prompt organization */}
           <div>
-            {collections.length >= 2 && (
+            {(collections.length >= 2 || (phase >= 3 && mode === "add")) && (
               creatingCollection ? (
               <div className="flex items-center gap-2">
                 <input
@@ -1269,6 +1271,9 @@ export default function DashboardPage() {
     localStorage.setItem("sterp_nudge_dismissed", "true");
     setNudgeDismissed(true);
   }
+
+  // Product overflow menu
+  const [productMenuOpen, setProductMenuOpen] = useState<string | null>(null);
 
   // Archive & delete modals
   const [archiveTarget, setArchiveTarget] = useState<Product | null>(null);
@@ -1709,6 +1714,8 @@ export default function DashboardPage() {
 
   const collectionMap = new Map(collections.map((c) => [c.id, c]));
   const currentProducts = products.filter((p) => p.status === "current");
+  const productCount = currentProducts.length;
+  const phase = productCount < 5 ? 1 : productCount === 5 ? 2 : 3;
   const [liveBannerDismissed, setLiveBannerDismissed] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("sterp_live_banner_dismissed") === "true";
@@ -1790,7 +1797,7 @@ export default function DashboardPage() {
               {currentProducts.length >= 2 ? (
                 <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5 flex-shrink-0">Live</span>
               ) : (
-                <span className="text-[10px] font-medium text-yellow-700 bg-yellow-100 rounded-full px-2 py-0.5 flex-shrink-0">Building</span>
+                <span className="text-[10px] font-medium text-neutral-400 bg-neutral-100 rounded-full px-2 py-0.5 flex-shrink-0">Draft</span>
               )}
               <button onClick={() => openProfileModal()} className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0">Edit</button>
               <a href={`/${profile.username}`} target="_blank" rel="noopener noreferrer" className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0">View</a>
@@ -1833,7 +1840,7 @@ export default function DashboardPage() {
                   {currentProducts.length >= 2 ? (
                     <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5 flex-shrink-0">Live</span>
                   ) : (
-                    <span className="text-[10px] font-medium text-yellow-700 bg-yellow-100 rounded-full px-2 py-0.5 flex-shrink-0">Building</span>
+                    <span className="text-[10px] font-medium text-neutral-400 bg-neutral-100 rounded-full px-2 py-0.5 flex-shrink-0">Draft</span>
                   )}
                 </div>
                 <a
@@ -1916,11 +1923,20 @@ export default function DashboardPage() {
                 </a>
               </div>
             )}
-            {profile?.username && currentProducts.length === 1 && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 px-5 py-3">
-                <p className="text-[14px] text-amber-800">
-                  Add at least 2 products to make your page live at{" "}
-                  <span className="font-medium">sterp.com/{profile.username}</span>
+            {profile?.username && phase === 1 && productCount >= 1 && !nudgeDismissed && (
+              <div className="relative rounded-lg border border-amber-200 bg-amber-50 px-5 py-3">
+                <button
+                  onClick={dismissNudge}
+                  className="absolute top-2.5 right-3 text-amber-400 hover:text-amber-600 transition-colors text-[16px] leading-none"
+                  aria-label="Dismiss"
+                >
+                  ×
+                </button>
+                <p className="text-[14px] text-amber-800 pr-6">
+                  {productCount < 2
+                    ? <>Add at least 2 products to make your page live at{" "}<span className="font-medium">sterp.com/{profile.username}</span></>
+                    : <>{productCount} down, {5 - productCount} to go. Fill out your Top 5.</>
+                  }
                 </p>
               </div>
             )}
@@ -1954,7 +1970,7 @@ export default function DashboardPage() {
                 >
                   + Add Product
                 </button>
-                {collections.length < 2 && (
+                {phase >= 2 && collections.length < 2 && (
                   <div>
                     <button
                       onClick={() => { setShowAddCollection(true); setAddCollectionError(""); }}
@@ -1968,7 +1984,7 @@ export default function DashboardPage() {
             )}
 
             {/* ─── Add Collection form (when Collections section is hidden) ── */}
-            {products.length > 0 && collections.length < 2 && showAddCollection && (
+            {products.length > 0 && phase >= 2 && collections.length < 2 && showAddCollection && (
               <form
                 onSubmit={handleAddCollection}
                 className="bg-white rounded-lg border border-gray-200 p-4 flex items-end gap-3"
@@ -1997,8 +2013,76 @@ export default function DashboardPage() {
               </form>
             )}
 
-            {/* ─── Section 3: Top Picks ──────────────────────── */}
-            {products.length > 0 && <section>
+            {/* ─── Phase 1: Flat product list (building Top 5) ── */}
+            {products.length > 0 && phase === 1 && (
+              <section>
+                <div className="space-y-2">
+                  {products
+                    .filter((p) => p.status === "current" || p.status === "draft")
+                    .sort((a, b) => a.sort_order - b.sort_order)
+                    .map((p) => (
+                      <div
+                        key={p.id}
+                        className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-gray-200"
+                      >
+                        <Thumbnail src={p.photo_url} alt={p.name} />
+                        <div
+                          className="flex-1 min-w-0 cursor-pointer"
+                          onClick={() => setProductModal({ mode: "edit", product: p })}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-[15px] font-medium text-neutral-900 truncate">
+                              {p.name}
+                            </span>
+                            <span className="hidden sm:inline flex-shrink-0"><StatusBadge status={p.status} /></span>
+                          </div>
+                          {p.one_liner && (
+                            <span className="text-[13px] text-neutral-400 truncate block">
+                              {p.one_liner}
+                            </span>
+                          )}
+                        </div>
+                        <div className="relative flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setProductMenuOpen(productMenuOpen === p.id ? null : p.id)}
+                            aria-label={`${p.name} options`}
+                            className="p-1 hover:bg-neutral-100 rounded transition-colors"
+                          >
+                            <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
+                              <circle cx="8" cy="3" r="1.5" />
+                              <circle cx="8" cy="8" r="1.5" />
+                              <circle cx="8" cy="13" r="1.5" />
+                            </svg>
+                          </button>
+                          {productMenuOpen === p.id && (
+                            <>
+                              <div className="fixed inset-0 z-10" onClick={() => setProductMenuOpen(null)} />
+                              <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-40">
+                                <button
+                                  onClick={() => { setProductMenuOpen(null); setProductModal({ mode: "edit", product: p }); }}
+                                  className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => { setProductMenuOpen(null); setArchiveTarget(p); }}
+                                  className="w-full text-left px-4 py-2 text-[14px] text-[#C0392B] hover:bg-neutral-50 transition-colors"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </section>
+            )}
+
+            {/* ─── Section 3: Top Picks (Phase 2+) ──────────────────────── */}
+            {products.length > 0 && phase >= 2 && <section>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <h2 className="text-[17px] font-medium text-neutral-900">
@@ -2008,21 +2092,23 @@ export default function DashboardPage() {
                     {topPicks.length}/5
                   </span>
                 </div>
-                <button
-                  onClick={() => {
-                    if (topPicks.length < 5) {
-                      setShowAddTopPick(!showAddTopPick);
-                      setTopPickSearch("");
-                      setTopPickFilter("");
-                    }
-                  }}
-                  disabled={topPicks.length >= 5}
-                  className="text-[13px] font-medium transition-opacity disabled:opacity-30 disabled:cursor-not-allowed"
-                  style={{ color: "#C0392B" }}
-                  title={topPicks.length >= 5 ? "Maximum 5 top picks" : undefined}
-                >
-                  {showAddTopPick ? "Cancel" : "+ Add to Top"}
-                </button>
+                {phase >= 3 && (
+                  <button
+                    onClick={() => {
+                      if (topPicks.length < 5) {
+                        setShowAddTopPick(!showAddTopPick);
+                        setTopPickSearch("");
+                        setTopPickFilter("");
+                      }
+                    }}
+                    disabled={topPicks.length >= 5}
+                    className="text-[13px] font-medium transition-opacity disabled:opacity-30 disabled:cursor-not-allowed"
+                    style={{ color: "#C0392B" }}
+                    title={topPicks.length >= 5 ? "Maximum 5 top picks" : undefined}
+                  >
+                    {showAddTopPick ? "Cancel" : "+ Add to Top"}
+                  </button>
+                )}
               </div>
 
               {/* Add to Top dropdown */}
@@ -2145,8 +2231,8 @@ export default function DashboardPage() {
               )}
             </section>}
 
-            {/* ─── Section 4: Collections (hidden until user has 2+ collections) ── */}
-            {products.length > 0 && collections.length >= 2 && <section>
+            {/* ─── Section 4: Collections (Phase 3, hidden until user has 2+ collections) ── */}
+            {products.length > 0 && phase >= 3 && collections.length >= 2 && <section>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[17px] font-medium text-neutral-900">
                   Collections
@@ -2405,12 +2491,14 @@ export default function DashboardPage() {
                                               {({ handle }) => (
                                                 <div
                                                   data-product-id={p.id}
-                                                  className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-neutral-50 transition-colors cursor-pointer"
-                                                  onClick={() => setProductModal({ mode: "edit", product: p })}
+                                                  className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-neutral-50 transition-colors"
                                                 >
                                                   {handle}
                                                   <Thumbnail src={p.photo_url} alt={p.name} />
-                                                  <div className="flex-1 min-w-0">
+                                                  <div
+                                                    className="flex-1 min-w-0 cursor-pointer"
+                                                    onClick={() => setProductModal({ mode: "edit", product: p })}
+                                                  >
                                                     <div className="flex items-center gap-2">
                                                       <span className="text-[15px] font-medium text-neutral-900 truncate">
                                                         {p.name}
@@ -2423,9 +2511,39 @@ export default function DashboardPage() {
                                                       </span>
                                                     )}
                                                   </div>
-                                                  <span className="text-[12px] text-neutral-500 flex-shrink-0">
-                                                    Edit
-                                                  </span>
+                                                  <div className="relative flex-shrink-0">
+                                                    <button
+                                                      type="button"
+                                                      onClick={(e) => { e.stopPropagation(); setProductMenuOpen(productMenuOpen === p.id ? null : p.id); }}
+                                                      aria-label={`${p.name} options`}
+                                                      className="p-1 hover:bg-neutral-100 rounded transition-colors"
+                                                    >
+                                                      <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
+                                                        <circle cx="8" cy="3" r="1.5" />
+                                                        <circle cx="8" cy="8" r="1.5" />
+                                                        <circle cx="8" cy="13" r="1.5" />
+                                                      </svg>
+                                                    </button>
+                                                    {productMenuOpen === p.id && (
+                                                      <>
+                                                        <div className="fixed inset-0 z-10" onClick={() => setProductMenuOpen(null)} />
+                                                        <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-40">
+                                                          <button
+                                                            onClick={() => { setProductMenuOpen(null); setProductModal({ mode: "edit", product: p }); }}
+                                                            className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                                          >
+                                                            Edit
+                                                          </button>
+                                                          <button
+                                                            onClick={() => { setProductMenuOpen(null); setArchiveTarget(p); }}
+                                                            className="w-full text-left px-4 py-2 text-[14px] text-[#C0392B] hover:bg-neutral-50 transition-colors"
+                                                          >
+                                                            Remove
+                                                          </button>
+                                                        </div>
+                                                      </>
+                                                    )}
+                                                  </div>
                                                 </div>
                                               )}
                                             </SortableProduct>
@@ -2542,8 +2660,35 @@ export default function DashboardPage() {
                 </div>
               </section>
             )}
-            {/* ─── Post-Live Nudge Card (one-time) ──────── */}
-            {currentProducts.length >= 2 && !nudgeDismissed && (
+            {/* ─── Phase 2 Nudge: Top 5 complete, introduce collections ──────── */}
+            {phase === 2 && !nudgeDismissed && (
+              <div className="relative rounded-lg border border-neutral-200 bg-neutral-50 px-5 py-4">
+                <button
+                  onClick={dismissNudge}
+                  className="absolute top-3 right-3 text-neutral-300 hover:text-neutral-500 transition-colors text-[16px] leading-none"
+                  aria-label="Dismiss"
+                >
+                  ×
+                </button>
+                <p className="text-[15px] font-medium text-neutral-800 mb-1.5 pr-6">
+                  Your Top 5 is set. Now organize your products into collections.
+                </p>
+                <p className="text-[14px] text-neutral-500 leading-relaxed">
+                  The speaker on your desk. The protein powder in your cabinet. Group them however you want.
+                </p>
+                <button
+                  onClick={() => {
+                    setShowAddCollection(true);
+                    setAddCollectionError("");
+                  }}
+                  className="mt-3 text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
+                >
+                  + Add Collection
+                </button>
+              </div>
+            )}
+            {/* ─── Phase 3 Nudge: Keep adding products ──────── */}
+            {phase >= 3 && !nudgeDismissed && (
               <div className="relative rounded-lg border border-neutral-200 bg-neutral-50 px-5 py-4">
                 <button
                   onClick={dismissNudge}
@@ -2586,6 +2731,7 @@ export default function DashboardPage() {
           collections={collections}
           topPicks={topPicks}
           userId={user.id}
+          phase={phase}
           onSave={async () => {
             await Promise.all([fetchProducts(), fetchCollections(), fetchTopPicks()]);
           }}

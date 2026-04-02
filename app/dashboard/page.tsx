@@ -332,21 +332,19 @@ function ArchiveModal({
 }) {
   const [note, setNote] = useState("");
   const now = new Date();
-  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
   // Started using — defaults to product's acquired_at or created_at
   const startDate = product.acquired_at ? new Date(product.acquired_at) : new Date(product.created_at);
-  const [startMonth, setStartMonth] = useState(String(startDate.getUTCMonth() + 1));
-  const [startYear, setStartYear] = useState(String(startDate.getUTCFullYear()));
-  const [editingStart, setEditingStart] = useState(false);
+  const [startValue, setStartValue] = useState(
+    `${startDate.getUTCFullYear()}-${String(startDate.getUTCMonth() + 1).padStart(2, "0")}`
+  );
 
   // Stopped using — defaults to current month/year
-  const [stopMonth, setStopMonth] = useState(String(now.getMonth() + 1));
-  const [stopYear, setStopYear] = useState(String(now.getFullYear()));
-  const [editingStop, setEditingStop] = useState(false);
+  const [stopValue, setStopValue] = useState(
+    `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+  );
 
-  const yearOptions = Array.from({ length: now.getFullYear() - 2009 }, (_, i) => now.getFullYear() - i);
-  const dateSelectClass = "flex-1 rounded-md border border-gray-200 px-2 py-1.5 text-[13px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40 appearance-none";
+  const monthInputClass = "rounded-md border border-gray-200 px-2.5 py-1.5 text-[13px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-neutral-400";
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === "Escape") onCancel(); }
@@ -361,76 +359,57 @@ function ArchiveModal({
         className="relative z-10 w-full sm:max-w-md bg-white rounded-t-xl sm:rounded-xl p-5 space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex flex-col items-center gap-2">
+        {/* Photo + Name */}
+        <div className="flex items-center gap-3">
           {product.photo_url && (
-            <div className="h-20 w-20 rounded-lg bg-neutral-200 overflow-hidden">
-              <Image src={product.photo_url} alt="" width={80} height={80} className="h-full w-full object-cover" />
+            <div className="h-[72px] w-[72px] rounded-lg bg-neutral-200 overflow-hidden flex-shrink-0">
+              <Image src={product.photo_url} alt="" width={72} height={72} className="h-full w-full object-cover" />
             </div>
           )}
-          <p className="text-[15px] font-medium text-neutral-900">{product.name}</p>
-        </div>
-        <div>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            rows={3}
-            className="w-full rounded-md border border-gray-200 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40 resize-none"
-            placeholder="Any memories with this one? (optional)"
-            autoFocus
-          />
-          <p className="text-[12px] text-neutral-400 mt-1">
-            This is a personal note, not a review.
-          </p>
+          <p className="text-[17px] font-semibold text-neutral-900">{product.name}</p>
         </div>
 
-        {/* Started using */}
-        <div className="flex items-center justify-between">
-          <span className="text-[13px] font-medium text-neutral-600">Started using</span>
-          {editingStart ? (
-            <div className="flex items-center gap-1.5">
-              <select value={startMonth} onChange={(e) => setStartMonth(e.target.value)} className={dateSelectClass}>
-                {monthNames.map((m, i) => <option key={i + 1} value={String(i + 1)}>{m}</option>)}
-              </select>
-              <select value={startYear} onChange={(e) => setStartYear(e.target.value)} className={dateSelectClass}>
-                {yearOptions.map((y) => <option key={y} value={String(y)}>{y}</option>)}
-              </select>
-              <button type="button" onClick={() => setEditingStart(false)} className="text-[12px] text-neutral-500 hover:text-neutral-800 ml-1">Done</button>
-            </div>
-          ) : (
-            <p className="text-[13px] text-neutral-400">
-              {monthNames[Number(startMonth) - 1]} {startYear}
-              <button type="button" onClick={() => setEditingStart(true)} className="ml-2 text-[12px] text-[#C0392B] hover:opacity-70 transition-opacity">Change</button>
-            </p>
-          )}
+        {/* Memory note */}
+        <textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          rows={3}
+          className="w-full rounded-md border border-gray-200 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-neutral-400 resize-none"
+          placeholder="Any memories with this one? (optional)"
+          autoFocus
+        />
+
+        {/* Date fields */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] font-medium text-neutral-500">Started using</span>
+            <input
+              type="month"
+              value={startValue}
+              onChange={(e) => setStartValue(e.target.value)}
+              max={stopValue}
+              className={monthInputClass}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] font-medium text-neutral-500">Stopped using</span>
+            <input
+              type="month"
+              value={stopValue}
+              onChange={(e) => setStopValue(e.target.value)}
+              min={startValue}
+              className={monthInputClass}
+            />
+          </div>
         </div>
 
-        {/* Stopped using */}
-        <div className="flex items-center justify-between">
-          <span className="text-[13px] font-medium text-neutral-600">Stopped using</span>
-          {editingStop ? (
-            <div className="flex items-center gap-1.5">
-              <select value={stopMonth} onChange={(e) => setStopMonth(e.target.value)} className={dateSelectClass}>
-                {monthNames.map((m, i) => <option key={i + 1} value={String(i + 1)}>{m}</option>)}
-              </select>
-              <select value={stopYear} onChange={(e) => setStopYear(e.target.value)} className={dateSelectClass}>
-                {yearOptions.map((y) => <option key={y} value={String(y)}>{y}</option>)}
-              </select>
-              <button type="button" onClick={() => setEditingStop(false)} className="text-[12px] text-neutral-500 hover:text-neutral-800 ml-1">Done</button>
-            </div>
-          ) : (
-            <p className="text-[13px] text-neutral-400">
-              {monthNames[Number(stopMonth) - 1]} {stopYear}
-              <button type="button" onClick={() => setEditingStop(true)} className="ml-2 text-[12px] text-[#C0392B] hover:opacity-70 transition-opacity">Change</button>
-            </p>
-          )}
-        </div>
-
+        {/* Actions */}
         <div className="flex items-center gap-3 pt-1">
           <button
             onClick={() => onConfirm(
               note.trim() || null,
-              `${stopYear}-${stopMonth.padStart(2, "0")}-01T00:00:00Z`,
-              `${startYear}-${startMonth.padStart(2, "0")}-01T00:00:00Z`
+              `${stopValue}-01T00:00:00Z`,
+              `${startValue}-01T00:00:00Z`
             )}
             className="text-[14px] font-medium text-white px-5 py-2 rounded-md hover:opacity-90 bg-neutral-700"
           >

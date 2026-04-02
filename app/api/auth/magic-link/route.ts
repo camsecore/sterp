@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
-  const { email } = await request.json();
+  const { email, next } = await request.json();
 
   if (!email) {
     return NextResponse.json(
@@ -11,12 +11,16 @@ export async function POST(request: Request) {
     );
   }
 
+  const callbackUrl = next
+    ? `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/callback?next=${encodeURIComponent(next)}`
+    : `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/callback`;
+
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/callback`,
+      emailRedirectTo: callbackUrl,
     },
   });
 

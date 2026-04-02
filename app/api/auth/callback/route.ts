@@ -10,9 +10,36 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { error, data } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      // For new signups heading to onboarding, ensure the user row exists
+      // server-side so the client doesn't have to wait for it
+      if (next === "/onboarding/username" && data.user) {
+        const user = data.user;
+        const { data: existing } = await supabase
+          .from("users")
+          .select("id")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (!existing) {
+          const emailPrefix = (user.email?.split("@")[0] || "user")
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "")
+            .slice(0, 12);
+          const suffix = Math.random().toString(36).slice(2, 6);
+          const username = `${emailPrefix}_${suffix}`;
+          await supabase.from("users").insert({
+            id: user.id,
+            email: user.email!,
+            username,
+          });
+        }
+
+        return NextResponse.redirect(`${origin}/onboarding/username?new=1`);
+      }
+
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

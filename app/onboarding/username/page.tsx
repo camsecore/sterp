@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useUser } from "@/app/contexts/auth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import { Check, X, Loader2 } from "lucide-react";
@@ -22,13 +22,23 @@ type ValidationState =
   | { status: "available" }
   | { status: "taken" };
 
-export default function OnboardingUsernamePage() {
+export default function OnboardingUsernamePageWrapper() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#EEF2F7] flex items-center justify-center"><Loader2 className="w-5 h-5 animate-spin text-neutral-400" /></div>}>
+      <OnboardingUsernamePage />
+    </Suspense>
+  );
+}
+
+function OnboardingUsernamePage() {
   const { user, loading: authLoading } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isNewSignup = searchParams.get("new") === "1";
   const [username, setUsername] = useState("");
   const [validation, setValidation] = useState<ValidationState>({ status: "idle" });
   const [submitting, setSubmitting] = useState(false);
-  const [checkingProfile, setCheckingProfile] = useState(true);
+  const [checkingProfile, setCheckingProfile] = useState(!isNewSignup);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Redirect unauthenticated users to login
@@ -38,9 +48,10 @@ export default function OnboardingUsernamePage() {
     }
   }, [authLoading, user, router]);
 
-  // Check onboarding state and redirect accordingly
+  // Check onboarding state and redirect accordingly (skip for new signups —
+  // the callback already ensured the user row exists)
   useEffect(() => {
-    if (!user) return;
+    if (!user || isNewSignup) return;
     ensureUserRow(user).then(() => {
       const supabase = createClient();
       supabase
@@ -62,7 +73,7 @@ export default function OnboardingUsernamePage() {
           }
         });
     });
-  }, [user, router]);
+  }, [user, router, isNewSignup]);
 
   const checkAvailability = useCallback(async (value: string) => {
     try {

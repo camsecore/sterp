@@ -19,7 +19,7 @@ export default function SignupPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/api/auth/callback`,
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/api/auth/callback?next=/onboarding/username`,
       },
     });
     if (error) setError(error.message);
@@ -32,7 +32,7 @@ export default function SignupPage() {
     const res = await fetch("/api/auth/magic-link", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, next: "/onboarding/username" }),
     });
     const data = await res.json();
     if (!res.ok) { setError(data.error); setLoading(false); return; }

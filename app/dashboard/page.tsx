@@ -2233,7 +2233,7 @@ export default function DashboardPage() {
                                 <div className="relative flex-shrink-0">
                                   <button
                                     type="button"
-                                    onClick={() => setProductMenuOpen(productMenuOpen === tp.product_id ? null : tp.product_id)}
+                                    onClick={() => setProductMenuOpen(productMenuOpen === `tp-${tp.product_id}` ? null : `tp-${tp.product_id}`)}
                                     aria-label={`${tp.products?.name ?? "Product"} options`}
                                     className="p-1 hover:bg-neutral-100 rounded transition-colors"
                                   >
@@ -2243,7 +2243,7 @@ export default function DashboardPage() {
                                       <circle cx="8" cy="13" r="1.5" />
                                     </svg>
                                   </button>
-                                  {productMenuOpen === tp.product_id && (
+                                  {productMenuOpen === `tp-${tp.product_id}` && (
                                     <>
                                       <div className="fixed inset-0 z-10" onClick={() => setProductMenuOpen(null)} />
                                       <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-48">
@@ -2509,7 +2509,7 @@ export default function DashboardPage() {
                           return (
                             <SortableCollection key={c.id} id={c.id}>
                               {({ handle }) => (
-                                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden transition-all">
+                                <div className="bg-white rounded-lg border border-gray-200 transition-all">
                                   {/* ── Collection header row ── */}
                                   <div className="flex items-center gap-2 px-4 py-3">
                                     {handle}
@@ -2701,7 +2701,7 @@ export default function DashboardPage() {
                                                   <div className="relative flex-shrink-0">
                                                     <button
                                                       type="button"
-                                                      onClick={(e) => { e.stopPropagation(); setProductMenuOpen(productMenuOpen === p.id ? null : p.id); }}
+                                                      onClick={(e) => { e.stopPropagation(); setProductMenuOpen(productMenuOpen === `col-${p.id}` ? null : `col-${p.id}`); }}
                                                       aria-label={`${p.name} options`}
                                                       className="p-1 hover:bg-neutral-100 rounded transition-colors"
                                                     >
@@ -2711,7 +2711,7 @@ export default function DashboardPage() {
                                                         <circle cx="8" cy="13" r="1.5" />
                                                       </svg>
                                                     </button>
-                                                    {productMenuOpen === p.id && (
+                                                    {productMenuOpen === `col-${p.id}` && (
                                                       <>
                                                         <div className="fixed inset-0 z-10" onClick={() => setProductMenuOpen(null)} />
                                                         <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-40">

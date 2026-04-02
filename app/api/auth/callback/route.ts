@@ -1,5 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { createHash } from "crypto";
+
+async function getGravatarUrl(email: string): Promise<string | null> {
+  const hash = createHash("md5").update(email.trim().toLowerCase()).digest("hex");
+  const url = `https://gravatar.com/avatar/${hash}?s=200&d=404`;
+  try {
+    const res = await fetch(url, { method: "HEAD", redirect: "follow" });
+    return res.ok ? `https://gravatar.com/avatar/${hash}?s=200` : null;
+  } catch {
+    return null;
+  }
+}
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -30,10 +42,16 @@ export async function GET(request: Request) {
             .slice(0, 12);
           const suffix = Math.random().toString(36).slice(2, 6);
           const username = `${emailPrefix}_${suffix}`;
+
+          // Grab avatar: Google profile pic > Gravatar > null
+          const googlePic = user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
+          const avatar_url = googlePic || (user.email ? await getGravatarUrl(user.email) : null);
+
           await supabase.from("users").insert({
             id: user.id,
             email: user.email!,
             username,
+            ...(avatar_url && { avatar_url }),
           });
         }
 

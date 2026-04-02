@@ -319,6 +319,73 @@ function CropModal({ imageSrc, aspect, onDone, onCancel }: CropModalProps) {
   );
 }
 
+// ─── Custom Dropdown ────────────────────────────────────────────────
+
+function CustomDropdown({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const selectedLabel = options.find((o) => o.value === value)?.label ?? value;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5 text-[13px] text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-300 transition-colors hover:bg-gray-100"
+      >
+        {selectedLabel}
+        <svg
+          className={`w-3.5 h-3.5 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M4 6l4 4 4-4" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute z-30 mt-1 left-0 min-w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => { onChange(opt.value); setOpen(false); }}
+              className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors ${
+                opt.value === value
+                  ? "bg-gray-50 font-medium text-gray-900"
+                  : "text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Archive Modal ──────────────────────────────────────────────────
 
 function ArchiveModal({
@@ -333,9 +400,10 @@ function ArchiveModal({
   const [note, setNote] = useState("");
   const now = new Date();
 
-  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  const yearOptions = Array.from({ length: now.getFullYear() - 1999 }, (_, i) => now.getFullYear() - i);
-  const selectClass = "rounded-md border border-gray-200 px-2 py-1.5 text-[13px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-neutral-400";
+  const monthOptions = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+    .map((m, i) => ({ value: String(i + 1), label: m }));
+  const yearOptions = Array.from({ length: now.getFullYear() - 1999 }, (_, i) => now.getFullYear() - i)
+    .map((y) => ({ value: String(y), label: String(y) }));
 
   // Started using — defaults to product's acquired_at or created_at
   const startDate = product.acquired_at ? new Date(product.acquired_at) : new Date(product.created_at);
@@ -384,23 +452,15 @@ function ArchiveModal({
           <div className="flex items-center justify-between">
             <span className="text-[13px] font-medium text-neutral-500">Started using</span>
             <div className="flex items-center gap-1.5">
-              <select value={startMonth} onChange={(e) => setStartMonth(e.target.value)} className={selectClass}>
-                {monthNames.map((m, i) => <option key={i + 1} value={String(i + 1)}>{m}</option>)}
-              </select>
-              <select value={startYear} onChange={(e) => setStartYear(e.target.value)} className={selectClass}>
-                {yearOptions.map((y) => <option key={y} value={String(y)}>{y}</option>)}
-              </select>
+              <CustomDropdown value={startMonth} options={monthOptions} onChange={setStartMonth} />
+              <CustomDropdown value={startYear} options={yearOptions} onChange={setStartYear} />
             </div>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[13px] font-medium text-neutral-500">Stopped using</span>
             <div className="flex items-center gap-1.5">
-              <select value={stopMonth} onChange={(e) => setStopMonth(e.target.value)} className={selectClass}>
-                {monthNames.map((m, i) => <option key={i + 1} value={String(i + 1)}>{m}</option>)}
-              </select>
-              <select value={stopYear} onChange={(e) => setStopYear(e.target.value)} className={selectClass}>
-                {yearOptions.map((y) => <option key={y} value={String(y)}>{y}</option>)}
-              </select>
+              <CustomDropdown value={stopMonth} options={monthOptions} onChange={setStopMonth} />
+              <CustomDropdown value={stopYear} options={yearOptions} onChange={setStopYear} />
             </div>
           </div>
         </div>

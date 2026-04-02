@@ -962,26 +962,22 @@ function ProductModal({
             <div>
               <label className="block text-[13px] text-neutral-400 mb-1">When did you get this?</label>
               <div className="flex items-center gap-2">
-                <select
+                <CustomDropdown
                   value={acquiredMonth}
-                  onChange={(e) => setAcquiredMonth(e.target.value)}
-                  className={`${inputClass} flex-1 appearance-none`}
-                >
-                  <option value="">Month</option>
-                  {["January","February","March","April","May","June","July","August","September","October","November","December"].map((m, i) => (
-                    <option key={i + 1} value={String(i + 1)}>{m}</option>
-                  ))}
-                </select>
-                <select
+                  options={[
+                    { value: "", label: "Month" },
+                    ...["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => ({ value: String(i + 1), label: m })),
+                  ]}
+                  onChange={setAcquiredMonth}
+                />
+                <CustomDropdown
                   value={acquiredYear}
-                  onChange={(e) => setAcquiredYear(e.target.value)}
-                  className={`${inputClass} flex-1 appearance-none`}
-                >
-                  <option value="">Year</option>
-                  {Array.from({ length: new Date().getFullYear() - 2009 }, (_, i) => new Date().getFullYear() - i).map((y) => (
-                    <option key={y} value={String(y)}>{y}</option>
-                  ))}
-                </select>
+                  options={[
+                    { value: "", label: "Year" },
+                    ...Array.from({ length: new Date().getFullYear() - 2009 }, (_, i) => new Date().getFullYear() - i).map((y) => ({ value: String(y), label: String(y) })),
+                  ]}
+                  onChange={setAcquiredYear}
+                />
                 {(acquiredMonth || acquiredYear) && (
                   <button
                     type="button"
@@ -1039,29 +1035,21 @@ function ProductModal({
                 </button>
               </div>
             ) : (
-              <select
+              <CustomDropdown
                 value={collectionId}
-                onChange={(e) => {
-                  if (e.target.value === "__create__") {
+                options={[
+                  { value: "", label: "Select a collection" },
+                  ...collections.map((col) => ({ value: col.id, label: col.name })),
+                  { value: "__create__", label: "＋ Create new collection" },
+                ]}
+                onChange={(v) => {
+                  if (v === "__create__") {
                     setCreatingCollection(true);
                   } else {
-                    setCollectionId(e.target.value);
+                    setCollectionId(v);
                   }
                 }}
-                className={`${inputClass} appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%239ca3af%22%20d%3D%22M3%204.5L6%208l3-3.5H3z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_0.75rem_center]`}
-              >
-                <option value="" disabled>
-                  Select a collection
-                </option>
-                {collections.map((col) => (
-                  <option key={col.id} value={col.id}>
-                    {col.name}
-                  </option>
-                ))}
-                <option value="__create__">
-                  ＋ Create new collection
-                </option>
-              </select>
+              />
             ))}
             {newCollectionError && (
               <p className="text-[13px] text-[#C0392B] mt-1">{newCollectionError}</p>
@@ -2211,16 +2199,14 @@ export default function DashboardPage() {
                       placeholder="Search products..."
                       className="flex-1 rounded-md border border-gray-200 px-3 py-2 text-[14px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40"
                     />
-                    <select
+                    <CustomDropdown
                       value={topPickFilter}
-                      onChange={(e) => setTopPickFilter(e.target.value)}
-                      className="rounded-md border border-gray-200 px-2 py-2 text-[14px] text-neutral-600 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40"
-                    >
-                      <option value="">All collections</option>
-                      {collections.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
+                      options={[
+                        { value: "", label: "All collections" },
+                        ...collections.map((c) => ({ value: c.id, label: c.name })),
+                      ]}
+                      onChange={setTopPickFilter}
+                    />
                   </div>
                   <div className="max-h-48 overflow-y-auto space-y-1">
                     {(() => {

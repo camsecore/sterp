@@ -2,15 +2,15 @@ import { getAuthenticatedUser } from "@/lib/auth-guard";
 import { NextResponse } from "next/server";
 
 /**
- * GET /api/top-picks
- * Fetch the authenticated user's top picks with product data.
+ * GET /api/obsessions
+ * Fetch the authenticated user's obsessions with product data.
  */
 export async function GET() {
   const { user, supabase, error } = await getAuthenticatedUser();
   if (error) return error;
 
   const { data, error: dbError } = await supabase
-    .from("top_picks")
+    .from("obsessions")
     .select("id, product_id, sort_order, products(id, name, photo_url, one_liner, affiliate_url)")
     .eq("user_id", user!.id)
     .order("sort_order", { ascending: true });
@@ -23,8 +23,8 @@ export async function GET() {
 }
 
 /**
- * POST /api/top-picks
- * Add a product to top picks.
+ * POST /api/obsessions
+ * Add a product to obsessions.
  * Body: { product_id: string }
  */
 export async function POST(request: Request) {
@@ -39,12 +39,12 @@ export async function POST(request: Request) {
 
   // Check the 5-item cap
   const { count } = await supabase
-    .from("top_picks")
+    .from("obsessions")
     .select("id", { count: "exact", head: true })
     .eq("user_id", user!.id);
 
   if ((count ?? 0) >= 5) {
-    return NextResponse.json({ error: "Maximum 5 top picks allowed. Remove one first." }, { status: 400 });
+    return NextResponse.json({ error: "Maximum 5 obsessions allowed. Remove one first." }, { status: 400 });
   }
 
   // Verify the product belongs to this user and is current
@@ -60,20 +60,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Product must be active (not archived or draft)" }, { status: 404 });
   }
 
-  // Check if already in top picks
+  // Check if already in obsessions
   const { data: existing } = await supabase
-    .from("top_picks")
+    .from("obsessions")
     .select("id")
     .eq("user_id", user!.id)
     .eq("product_id", product_id)
     .single();
 
   if (existing) {
-    return NextResponse.json({ error: "Product is already in top picks" }, { status: 400 });
+    return NextResponse.json({ error: "Product is already in obsessions" }, { status: 400 });
   }
 
   const { data, error: dbError } = await supabase
-    .from("top_picks")
+    .from("obsessions")
     .insert({
       user_id: user!.id,
       product_id,

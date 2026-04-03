@@ -52,7 +52,7 @@ interface Collection {
   sort_order: number;
 }
 
-interface TopPick {
+interface Obsession {
   id: string;
   product_id: string;
   sort_order: number;
@@ -581,7 +581,7 @@ interface ProductModalProps {
   product?: Product;
   defaultCollectionId?: string;
   collections: Collection[];
-  topPicks: TopPick[];
+  obsessions: Obsession[];
   userId: string;
   phase?: number;
   onSave: () => Promise<void>;
@@ -596,7 +596,7 @@ function ProductModal({
   product,
   defaultCollectionId,
   collections,
-  topPicks,
+  obsessions,
   userId,
   phase = 3,
   onSave,
@@ -605,11 +605,11 @@ function ProductModal({
   onArchive,
   onDelete,
 }: ProductModalProps) {
-  const topPickEntry = product ? topPicks.find((tp) => tp.product_id === product.id) : undefined;
-  const topPickRank = topPickEntry ? topPicks.sort((a, b) => a.sort_order - b.sort_order).indexOf(topPickEntry) + 1 : 0;
-  const topPicksFull = topPicks.length >= 5;
+  const obsessionEntry = product ? obsessions.find((tp) => tp.product_id === product.id) : undefined;
+  const obsessionRank = obsessionEntry ? obsessions.sort((a, b) => a.sort_order - b.sort_order).indexOf(obsessionEntry) + 1 : 0;
+  const obsessionsFull = obsessions.length >= 5;
   const [showReplacePicker, setShowReplacePicker] = useState(false);
-  const [topPickPending, setTopPickPending] = useState(false);
+  const [obsessionPending, setObsessionPending] = useState(false);
   const [name, setName] = useState(product?.name || "");
   const [oneLiner, setOneLiner] = useState(product?.one_liner || "");
   const [originalUrl, setOriginalUrl] = useState(product?.original_url || "");
@@ -1100,27 +1100,27 @@ function ProductModal({
               <p className="text-[13px] text-[#C0392B] mt-1">{errors.collection}</p>
             )}
 
-            {/* Top Pick — inline with collection row */}
+            {/* Obsession — inline with collection row */}
             {mode === "edit" && product && product.status === "current" && !creatingCollection && (
               <div className="mt-2">
-                {topPickEntry ? (
+                {obsessionEntry ? (
                   <div className="flex items-center justify-between rounded-md px-2.5 py-1.5 bg-[#C0392B]/[0.07]">
                     <div className="flex items-center gap-1.5">
                       <Star size={13} className="text-[#C0392B]/70" fill="currentColor" />
-                      <span className="text-[12px] font-medium text-[#C0392B]/80">Top Pick #{topPickRank}</span>
+                      <span className="text-[12px] font-medium text-[#C0392B]/80">Obsession #{obsessionRank}</span>
                     </div>
                     <button
                       type="button"
-                      disabled={topPickPending}
+                      disabled={obsessionPending}
                       onClick={async () => {
-                        setTopPickPending(true);
-                        await fetch(`/api/top-picks/${product.id}`, { method: "DELETE" });
+                        setObsessionPending(true);
+                        await fetch(`/api/obsessions/${product.id}`, { method: "DELETE" });
                         await onSave();
-                        setTopPickPending(false);
+                        setObsessionPending(false);
                       }}
                       className="text-[11px] text-neutral-400 hover:text-neutral-600 transition-colors"
                     >
-                      {topPickPending ? "Removing..." : "Remove"}
+                      {obsessionPending ? "Removing..." : "Remove"}
                     </button>
                   </div>
                 ) : !showReplacePicker && (
@@ -1128,24 +1128,24 @@ function ProductModal({
                     <Star size={13} className="text-neutral-300" />
                     <button
                       type="button"
-                      disabled={topPickPending}
+                      disabled={obsessionPending}
                       onClick={async () => {
-                        if (topPicksFull) {
+                        if (obsessionsFull) {
                           setShowReplacePicker(true);
                         } else {
-                          setTopPickPending(true);
-                          await fetch("/api/top-picks", {
+                          setObsessionPending(true);
+                          await fetch("/api/obsessions", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ product_id: product.id }),
                           });
                           await onSave();
-                          setTopPickPending(false);
+                          setObsessionPending(false);
                         }
                       }}
                       className="text-[12px] text-[#C0392B] hover:opacity-70 transition-opacity"
                     >
-                      {topPickPending ? "Adding..." : "Add to Top Picks"}
+                      {obsessionPending ? "Adding..." : "Add to Obsessions"}
                     </button>
                   </div>
                 )}
@@ -1154,26 +1154,26 @@ function ProductModal({
           </div>
 
           {/* Replace picker — separate row when active */}
-          {mode === "edit" && product && showReplacePicker && !topPickEntry && (
+          {mode === "edit" && product && showReplacePicker && !obsessionEntry && (
             <div className="space-y-2 rounded-md border border-gray-200 px-3 py-2.5">
-              <p className="text-[13px] text-neutral-600">Replace which Top Pick?</p>
-              {topPicks
+              <p className="text-[13px] text-neutral-600">Replace which Obsession?</p>
+              {obsessions
                 .sort((a, b) => a.sort_order - b.sort_order)
                 .map((tp, i) => (
                   <button
                     key={tp.id}
                     type="button"
-                    disabled={topPickPending}
+                    disabled={obsessionPending}
                     onClick={async () => {
-                      setTopPickPending(true);
-                      await fetch(`/api/top-picks/${tp.product_id}`, { method: "DELETE" });
-                      await fetch("/api/top-picks", {
+                      setObsessionPending(true);
+                      await fetch(`/api/obsessions/${tp.product_id}`, { method: "DELETE" });
+                      await fetch("/api/obsessions", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ product_id: product.id }),
                       });
                       await onSave();
-                      setTopPickPending(false);
+                      setObsessionPending(false);
                       setShowReplacePicker(false);
                     }}
                     className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded hover:bg-neutral-50 transition-colors"
@@ -1271,7 +1271,7 @@ function DragHandle({ attributes, listeners }: { attributes: any; listeners: any
   );
 }
 
-function SortableTopPick({ id, children }: { id: string; children: (props: { handle: React.ReactNode; isDragging: boolean }) => React.ReactNode }) {
+function SortableObsession({ id, children }: { id: string; children: (props: { handle: React.ReactNode; isDragging: boolean }) => React.ReactNode }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = { transform: CSS.Transform.toString(transform), transition };
   return (
@@ -1309,7 +1309,7 @@ export default function DashboardPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
-  const [topPicks, setTopPicks] = useState<TopPick[]>([]);
+  const [obsessions, setObsessions] = useState<Obsession[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -1385,9 +1385,9 @@ export default function DashboardPage() {
     if (res.ok) setCollections(await res.json());
   }, []);
 
-  const fetchTopPicks = useCallback(async () => {
-    const res = await fetch("/api/top-picks");
-    if (res.ok) setTopPicks(await res.json());
+  const fetchObsessions = useCallback(async () => {
+    const res = await fetch("/api/obsessions");
+    if (res.ok) setObsessions(await res.json());
   }, []);
 
   const fetchProfile = useCallback(async () => {
@@ -1422,9 +1422,9 @@ export default function DashboardPage() {
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    await Promise.all([fetchProducts(), fetchCollections(), fetchTopPicks(), fetchProfile()]);
+    await Promise.all([fetchProducts(), fetchCollections(), fetchObsessions(), fetchProfile()]);
     setLoading(false);
-  }, [fetchProducts, fetchCollections, fetchTopPicks, fetchProfile]);
+  }, [fetchProducts, fetchCollections, fetchObsessions, fetchProfile]);
 
   // Auth redirect
   useEffect(() => {
@@ -1557,7 +1557,7 @@ export default function DashboardPage() {
       body: JSON.stringify({ archive_note: note, archived_at: archivedAt, acquired_at: acquiredAt }),
     });
     if (res.ok) {
-      await Promise.all([fetchProducts(), fetchTopPicks()]);
+      await Promise.all([fetchProducts(), fetchObsessions()]);
     }
     setArchiveTarget(null);
   }
@@ -1576,51 +1576,51 @@ export default function DashboardPage() {
     } else {
       const res = await fetch(`/api/products/${deleteTarget.id}`, { method: "DELETE" });
       if (res.ok) {
-        await Promise.all([fetchProducts(), fetchTopPicks()]);
+        await Promise.all([fetchProducts(), fetchObsessions()]);
       }
     }
     setDeleteTarget(null);
   }
 
-  // ─── Top Picks actions ─────────────────────────────────────────
+  // ─── Obsessions actions ─────────────────────────────────────────
 
-  const [showAddTopPick, setShowAddTopPick] = useState(false);
-  const [topPickSearch, setTopPickSearch] = useState("");
-  const [topPickFilter, setTopPickFilter] = useState("");
+  const [showAddObsession, setShowAddObsession] = useState(false);
+  const [obsessionSearch, setObsessionSearch] = useState("");
+  const [obsessionFilter, setObsessionFilter] = useState("");
 
-  async function handleRemoveTopPick(productId: string) {
-    const res = await fetch(`/api/top-picks/${productId}`, { method: "DELETE" });
-    if (res.ok) await fetchTopPicks();
+  async function handleRemoveObsession(productId: string) {
+    const res = await fetch(`/api/obsessions/${productId}`, { method: "DELETE" });
+    if (res.ok) await fetchObsessions();
   }
 
-  async function handleAddTopPick(productId: string) {
-    const res = await fetch("/api/top-picks", {
+  async function handleAddObsession(productId: string) {
+    const res = await fetch("/api/obsessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ product_id: productId }),
     });
     if (res.ok) {
-      await fetchTopPicks();
-      setShowAddTopPick(false);
-      setTopPickSearch("");
-      setTopPickFilter("");
+      await fetchObsessions();
+      setShowAddObsession(false);
+      setObsessionSearch("");
+      setObsessionFilter("");
     }
   }
 
-  async function handleReorderTopPicks(fromIdx: number, toIdx: number) {
-    const sorted = [...topPicks].sort((a, b) => a.sort_order - b.sort_order);
+  async function handleReorderObsessions(fromIdx: number, toIdx: number) {
+    const sorted = [...obsessions].sort((a, b) => a.sort_order - b.sort_order);
     const [moved] = sorted.splice(fromIdx, 1);
     sorted.splice(toIdx, 0, moved);
     // Optimistic update
     const reordered = sorted.map((tp, i) => ({ ...tp, sort_order: i + 1 }));
-    setTopPicks(reordered);
+    setObsessions(reordered);
     // Persist
-    const res = await fetch("/api/top-picks/reorder", {
+    const res = await fetch("/api/obsessions/reorder", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ order: reordered.map((tp) => tp.product_id) }),
     });
-    if (!res.ok) await fetchTopPicks();
+    if (!res.ok) await fetchObsessions();
   }
 
   // ─── Collection + Product drag state ────────────────────────────
@@ -1681,14 +1681,14 @@ export default function DashboardPage() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  function handleTopPickDragEnd(event: DragEndEvent) {
+  function handleObsessionDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const sorted = [...topPicks].sort((a, b) => a.sort_order - b.sort_order);
+    const sorted = [...obsessions].sort((a, b) => a.sort_order - b.sort_order);
     const oldIndex = sorted.findIndex((tp) => tp.product_id === active.id);
     const newIndex = sorted.findIndex((tp) => tp.product_id === over.id);
     if (oldIndex !== -1 && newIndex !== -1) {
-      handleReorderTopPicks(oldIndex, newIndex);
+      handleReorderObsessions(oldIndex, newIndex);
     }
   }
 
@@ -2025,7 +2025,7 @@ export default function DashboardPage() {
                 return (
                   <div className="relative rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-3">
                     <p className="text-[14px] text-emerald-800">
-                      {productCount} down, {5 - productCount} to go. Fill out your Top 5.
+                      {productCount} down, {5 - productCount} to go. Fill out your Obsessions.
                     </p>
                   </div>
                 );
@@ -2034,7 +2034,7 @@ export default function DashboardPage() {
                 return (
                   <div className="relative rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-3">
                     <p className="text-[14px] text-emerald-800">
-                      Your Top 5 is set. Keep adding products — you&apos;ll be able to organize them into collections.
+                      Your Obsessions are set. Keep adding products — you&apos;ll be able to organize them into collections.
                     </p>
                   </div>
                 );
@@ -2074,10 +2074,10 @@ export default function DashboardPage() {
             {products.length === 0 && (
               <div className="text-center pt-10 pb-4">
                 <h2 className="text-[22px] font-semibold text-neutral-800 mb-2">
-                  What are your top products?
+                  What are you obsessed with right now?
                 </h2>
                 <p className="text-[15px] text-neutral-400 mb-6">
-                  The stuff you&apos;d recommend to anyone. Add 2 to make your page live.
+                  The stuff you can&apos;t stop talking about. Add 2 to make your page live.
                 </p>
                 <button
                   onClick={() => setProductModal({ mode: "add" })}
@@ -2132,7 +2132,7 @@ export default function DashboardPage() {
               </form>
             )}
 
-            {/* ─── Phase 1: Flat product list (building Top 5) ── */}
+            {/* ─── Phase 1: Flat product list (building Obsessions) ── */}
             {products.length > 0 && phase === 1 && (
               <section>
                 <div className="space-y-2">
@@ -2200,70 +2200,70 @@ export default function DashboardPage() {
               </section>
             )}
 
-            {/* ─── Section 3: Top Picks (Phase 2+) ──────────────────────── */}
+            {/* ─── Section 3: Obsessions (Phase 2+) ──────────────────────── */}
             {products.length > 0 && phase >= 2 && <section>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <h2 className="text-[17px] font-medium text-neutral-900">
-                    Top Picks
+                    Obsessions
                   </h2>
                   <span className="text-[13px] text-neutral-400 font-medium">
-                    {topPicks.length}/5
+                    {obsessions.length}/5
                   </span>
                 </div>
                 {phase >= 3 && (
                   <button
                     onClick={() => {
-                      if (topPicks.length < 5) {
-                        setShowAddTopPick(!showAddTopPick);
-                        setTopPickSearch("");
-                        setTopPickFilter("");
+                      if (obsessions.length < 5) {
+                        setShowAddObsession(!showAddObsession);
+                        setObsessionSearch("");
+                        setObsessionFilter("");
                       }
                     }}
-                    disabled={topPicks.length >= 5}
+                    disabled={obsessions.length >= 5}
                     className="text-[13px] font-medium transition-opacity disabled:opacity-30 disabled:cursor-not-allowed"
                     style={{ color: "#C0392B" }}
-                    title={topPicks.length >= 5 ? "Maximum 5 top picks" : undefined}
+                    title={obsessions.length >= 5 ? "Maximum 5 obsessions" : undefined}
                   >
-                    {showAddTopPick ? "Cancel" : "+ Add to Top"}
+                    {showAddObsession ? "Cancel" : "+ Add to Obsessions"}
                   </button>
                 )}
               </div>
 
-              {/* Add to Top dropdown */}
-              {showAddTopPick && (
+              {/* Add to Obsessions dropdown */}
+              {showAddObsession && (
                 <div className="bg-white rounded-lg border border-gray-200 p-3 mb-3">
                   <div className="flex gap-2 mb-2">
                     <input
                       type="text"
-                      value={topPickSearch}
-                      onChange={(e) => setTopPickSearch(e.target.value)}
+                      value={obsessionSearch}
+                      onChange={(e) => setObsessionSearch(e.target.value)}
                       placeholder="Search products..."
                       className="flex-1 rounded-md border border-gray-200 px-3 py-2 text-[14px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40"
                     />
                     <CustomDropdown
-                      value={topPickFilter}
+                      value={obsessionFilter}
                       options={[
                         { value: "", label: "All collections" },
                         ...collections.map((c) => ({ value: c.id, label: c.name })),
                       ]}
-                      onChange={setTopPickFilter}
+                      onChange={setObsessionFilter}
                     />
                   </div>
                   <div className="max-h-48 overflow-y-auto space-y-1">
                     {(() => {
-                      const topPickProductIds = new Set(topPicks.map((tp) => tp.product_id));
+                      const obsessionProductIds = new Set(obsessions.map((tp) => tp.product_id));
                       const eligible = currentProducts
-                        .filter((p) => !topPickProductIds.has(p.id))
-                        .filter((p) => !topPickSearch || p.name.toLowerCase().includes(topPickSearch.toLowerCase()))
-                        .filter((p) => !topPickFilter || p.collection_id === topPickFilter);
+                        .filter((p) => !obsessionProductIds.has(p.id))
+                        .filter((p) => !obsessionSearch || p.name.toLowerCase().includes(obsessionSearch.toLowerCase()))
+                        .filter((p) => !obsessionFilter || p.collection_id === obsessionFilter);
                       return eligible.length === 0 ? (
                         <p className="text-[13px] text-neutral-400 py-2 text-center">No matching products</p>
                       ) : (
                         eligible.map((p) => (
                           <button
                             key={p.id}
-                            onClick={() => handleAddTopPick(p.id)}
+                            onClick={() => handleAddObsession(p.id)}
                             className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-neutral-50 transition-colors text-left"
                           >
                             <Thumbnail src={p.photo_url} alt={p.name} />
@@ -2277,21 +2277,21 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {topPicks.length === 0 ? (
+              {obsessions.length === 0 ? (
                 <div className="bg-white rounded-lg border border-gray-200 px-4 py-6 text-center">
                   <p className="text-[15px] text-neutral-500">
-                    Add products to your Top picks — these are the first thing visitors see.
+                    Add products to your Obsessions — these are the first thing visitors see.
                   </p>
                 </div>
               ) : (
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleTopPickDragEnd}>
-                  <SortableContext items={[...topPicks].sort((a, b) => a.sort_order - b.sort_order).slice(0, 5).map((tp) => tp.product_id)} strategy={verticalListSortingStrategy}>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleObsessionDragEnd}>
+                  <SortableContext items={[...obsessions].sort((a, b) => a.sort_order - b.sort_order).slice(0, 5).map((tp) => tp.product_id)} strategy={verticalListSortingStrategy}>
                     <div className="space-y-2">
-                      {[...topPicks]
+                      {[...obsessions]
                         .sort((a, b) => a.sort_order - b.sort_order)
                         .slice(0, 5)
                         .map((tp, i) => (
-                          <SortableTopPick key={tp.product_id} id={tp.product_id}>
+                          <SortableObsession key={tp.product_id} id={tp.product_id}>
                             {({ handle }) => {
                               const tpProduct = products.find((p) => p.id === tp.product_id);
                               return (
@@ -2344,10 +2344,10 @@ export default function DashboardPage() {
                                           Edit
                                         </button>
                                         <button
-                                          onClick={() => { setProductMenuOpen(null); handleRemoveTopPick(tp.product_id); }}
+                                          onClick={() => { setProductMenuOpen(null); handleRemoveObsession(tp.product_id); }}
                                           className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
                                         >
-                                          Remove from Top Picks
+                                          Remove from Obsessions
                                         </button>
                                       </div>
                                     </>
@@ -2356,7 +2356,7 @@ export default function DashboardPage() {
                               </div>
                               );
                             }}
-                          </SortableTopPick>
+                          </SortableObsession>
                         ))}
                     </div>
                   </SortableContext>
@@ -2364,17 +2364,17 @@ export default function DashboardPage() {
               )}
             </section>}
 
-            {/* ─── Phase 3: Flat list for non-top-pick products (no collections section yet) ── */}
+            {/* ─── Phase 3: Flat list for non-obsession products (no collections section yet) ── */}
             {products.length > 0 && phase === 3 && (() => {
-              const topPickIds = new Set(topPicks.map((tp) => tp.product_id));
-              const nonTopProducts = products
-                .filter((p) => (p.status === "current" || p.status === "draft") && !topPickIds.has(p.id))
+              const obsessionIds = new Set(obsessions.map((tp) => tp.product_id));
+              const nonObsessionProducts = products
+                .filter((p) => (p.status === "current" || p.status === "draft") && !obsessionIds.has(p.id))
                 .sort((a, b) => a.sort_order - b.sort_order);
-              if (nonTopProducts.length === 0) return null;
+              if (nonObsessionProducts.length === 0) return null;
               return (
                 <section>
                   <div className="space-y-2">
-                    {nonTopProducts.map((p) => (
+                    {nonObsessionProducts.map((p) => (
                       <div
                         key={p.id}
                         className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-gray-200"
@@ -2943,11 +2943,11 @@ export default function DashboardPage() {
           product={productModal.product}
           defaultCollectionId={productModal.collectionId}
           collections={collections}
-          topPicks={topPicks}
+          obsessions={obsessions}
           userId={user.id}
           phase={phase}
           onSave={async () => {
-            await Promise.all([fetchProducts(), fetchCollections(), fetchTopPicks()]);
+            await Promise.all([fetchProducts(), fetchCollections(), fetchObsessions()]);
           }}
           onClose={() => setProductModal(null)}
           onCollectionCreated={fetchCollections}

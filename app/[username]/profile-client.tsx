@@ -39,7 +39,7 @@ interface Product {
   acquired_at: string | null;
 }
 
-interface TopPick {
+interface Obsession {
   id: string;
   product_id: string;
   sort_order: number;
@@ -207,19 +207,19 @@ export default function ProfileClient({
   user,
   collections,
   products,
-  topPicks,
+  obsessions,
 }: {
   user: User;
   collections: Collection[];
   products: Product[];
-  topPicks: TopPick[];
+  obsessions: Obsession[];
 }) {
   // Build lookup maps
   const productMap = new Map(products.map((p) => [p.id, p]));
   const collectionMap = new Map(collections.map((c) => [c.id, c]));
 
-  // Derive favorites from top_picks
-  const favorites = topPicks
+  // Derive favorites from obsessions
+  const favorites = obsessions
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((tp) => productMap.get(tp.product_id))
     .filter((p): p is Product => !!p && p.status === "current");
@@ -291,22 +291,22 @@ export default function ProfileClient({
   ];
 
   // Named collections only (exclude default "Products" bucket)
-  const topPickProductIds = new Set(favorites.map((f) => f.id));
+  const obsessionProductIds = new Set(favorites.map((f) => f.id));
   const namedCollections = sortedCollections.filter((c) => c.name !== "Products");
 
   // Show "Everything" tab when there are products beyond the Top picks
-  const hasNonTopProducts = currentProducts.some((p) => !topPickProductIds.has(p.id));
+  const hasNonObsessionProducts = currentProducts.some((p) => !obsessionProductIds.has(p.id));
 
   const tabs: { tab: Tab; label: string; activeClass: string; activeStyle?: React.CSSProperties }[] = [
     ...(favorites.length > 0
       ? [{
           tab: { kind: "favorites" as const },
-          label: `Top ${favorites.length}`,
+          label: "Obsessions",
           activeClass: "",
           activeStyle: { backgroundColor: "#FDECEA", color: "#C0392B" },
         }]
       : []),
-    ...(hasNonTopProducts || currentProducts.length > favorites.length
+    ...(hasNonObsessionProducts || currentProducts.length > favorites.length
       ? [{
           tab: { kind: "everything" as const },
           label: "Everything",

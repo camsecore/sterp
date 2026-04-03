@@ -45,13 +45,13 @@ export async function PATCH(
         .single();
       if (existing?.status === "draft") {
         updates.status = "current";
-        // Auto-populate top picks (same logic as POST /api/products)
+        // Auto-populate obsessions (same logic as POST /api/products)
         const { count } = await supabase
-          .from("top_picks")
+          .from("obsessions")
           .select("id", { count: "exact", head: true })
           .eq("user_id", user!.id);
         if ((count ?? 0) < 5) {
-          await supabase.from("top_picks").insert({
+          await supabase.from("obsessions").insert({
             user_id: user!.id,
             product_id: id,
             sort_order: (count ?? 0) + 1,
@@ -126,9 +126,9 @@ export async function DELETE(
   const { user, supabase, error } = await getAuthenticatedUser();
   if (error) return error;
 
-  // Remove from top picks if present
+  // Remove from obsessions if present
   await supabase
-    .from("top_picks")
+    .from("obsessions")
     .delete()
     .eq("product_id", id)
     .eq("user_id", user!.id);

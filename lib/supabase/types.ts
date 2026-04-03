@@ -148,7 +148,7 @@ export type Database = {
           },
         ]
       }
-      top_picks: {
+      obsessions: {
         Row: {
           created_at: string
           id: string
@@ -172,14 +172,14 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "top_picks_product_id_fkey"
+            foreignKeyName: "obsessions_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "top_picks_user_id_fkey"
+            foreignKeyName: "obsessions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"

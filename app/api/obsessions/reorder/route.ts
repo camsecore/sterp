@@ -2,8 +2,8 @@ import { getAuthenticatedUser } from "@/lib/auth-guard";
 import { NextResponse } from "next/server";
 
 /**
- * PUT /api/top-picks/reorder
- * Reorder top picks.
+ * PUT /api/obsessions/reorder
+ * Reorder obsessions.
  * Body: { order: string[] } — array of product IDs in desired order
  */
 export async function PUT(request: Request) {
@@ -18,7 +18,7 @@ export async function PUT(request: Request) {
 
   const updates = order.map((productId: string, index: number) =>
     supabase
-      .from("top_picks")
+      .from("obsessions")
       .update({ sort_order: index })
       .eq("product_id", productId)
       .eq("user_id", user!.id)

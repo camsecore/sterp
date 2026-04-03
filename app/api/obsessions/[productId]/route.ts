@@ -2,8 +2,8 @@ import { getAuthenticatedUser } from "@/lib/auth-guard";
 import { NextResponse } from "next/server";
 
 /**
- * DELETE /api/top-picks/[productId]
- * Remove a product from top picks.
+ * DELETE /api/obsessions/[productId]
+ * Remove a product from obsessions.
  */
 export async function DELETE(
   _request: Request,
@@ -14,7 +14,7 @@ export async function DELETE(
   if (error) return error;
 
   const { error: dbError } = await supabase
-    .from("top_picks")
+    .from("obsessions")
     .delete()
     .eq("product_id", productId)
     .eq("user_id", user!.id);

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 /**
  * GET /api/users/[username]
- * Public endpoint — fetches a user's full page data (profile, collections, products, top picks).
+ * Public endpoint — fetches a user's full page data (profile, collections, products, obsessions).
  */
 export async function GET(
   _request: Request,
@@ -23,8 +23,8 @@ export async function GET(
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  // Fetch collections, products, and top picks in parallel
-  const [collectionsRes, productsRes, topPicksRes] = await Promise.all([
+  // Fetch collections, products, and obsessions in parallel
+  const [collectionsRes, productsRes, obsessionsRes] = await Promise.all([
     supabase
       .from("collections")
       .select("id, name, sort_order")
@@ -38,7 +38,7 @@ export async function GET(
       .order("sort_order", { ascending: true }),
 
     supabase
-      .from("top_picks")
+      .from("obsessions")
       .select("id, product_id, sort_order")
       .eq("user_id", user.id)
       .order("sort_order", { ascending: true }),
@@ -54,6 +54,6 @@ export async function GET(
     user,
     collections: collectionsRes.data ?? [],
     products: productsRes.data ?? [],
-    top_picks: topPicksRes.data ?? [],
+    obsessions: obsessionsRes.data ?? [],
   });
 }

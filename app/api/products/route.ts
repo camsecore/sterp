@@ -99,15 +99,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 
-  // Auto-populate top picks if user has fewer than 5 (only for current products)
+  // Auto-populate obsessions if user has fewer than 5 (only for current products)
   if (data.status === "current") {
     const { count } = await supabase
-      .from("top_picks")
+      .from("obsessions")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user!.id);
 
     if ((count ?? 0) < 5) {
-      await supabase.from("top_picks").insert({
+      await supabase.from("obsessions").insert({
         user_id: user!.id,
         product_id: data.id,
         sort_order: (count ?? 0) + 1,

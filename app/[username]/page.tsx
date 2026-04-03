@@ -32,17 +32,17 @@ export async function generateMetadata({
     return { title: "Not Found — Sterp" };
   }
 
-  // Get the user's #1 top pick photo for the OG image
-  const { data: topPick } = await supabase
-    .from("top_picks")
+  // Get the user's #1 obsession photo for the OG image
+  const { data: obsession } = await supabase
+    .from("obsessions")
     .select("products(photo_url)")
     .eq("user_id", user.id)
     .order("sort_order")
     .limit(1)
     .single();
 
-  const topPickPhoto = (topPick?.products as unknown as { photo_url: string } | null)?.photo_url;
-  const ogImage = topPickPhoto || user.avatar_url;
+  const obsessionPhoto = (obsession?.products as unknown as { photo_url: string } | null)?.photo_url;
+  const ogImage = obsessionPhoto || user.avatar_url;
 
   const title = `${user.name || user.username} — Sterp`;
   const description = user.bio || `Check out ${user.name || user.username}'s favorite products on Sterp.`;
@@ -92,8 +92,8 @@ export default async function ProfilePage({
 
   if ((count ?? 0) < 2) notFound();
 
-  // Fetch collections, products, and top picks in parallel
-  const [collectionsRes, productsRes, topPicksRes] = await Promise.all([
+  // Fetch collections, products, and obsessions in parallel
+  const [collectionsRes, productsRes, obsessionsRes] = await Promise.all([
     supabase
       .from("collections")
       .select("*")
@@ -106,7 +106,7 @@ export default async function ProfilePage({
       .neq("status", "draft")
       .order("sort_order"),
     supabase
-      .from("top_picks")
+      .from("obsessions")
       .select("*")
       .eq("user_id", user.id)
       .order("sort_order"),
@@ -117,7 +117,7 @@ export default async function ProfilePage({
       user={user}
       collections={collectionsRes.data ?? []}
       products={productsRes.data ?? []}
-      topPicks={topPicksRes.data ?? []}
+      obsessions={obsessionsRes.data ?? []}
     />
   );
 }

@@ -40,9 +40,9 @@ export async function POST(
     return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 
-  // Remove from top picks if present
+  // Remove from obsessions if present
   await supabase
-    .from("top_picks")
+    .from("obsessions")
     .delete()
     .eq("product_id", id)
     .eq("user_id", user!.id);

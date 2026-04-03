@@ -9,7 +9,7 @@
  *
  * Uses the SERVICE_ROLE_KEY to bypass RLS.
  * Uploads images from public/cam/ to Supabase Storage, then seeds
- * user, collections, products, and top_picks.
+ * user, collections, products, and obsessions.
  */
 
 import { createClient } from "@supabase/supabase-js";
@@ -382,8 +382,8 @@ async function main() {
   }
   console.log("");
 
-  // 5. Insert top_picks
-  console.log("Inserting top picks...");
+  // 5. Insert obsessions
+  console.log("Inserting obsessions...");
   const favorites = PRODUCTS.filter((p) => p.isFavorite);
   for (const fav of favorites) {
     const prodId = productIds[fav.name];
@@ -392,7 +392,7 @@ async function main() {
       continue;
     }
 
-    const { error: tpErr } = await supabase.from("top_picks").upsert(
+    const { error: tpErr } = await supabase.from("obsessions").upsert(
       {
         id: uuid(),
         product_id: prodId,

@@ -142,7 +142,7 @@ function StatusBadge({ status }: { status: string }) {
     return <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-neutral-200 text-neutral-500">Archived</span>;
   }
   if (status === "draft") {
-    return <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-400">Draft</span>;
+    return <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[#555] text-white">Draft</span>;
   }
   return <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Active</span>;
 }
@@ -1890,7 +1890,7 @@ export default function DashboardPage() {
               {currentProducts.length >= 3 ? (
                 <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5 flex-shrink-0">Live</span>
               ) : (
-                <span className="text-[10px] font-medium text-neutral-400 bg-neutral-100 rounded-full px-2 py-0.5 flex-shrink-0">Draft</span>
+                <span className="text-[10px] font-medium text-white bg-[#555] rounded-full px-2 py-0.5 flex-shrink-0">Draft</span>
               )}
               <button onClick={() => openProfileModal()} className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0">Edit</button>
               <a href={`/${profile.username}`} target="_blank" rel="noopener noreferrer" className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0">View</a>
@@ -1933,7 +1933,7 @@ export default function DashboardPage() {
                   {currentProducts.length >= 3 ? (
                     <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5 flex-shrink-0">Live</span>
                   ) : (
-                    <span className="text-[10px] font-medium text-neutral-400 bg-neutral-100 rounded-full px-2 py-0.5 flex-shrink-0">Draft</span>
+                    <span className="text-[10px] font-medium text-white bg-[#555] rounded-full px-2 py-0.5 flex-shrink-0">Draft</span>
                   )}
                 </div>
                 <a

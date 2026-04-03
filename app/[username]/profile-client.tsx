@@ -90,6 +90,7 @@ function ProductCard({
   url,
   productId,
   userId,
+  rank,
 }: {
   name: string;
   photo: string;
@@ -97,6 +98,7 @@ function ProductCard({
   url: string | null;
   productId: string;
   userId: string;
+  rank?: number;
 }) {
   const handleClick = () => {
     fetch("/api/clicks", {
@@ -120,6 +122,11 @@ function ProductCard({
           sizes="(max-width: 640px) 100vw, 50vw"
           className="object-cover"
         />
+        {rank != null && (
+          <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[#E5E7EB] text-white text-[12px] font-semibold flex items-center justify-center opacity-75">
+            {rank}
+          </span>
+        )}
       </div>
       <div className="p-3 flex flex-col flex-1">
         <h3 className="text-[18px] font-semibold text-neutral-900 leading-snug [font-family:var(--font-space-grotesk)]">
@@ -335,7 +342,7 @@ export default function ProfileClient({
   if (activeTab.kind === "favorites") {
     content = (
       <div className={gridClass}>
-        {favorites.map((p) => (
+        {favorites.map((p, i) => (
           <ProductCard
             key={p.id}
             name={p.name}
@@ -344,6 +351,7 @@ export default function ProfileClient({
             url={p.affiliate_url ?? null}
             productId={p.id}
             userId={user.id}
+            rank={i + 1}
           />
         ))}
       </div>

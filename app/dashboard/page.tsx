@@ -584,7 +584,7 @@ interface ProductModalProps {
   obsessions: Obsession[];
   userId: string;
   phase?: number;
-  onSave: () => Promise<void>;
+  onSave: (newProductId?: string) => Promise<void>;
   onClose: () => void;
   onCollectionCreated: () => Promise<void>;
   onArchive?: (product: Product) => void;
@@ -791,6 +791,8 @@ function ProductModal({
         resolvedCollectionId = collections[0].id;
       }
 
+      let createdProductId: string | undefined;
+
       if (mode === "add") {
         // Create product first (without photo_url if we have a pending blob)
         const res = await fetch("/api/products", {
@@ -811,6 +813,7 @@ function ProductModal({
           return;
         }
         const created = await res.json();
+        createdProductId = created.id;
 
         // Now upload photo with the real product ID
         if (pendingBlob) {
@@ -849,7 +852,7 @@ function ProductModal({
         }
       }
 
-      await onSave();
+      await onSave(mode === "add" ? createdProductId : undefined);
       onClose();
     } catch {
       setErrors({ form: "Something went wrong" });
@@ -1342,6 +1345,9 @@ export default function DashboardPage() {
     collectionId?: string;
     product?: Product;
   } | null>(null);
+
+  // Scroll-to + highlight after adding a product
+  const [highlightProductId, setHighlightProductId] = useState<string | null>(null);
 
   // Add collection
   const [showAddCollection, setShowAddCollection] = useState(false);
@@ -2142,7 +2148,8 @@ export default function DashboardPage() {
                     .map((p) => (
                       <div
                         key={p.id}
-                        className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-gray-200"
+                        data-product-id={p.id}
+                        className={`flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-gray-200 transition-colors duration-700 ${highlightProductId === p.id ? "ring-2 ring-emerald-400 bg-emerald-50" : ""}`}
                       >
                         <Thumbnail src={p.photo_url} alt={p.name} />
                         <div
@@ -2295,7 +2302,7 @@ export default function DashboardPage() {
                             {({ handle }) => {
                               const tpProduct = products.find((p) => p.id === tp.product_id);
                               return (
-                              <div className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-gray-200 transition-all">
+                              <div data-product-id={tp.product_id} className={`flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-gray-200 transition-all duration-700 ${highlightProductId === tp.product_id ? "ring-2 ring-emerald-400 bg-emerald-50" : ""}`}>
                                 {handle}
                                 <span className="text-[15px] font-semibold text-neutral-300 w-5 text-center flex-shrink-0">
                                   {i + 1}
@@ -2377,7 +2384,8 @@ export default function DashboardPage() {
                     {nonObsessionProducts.map((p) => (
                       <div
                         key={p.id}
-                        className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-gray-200"
+                        data-product-id={p.id}
+                        className={`flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-gray-200 transition-colors duration-700 ${highlightProductId === p.id ? "ring-2 ring-emerald-400 bg-emerald-50" : ""}`}
                       >
                         <Thumbnail src={p.photo_url} alt={p.name} />
                         <div
@@ -2521,7 +2529,8 @@ export default function DashboardPage() {
                       .map((p) => (
                         <div
                           key={p.id}
-                          className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-neutral-50 transition-colors"
+                          data-product-id={p.id}
+                          className={`flex items-center gap-3 rounded-md px-3 py-2 hover:bg-neutral-50 transition-colors duration-700 ${highlightProductId === p.id ? "ring-2 ring-emerald-400 bg-emerald-50" : ""}`}
                         >
                           <Thumbnail src={p.photo_url} alt={p.name} />
                           <div
@@ -2762,7 +2771,7 @@ export default function DashboardPage() {
                                               {({ handle }) => (
                                                 <div
                                                   data-product-id={p.id}
-                                                  className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-neutral-50 transition-colors"
+                                                  className={`flex items-center gap-3 rounded-md px-3 py-2 hover:bg-neutral-50 transition-colors duration-700 ${highlightProductId === p.id ? "ring-2 ring-emerald-400 bg-emerald-50" : ""}`}
                                                 >
                                                   {handle}
                                                   <Thumbnail src={p.photo_url} alt={p.name} />
@@ -2946,8 +2955,15 @@ export default function DashboardPage() {
           obsessions={obsessions}
           userId={user.id}
           phase={phase}
-          onSave={async () => {
+          onSave={async (newProductId?: string) => {
             await Promise.all([fetchProducts(), fetchCollections(), fetchObsessions()]);
+            if (newProductId) {
+              setHighlightProductId(newProductId);
+              setTimeout(() => {
+                document.querySelector(`[data-product-id="${newProductId}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+              }, 100);
+              setTimeout(() => setHighlightProductId(null), 2500);
+            }
           }}
           onClose={() => setProductModal(null)}
           onCollectionCreated={fetchCollections}

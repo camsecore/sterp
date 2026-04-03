@@ -44,9 +44,9 @@ export async function GET(
       .order("sort_order", { ascending: true }),
   ]);
 
-  // Check page go-live threshold: minimum 2 current products
+  // Check page go-live threshold: minimum 3 current products
   const currentProducts = (productsRes.data ?? []).filter(p => p.status === "current");
-  if (currentProducts.length < 2) {
+  if (currentProducts.length < 3) {
     return NextResponse.json({ error: "Page not yet live" }, { status: 404 });
   }
 

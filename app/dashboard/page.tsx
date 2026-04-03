@@ -1887,7 +1887,7 @@ export default function DashboardPage() {
                   {copied ? "Copied!" : `sterp.com/${profile.username}`}
                 </a>
               </div>
-              {currentProducts.length >= 2 ? (
+              {currentProducts.length >= 3 ? (
                 <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5 flex-shrink-0">Live</span>
               ) : (
                 <span className="text-[10px] font-medium text-neutral-400 bg-neutral-100 rounded-full px-2 py-0.5 flex-shrink-0">Draft</span>
@@ -1930,7 +1930,7 @@ export default function DashboardPage() {
                   <span className="text-[14px] font-medium text-neutral-900 truncate leading-none">
                     {profile.name || profile.username}
                   </span>
-                  {currentProducts.length >= 2 ? (
+                  {currentProducts.length >= 3 ? (
                     <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5 flex-shrink-0">Live</span>
                   ) : (
                     <span className="text-[10px] font-medium text-neutral-400 bg-neutral-100 rounded-full px-2 py-0.5 flex-shrink-0">Draft</span>
@@ -1962,8 +1962,8 @@ export default function DashboardPage() {
           <div className="space-y-6">
             {/* ─── Green Banner System (one banner at a time, priority-ordered) ──── */}
             {profile?.username && (() => {
-              // Priority 1: Celebration card (page just went live, 2+ products, not dismissed)
-              if (currentProducts.length >= 2 && !liveBannerDismissed) {
+              // Priority 1: Celebration card (page just went live, 3+ products, not dismissed)
+              if (currentProducts.length >= 3 && !liveBannerDismissed) {
                 return (
                   <div className="relative rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-5 mx-auto w-full sm:max-w-[600px] text-center animate-[celebrationIn_0.4s_ease-out]">
                     <button
@@ -2021,11 +2021,11 @@ export default function DashboardPage() {
                 );
               }
               // Priority 2: Phase-specific green banner messages
-              if (phase === 1 && productCount >= 1 && productCount < 2) {
+              if (phase === 1 && productCount >= 1 && productCount < 3) {
                 return (
                   <div className="relative rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-3">
                     <p className="text-[14px] text-emerald-800">
-                      {productCount} down, {2 - productCount} to go to make your page live.
+                      {productCount} down, {3 - productCount} to go to make your page live.
                     </p>
                   </div>
                 );
@@ -2077,7 +2077,7 @@ export default function DashboardPage() {
                   What are you obsessed with right now?
                 </h2>
                 <p className="text-[15px] text-neutral-400 mb-6">
-                  The stuff you can&apos;t stop talking about. Add 2 to make your page live.
+                  The stuff you can&apos;t stop talking about. Add 3 to make your page live.
                 </p>
                 <button
                   onClick={() => setProductModal({ mode: "add" })}

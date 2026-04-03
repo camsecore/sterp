@@ -41,7 +41,7 @@ async function getFeaturedProfiles(): Promise<FeaturedProfile[]> {
       .eq("status", "current");
 
     const productCount = count ?? 0;
-    if (productCount < 2) continue;
+    if (productCount < 3) continue;
 
     const { data: photos } = await supabase
       .from("products")

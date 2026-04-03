@@ -80,7 +80,7 @@ export default function PrivacyPage() {
 
           <Section title="What's Public">
             <p>
-              Your Sterp page is public by design. Once your page is live (2+ products with photos), anyone with your link can see your username, name, avatar, bio, social links, product photos, product names, one-liners, and archive notes. This is the core product — there&apos;s no private mode.
+              Your Sterp page is public by design. Once your page is live (3+ products with photos), anyone with your link can see your username, name, avatar, bio, social links, product photos, product names, one-liners, and archive notes. This is the core product — there&apos;s no private mode.
             </p>
             <p className="mt-3">
               Draft products (without photos) and products you delete are not visible to anyone.

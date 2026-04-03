@@ -21,14 +21,14 @@ export async function generateMetadata({
     return { title: "Not Found — Sterp" };
   }
 
-  // Go-live check: need at least 2 current products
+  // Go-live check: need at least 3 current products
   const { count } = await supabase
     .from("products")
     .select("id", { count: "exact", head: true })
     .eq("user_id", user.id)
     .eq("status", "current");
 
-  if ((count ?? 0) < 2) {
+  if ((count ?? 0) < 3) {
     return { title: "Not Found — Sterp" };
   }
 
@@ -83,14 +83,14 @@ export default async function ProfilePage({
 
   if (!user) notFound();
 
-  // Go-live check: need at least 2 current products
+  // Go-live check: need at least 3 current products
   const { count } = await supabase
     .from("products")
     .select("id", { count: "exact", head: true })
     .eq("user_id", user.id)
     .eq("status", "current");
 
-  if ((count ?? 0) < 2) notFound();
+  if ((count ?? 0) < 3) notFound();
 
   // Fetch collections, products, and obsessions in parallel
   const [collectionsRes, productsRes, obsessionsRes] = await Promise.all([

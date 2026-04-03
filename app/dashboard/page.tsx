@@ -1809,12 +1809,12 @@ export default function DashboardPage() {
   const productCount = currentProducts.length;
   const hasNamedCollection = collections.some((c) => c.name !== "Products");
   const phase = productCount < 5 ? 1 : productCount === 5 ? 2 : hasNamedCollection ? 4 : 3;
-  const [liveBannerDismissed, setLiveBannerDismissed] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("sterp_live_banner_dismissed") === "true";
+  const [liveBannerDismissed, setLiveBannerDismissed] = useState(false);
+  useEffect(() => {
+    if (localStorage.getItem("sterp_live_banner_dismissed") === "true") {
+      setLiveBannerDismissed(true);
     }
-    return true;
-  });
+  }, []);
   const archivedProducts = products
     .filter((p) => p.status === "archived")
     .sort((a, b) => {

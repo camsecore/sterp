@@ -47,7 +47,6 @@ interface Obsession {
 
 type Tab =
   | { kind: "favorites" }
-  | { kind: "everything" }
   | { kind: "collection"; collectionId: string }
   | { kind: "archive" };
 
@@ -248,7 +247,6 @@ export default function ProfileClient({
     const hash = decodeURIComponent(window.location.hash.slice(1));
     if (!hash) return favorites.length > 0 ? { kind: "favorites" } : sortedCollections.length > 0 ? { kind: "collection", collectionId: sortedCollections[0].id } : { kind: "favorites" };
     if (hash === "top" || hash === "favorites") return { kind: "favorites" };
-    if (hash === "everything") return { kind: "everything" };
     if (hash === "archive") return { kind: "archive" };
     const match = sortedCollections.find((c) => slugify(c.name) === hash);
     if (match) return { kind: "collection", collectionId: match.id };
@@ -261,7 +259,6 @@ export default function ProfileClient({
     setActiveTabState(tab);
     let hash = "";
     if (tab.kind === "favorites") hash = "top";
-    else if (tab.kind === "everything") hash = "everything";
     else if (tab.kind === "archive") hash = "archive";
     else {
       const col = collections.find((c) => c.id === tab.collectionId);
@@ -298,11 +295,7 @@ export default function ProfileClient({
   ];
 
   // Named collections only (exclude default "Products" bucket)
-  const obsessionProductIds = new Set(favorites.map((f) => f.id));
   const namedCollections = sortedCollections.filter((c) => c.name !== "Products");
-
-  // Show "Everything" tab when there are products beyond the Top picks
-  const hasNonObsessionProducts = currentProducts.some((p) => !obsessionProductIds.has(p.id));
 
   const tabs: { tab: Tab; label: string; activeClass: string; activeStyle?: React.CSSProperties }[] = [
     ...(favorites.length > 0
@@ -311,13 +304,6 @@ export default function ProfileClient({
           label: "Obsessions",
           activeClass: "",
           activeStyle: { backgroundColor: "#FDECEA", color: "#C0392B" },
-        }]
-      : []),
-    ...(hasNonObsessionProducts || currentProducts.length > favorites.length
-      ? [{
-          tab: { kind: "everything" as const },
-          label: "Everything",
-          activeClass: "bg-neutral-200 text-neutral-800",
         }]
       : []),
     ...namedCollections.map((c, i) => ({
@@ -352,23 +338,6 @@ export default function ProfileClient({
             productId={p.id}
             userId={user.id}
             rank={i + 1}
-          />
-        ))}
-      </div>
-    );
-  } else if (activeTab.kind === "everything") {
-    const allProducts = currentProducts.sort((a, b) => a.sort_order - b.sort_order);
-    content = (
-      <div className={gridClass}>
-        {allProducts.map((p) => (
-          <ProductCard
-            key={p.id}
-            name={p.name}
-            photo={p.photo_url ?? ""}
-            oneLiner={p.one_liner ?? ""}
-            url={p.affiliate_url ?? null}
-            productId={p.id}
-            userId={user.id}
           />
         ))}
       </div>

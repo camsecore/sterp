@@ -2021,11 +2021,11 @@ export default function DashboardPage() {
                 );
               }
               // Priority 2: Phase-specific green banner messages
-              if (phase === 1 && productCount >= 1) {
+              if (phase === 1 && productCount >= 1 && productCount < 2) {
                 return (
                   <div className="relative rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-3">
                     <p className="text-[14px] text-emerald-800">
-                      {productCount} down, {5 - productCount} to go. Fill out your Obsessions.
+                      {productCount} down, {2 - productCount} to go to make your page live.
                     </p>
                   </div>
                 );

@@ -20,7 +20,8 @@ export async function DELETE(
     .eq("user_id", user!.id);
 
   if (dbError) {
-    return NextResponse.json({ error: dbError.message }, { status: 500 });
+    console.error(dbError);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });

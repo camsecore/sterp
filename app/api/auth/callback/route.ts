@@ -17,8 +17,9 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const nextParam = searchParams.get("next") ?? "/dashboard";
-  // Prevent open redirect — only allow relative paths starting with /
-  const next = nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/dashboard";
+  // Prevent open redirect — allowlist of valid redirect targets
+  const ALLOWED_REDIRECTS = ["/dashboard", "/onboarding/username"];
+  const next = ALLOWED_REDIRECTS.includes(nextParam) ? nextParam : "/dashboard";
 
   if (code) {
     const supabase = await createClient();

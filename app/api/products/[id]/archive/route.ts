@@ -37,7 +37,8 @@ export async function POST(
     .single();
 
   if (dbError) {
-    return NextResponse.json({ error: dbError.message }, { status: 500 });
+    console.error(dbError);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 
   // Remove from obsessions if present

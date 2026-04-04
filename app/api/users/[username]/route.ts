@@ -33,7 +33,7 @@ export async function GET(
 
     supabase
       .from("products")
-      .select("id, collection_id, name, photo_url, one_liner, affiliate_url, status, sort_order, created_at, archived_at")
+      .select("id, collection_id, name, photo_url, one_liner, status, sort_order, created_at")
       .eq("user_id", user.id)
       .in("status", ["current", "archived"])
       .order("sort_order", { ascending: true }),

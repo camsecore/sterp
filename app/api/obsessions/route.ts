@@ -16,7 +16,8 @@ export async function GET() {
     .order("sort_order", { ascending: true });
 
   if (dbError) {
-    return NextResponse.json({ error: dbError.message }, { status: 500 });
+    console.error(dbError);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 
   return NextResponse.json(data);
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
     .eq("user_id", user!.id);
 
   if ((count ?? 0) >= 5) {
-    return NextResponse.json({ error: "Maximum 5 obsessions allowed. Remove one first." }, { status: 400 });
+    return NextResponse.json({ error: "Maximum 5 obsessions allowed. Remove one first." }, { status: 409 });
   }
 
   // Verify the product belongs to this user and is current
@@ -83,7 +84,8 @@ export async function POST(request: Request) {
     .single();
 
   if (dbError) {
-    return NextResponse.json({ error: dbError.message }, { status: 500 });
+    console.error(dbError);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 
   return NextResponse.json(data, { status: 201 });

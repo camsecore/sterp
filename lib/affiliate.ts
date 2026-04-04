@@ -12,6 +12,11 @@ export function rewriteAffiliateUrl(originalUrl: string): string {
     return originalUrl;
   }
 
+  // Block dangerous protocols — only allow http(s)
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    return "";
+  }
+
   // Match amazon.com, amazon.co.uk, amazon.ca, etc.
   const isAmazon = /^(www\.)?amazon\.(com|co\.uk|ca|de|fr|it|es|com\.au|co\.jp|in|com\.br|com\.mx)$/.test(url.hostname);
 

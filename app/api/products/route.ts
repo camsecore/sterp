@@ -27,7 +27,7 @@ export async function GET(request: Request) {
   const { data, error: dbError } = await query;
 
   if (dbError) {
-    return NextResponse.json({ error: dbError.message }, { status: 500 });
+    return NextResponse.json({ error: "Database operation failed" }, { status: 500 });
   }
 
   return NextResponse.json(data);
@@ -76,6 +76,18 @@ export async function POST(request: Request) {
 
   const nextOrder = existing && existing.length > 0 ? existing[0].sort_order + 1 : 0;
 
+  // Validate URL protocol before storing
+  if (original_url) {
+    try {
+      const proto = new URL(original_url).protocol;
+      if (proto !== "https:" && proto !== "http:") {
+        return NextResponse.json({ error: "Only https:// and http:// URLs are allowed" }, { status: 400 });
+      }
+    } catch {
+      return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+    }
+  }
+
   // Rewrite affiliate URL
   const affiliate_url = original_url ? rewriteAffiliateUrl(original_url) : null;
 
@@ -96,7 +108,7 @@ export async function POST(request: Request) {
     .single();
 
   if (dbError) {
-    return NextResponse.json({ error: dbError.message }, { status: 500 });
+    return NextResponse.json({ error: "Database operation failed" }, { status: 500 });
   }
 
   // Auto-populate obsessions if user has fewer than 5 (only for current products)

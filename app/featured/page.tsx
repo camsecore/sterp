@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 // ─── Curated list — add usernames here to feature them ───────────
 const FEATURED_USERNAMES = ["cam"];
 
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: "Featured Sterps",
   description: "Real people. Real products. Real takes.",
@@ -23,46 +25,47 @@ interface FeaturedProfile {
 async function getFeaturedProfiles(): Promise<FeaturedProfile[]> {
   const supabase = await createClient();
 
-  const profiles: FeaturedProfile[] = [];
+  const results = await Promise.all(
+    FEATURED_USERNAMES.map(async (username) => {
+      const { data: user } = await supabase
+        .from("users")
+        .select("id, username, name, bio, avatar_url")
+        .eq("username", username)
+        .single();
 
-  for (const username of FEATURED_USERNAMES) {
-    const { data: user } = await supabase
-      .from("users")
-      .select("id, username, name, bio, avatar_url")
-      .eq("username", username)
-      .single();
+      if (!user) return null;
 
-    if (!user) continue;
+      const [{ count }, { data: photos }] = await Promise.all([
+        supabase
+          .from("products")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .eq("status", "current"),
+        supabase
+          .from("products")
+          .select("photo_url")
+          .eq("user_id", user.id)
+          .eq("status", "current")
+          .not("photo_url", "is", null)
+          .order("sort_order")
+          .limit(4),
+      ]);
 
-    const { count } = await supabase
-      .from("products")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .eq("status", "current");
+      const productCount = count ?? 0;
+      if (productCount < 3) return null;
 
-    const productCount = count ?? 0;
-    if (productCount < 3) continue;
+      return {
+        username: user.username,
+        name: user.name,
+        bio: user.bio,
+        avatar_url: user.avatar_url,
+        productCount,
+        productPhotos: (photos ?? []).map((p) => p.photo_url).filter(Boolean) as string[],
+      } as FeaturedProfile;
+    })
+  );
 
-    const { data: photos } = await supabase
-      .from("products")
-      .select("photo_url")
-      .eq("user_id", user.id)
-      .eq("status", "current")
-      .not("photo_url", "is", null)
-      .order("sort_order")
-      .limit(4);
-
-    profiles.push({
-      username: user.username,
-      name: user.name,
-      bio: user.bio,
-      avatar_url: user.avatar_url,
-      productCount,
-      productPhotos: (photos ?? []).map((p) => p.photo_url).filter(Boolean) as string[],
-    });
-  }
-
-  return profiles;
+  return results.filter((p): p is FeaturedProfile => p !== null);
 }
 
 export default async function FeaturedPage() {

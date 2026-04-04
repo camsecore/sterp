@@ -19,6 +19,10 @@ export async function PUT(request: Request) {
     );
   }
 
+  if (order.some((id: unknown) => typeof id !== "string" || id.length === 0)) {
+    return NextResponse.json({ error: "Each element in order must be a non-empty string" }, { status: 400 });
+  }
+
   const updates = order.map((id: string, index: number) =>
     supabase
       .from("products")
@@ -28,7 +32,11 @@ export async function PUT(request: Request) {
       .eq("collection_id", collection_id)
   );
 
-  await Promise.all(updates);
+  const results = await Promise.all(updates);
+  const failed = results.find(r => r.error);
+  if (failed) {
+    return NextResponse.json({ error: "Failed to reorder products" }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true });
 }

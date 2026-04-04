@@ -325,7 +325,7 @@ function CropModal({ imageSrc, aspect, onDone, onCancel }: CropModalProps) {
 // <select> overlaid invisibly on the trigger to invoke the OS scroll picker.
 
 function useIsTouchDevice() {
-  const [isTouch, setIsTouch] = useState(false);
+  const [isTouch, setIsTouch] = useState<boolean | null>(null);
   useEffect(() => {
     setIsTouch(
       window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0
@@ -449,7 +449,7 @@ function ArchiveModal({
   onCancel: () => void;
 }) {
   const [note, setNote] = useState("");
-  const now = new Date();
+  const [now] = useState(() => new Date());
 
   const monthOptions = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
     .map((m, i) => ({ value: String(i + 1), label: m }));
@@ -1748,7 +1748,7 @@ export default function DashboardPage() {
   const [collectionError, setCollectionError] = useState("");
 
   // Post-live nudge (one-time, localStorage)
-  const [nudgeDismissed, setNudgeDismissed] = useState(true); // default true to avoid flash
+  const [nudgeDismissed, setNudgeDismissed] = useState<boolean | null>(null);
   useEffect(() => {
     setNudgeDismissed(localStorage.getItem("sterp_nudge_dismissed") === "true");
   }, []);
@@ -2222,11 +2222,9 @@ export default function DashboardPage() {
   const productCount = currentProducts.length;
   const hasNamedCollection = collections.some((c) => c.name !== "Products");
   const phase = productCount < 5 ? 1 : productCount === 5 ? 2 : hasNamedCollection ? 4 : 3;
-  const [liveBannerDismissed, setLiveBannerDismissed] = useState(false);
+  const [liveBannerDismissed, setLiveBannerDismissed] = useState<boolean | null>(null);
   useEffect(() => {
-    if (localStorage.getItem("sterp_live_banner_dismissed") === "true") {
-      setLiveBannerDismissed(true);
-    }
+    setLiveBannerDismissed(localStorage.getItem("sterp_live_banner_dismissed") === "true");
   }, []);
   const archivedProducts = products
     .filter((p) => p.status === "archived")
@@ -2376,7 +2374,7 @@ export default function DashboardPage() {
             {/* ─── Green Banner System (one banner at a time, priority-ordered) ──── */}
             {profile?.username && (() => {
               // Priority 1: Celebration card (page just went live, 3+ products, not dismissed)
-              if (currentProducts.length >= 3 && !liveBannerDismissed) {
+              if (currentProducts.length >= 3 && liveBannerDismissed === false) {
                 return (
                   <div className="relative rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-5 mx-auto w-full sm:max-w-[600px] text-center animate-[celebrationIn_0.4s_ease-out]">
                     <button
@@ -2452,7 +2450,7 @@ export default function DashboardPage() {
                   </div>
                 );
               }
-              if (phase === 3 && !nudgeDismissed) {
+              if (phase === 3 && nudgeDismissed === false) {
                 return (
                   <div className="relative rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-4">
                     <button

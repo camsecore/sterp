@@ -33,8 +33,9 @@ export async function GET(
 
     supabase
       .from("products")
-      .select("id, collection_id, name, photo_url, one_liner, affiliate_url, status, sort_order, created_at, archived_at, archive_note")
+      .select("id, collection_id, name, photo_url, one_liner, affiliate_url, status, sort_order, created_at, archived_at")
       .eq("user_id", user.id)
+      .in("status", ["current", "archived"])
       .order("sort_order", { ascending: true }),
 
     supabase
@@ -45,15 +46,22 @@ export async function GET(
   ]);
 
   // Check page go-live threshold: minimum 3 current products
-  const currentProducts = (productsRes.data ?? []).filter(p => p.status === "current");
+  const currentProducts = (productsRes.data ?? []).filter((p: { status: string }) => p.status === "current");
   if (currentProducts.length < 3) {
     return NextResponse.json({ error: "Page not yet live" }, { status: 404 });
   }
 
-  return NextResponse.json({
-    user,
-    collections: collectionsRes.data ?? [],
-    products: productsRes.data ?? [],
-    obsessions: obsessionsRes.data ?? [],
-  });
+  return NextResponse.json(
+    {
+      user,
+      collections: collectionsRes.data ?? [],
+      products: productsRes.data ?? [],
+      obsessions: obsessionsRes.data ?? [],
+    },
+    {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
+    }
+  );
 }

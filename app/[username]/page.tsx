@@ -1,7 +1,31 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ProfileClient from "./profile-client";
+
+// Deduplicate user + product count queries across generateMetadata and page render
+const getProfileData = cache(async (username: string) => {
+  const supabase = await createClient();
+
+  const { data: user } = await supabase
+    .from("users")
+    .select("id, username, name, bio, avatar_url, twitter_url, instagram_url, youtube_url")
+    .eq("username", username)
+    .single();
+
+  if (!user) return null;
+
+  const { count } = await supabase
+    .from("products")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("status", "current");
+
+  if ((count ?? 0) < 3) return null;
+
+  return user;
+});
 
 export async function generateMetadata({
   params,
@@ -9,30 +33,14 @@ export async function generateMetadata({
   params: Promise<{ username: string }>;
 }): Promise<Metadata> {
   const { username } = await params;
-  const supabase = await createClient();
-
-  const { data: user } = await supabase
-    .from("users")
-    .select("id, name, username, bio, avatar_url")
-    .eq("username", username)
-    .single();
+  const user = await getProfileData(username);
 
   if (!user) {
     return { title: "Not Found — Sterp" };
   }
 
-  // Go-live check: need at least 3 current products
-  const { count } = await supabase
-    .from("products")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .eq("status", "current");
-
-  if ((count ?? 0) < 3) {
-    return { title: "Not Found — Sterp" };
-  }
-
   // Get the user's #1 obsession photo for the OG image
+  const supabase = await createClient();
   const { data: obsession } = await supabase
     .from("obsessions")
     .select("products(photo_url)")
@@ -72,25 +80,11 @@ export default async function ProfilePage({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
-  const supabase = await createClient();
-
-  // Fetch user by username
-  const { data: user } = await supabase
-    .from("users")
-    .select("id, username, name, bio, avatar_url, twitter_url, instagram_url, youtube_url")
-    .eq("username", username)
-    .single();
+  const user = await getProfileData(username);
 
   if (!user) notFound();
 
-  // Go-live check: need at least 3 current products
-  const { count } = await supabase
-    .from("products")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .eq("status", "current");
-
-  if ((count ?? 0) < 3) notFound();
+  const supabase = await createClient();
 
   // Fetch collections, products, and obsessions in parallel
   const [collectionsRes, productsRes, obsessionsRes] = await Promise.all([

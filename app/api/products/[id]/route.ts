@@ -66,6 +66,16 @@ export async function PATCH(
   }
 
   if (body.original_url !== undefined) {
+    if (body.original_url) {
+      try {
+        const proto = new URL(body.original_url).protocol;
+        if (proto !== "https:" && proto !== "http:") {
+          return NextResponse.json({ error: "Only https:// and http:// URLs are allowed" }, { status: 400 });
+        }
+      } catch {
+        return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+      }
+    }
     updates.original_url = body.original_url || null;
     updates.affiliate_url = body.original_url ? rewriteAffiliateUrl(body.original_url) : null;
   }
@@ -108,7 +118,7 @@ export async function PATCH(
     .single();
 
   if (dbError) {
-    return NextResponse.json({ error: dbError.message }, { status: 500 });
+    return NextResponse.json({ error: "Database operation failed" }, { status: 500 });
   }
 
   return NextResponse.json(data);
@@ -141,7 +151,7 @@ export async function DELETE(
     .eq("user_id", user!.id);
 
   if (dbError) {
-    return NextResponse.json({ error: dbError.message }, { status: 500 });
+    return NextResponse.json({ error: "Database operation failed" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });

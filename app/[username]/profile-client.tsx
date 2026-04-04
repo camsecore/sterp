@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Clock } from "lucide-react";
@@ -207,6 +207,16 @@ function ArchiveCard({
   );
 }
 
+const COLLECTION_COLORS = [
+  "bg-sky-100 text-sky-700",
+  "bg-violet-100 text-violet-700",
+  "bg-emerald-100 text-emerald-700",
+  "bg-rose-100 text-rose-700",
+  "bg-yellow-100 text-yellow-700",
+  "bg-fuchsia-100 text-fuchsia-700",
+  "bg-teal-100 text-teal-700",
+];
+
 // ─── Main client component ───────────────────────────────────────────
 
 export default function ProfileClient({
@@ -242,18 +252,26 @@ export default function ProfileClient({
     .filter((c) => collectionsWithProducts.has(c.id))
     .sort((a, b) => a.sort_order - b.sort_order);
 
+  const defaultTab = useCallback((): Tab => {
+    return favorites.length > 0 ? { kind: "favorites" } : sortedCollections.length > 0 ? { kind: "collection", collectionId: sortedCollections[0].id } : { kind: "favorites" };
+  }, [favorites.length, sortedCollections]);
+
   const resolveTabFromHash = useCallback((): Tab => {
-    if (typeof window === "undefined") return favorites.length > 0 ? { kind: "favorites" } : sortedCollections.length > 0 ? { kind: "collection", collectionId: sortedCollections[0].id } : { kind: "favorites" };
     const hash = decodeURIComponent(window.location.hash.slice(1));
-    if (!hash) return favorites.length > 0 ? { kind: "favorites" } : sortedCollections.length > 0 ? { kind: "collection", collectionId: sortedCollections[0].id } : { kind: "favorites" };
+    if (!hash) return defaultTab();
     if (hash === "top" || hash === "favorites") return { kind: "favorites" };
     if (hash === "archive") return { kind: "archive" };
     const match = sortedCollections.find((c) => slugify(c.name) === hash);
     if (match) return { kind: "collection", collectionId: match.id };
-    return favorites.length > 0 ? { kind: "favorites" } : sortedCollections.length > 0 ? { kind: "collection", collectionId: sortedCollections[0].id } : { kind: "favorites" };
-  }, [favorites.length, sortedCollections]);
+    return defaultTab();
+  }, [defaultTab, sortedCollections]);
 
-  const [activeTab, setActiveTabState] = useState<Tab>(resolveTabFromHash);
+  // Use a safe SSR-compatible default, then sync from hash after mount
+  const [activeTab, setActiveTabState] = useState<Tab>(defaultTab);
+
+  useEffect(() => {
+    setActiveTabState(resolveTabFromHash());
+  }, [resolveTabFromHash]);
 
   const setActiveTab = useCallback((tab: Tab) => {
     setActiveTabState(tab);
@@ -283,21 +301,10 @@ export default function ProfileClient({
     return true;
   };
 
-  // Tab colors
-  const collectionColors = [
-    "bg-sky-100 text-sky-700",
-    "bg-violet-100 text-violet-700",
-    "bg-emerald-100 text-emerald-700",
-    "bg-rose-100 text-rose-700",
-    "bg-yellow-100 text-yellow-700",
-    "bg-fuchsia-100 text-fuchsia-700",
-    "bg-teal-100 text-teal-700",
-  ];
-
   // Named collections only (exclude default "Products" bucket)
   const namedCollections = sortedCollections.filter((c) => c.name !== "Products");
 
-  const tabs: { tab: Tab; label: string; activeClass: string; activeStyle?: React.CSSProperties }[] = [
+  const tabs = useMemo<{ tab: Tab; label: string; activeClass: string; activeStyle?: React.CSSProperties }[]>(() => [
     ...(favorites.length > 0
       ? [{
           tab: { kind: "favorites" as const },
@@ -309,7 +316,7 @@ export default function ProfileClient({
     ...namedCollections.map((c, i) => ({
       tab: { kind: "collection" as const, collectionId: c.id },
       label: c.name,
-      activeClass: collectionColors[i % collectionColors.length],
+      activeClass: COLLECTION_COLORS[i % COLLECTION_COLORS.length],
     })),
     ...(archivedProducts.length > 0
       ? [{
@@ -318,7 +325,7 @@ export default function ProfileClient({
           activeClass: "bg-neutral-900 text-white",
         }]
       : []),
-  ];
+  ], [favorites.length, namedCollections, archivedProducts.length]);
 
   // Grid class shared across all content views
   const gridClass = "grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-5 items-stretch [&>*:last-child:nth-child(odd)]:sm:col-span-2 [&>*:last-child:nth-child(odd)]:sm:justify-self-center [&>*:last-child:nth-child(odd)]:sm:w-1/2";

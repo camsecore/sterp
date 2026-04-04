@@ -16,6 +16,10 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "order must be a non-empty array of collection IDs" }, { status: 400 });
   }
 
+  if (order.some((id: unknown) => typeof id !== "string" || id.length === 0)) {
+    return NextResponse.json({ error: "Each element in order must be a non-empty string" }, { status: 400 });
+  }
+
   // Update each collection's sort_order
   const updates = order.map((id: string, index: number) =>
     supabase
@@ -25,7 +29,11 @@ export async function PUT(request: Request) {
       .eq("user_id", user!.id)
   );
 
-  await Promise.all(updates);
+  const results = await Promise.all(updates);
+  const failed = results.find(r => r.error);
+  if (failed) {
+    return NextResponse.json({ error: "Failed to reorder collections" }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true });
 }

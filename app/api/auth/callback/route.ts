@@ -47,12 +47,17 @@ export async function GET(request: Request) {
           const googlePic = user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
           const avatar_url = googlePic || (user.email ? await getGravatarUrl(user.email) : null);
 
-          await supabase.from("users").insert({
+          const { error: insertError } = await supabase.from("users").insert({
             id: user.id,
             email: user.email!,
             username,
             ...(avatar_url && { avatar_url }),
           });
+
+          if (insertError) {
+            console.error("Failed to create user row:", insertError.message);
+            return NextResponse.redirect(`${origin}/login?error=account_setup_failed`);
+          }
         }
 
         return NextResponse.redirect(`${origin}/onboarding/username?new=1`);

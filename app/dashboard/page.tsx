@@ -1434,7 +1434,7 @@ function ProductModal({
     );
   }
 
-  // ── Add mode layout (unchanged) ──
+  // ── Add mode layout (unified with Edit shell) ──
   return (
     <div
       role="dialog"
@@ -1443,65 +1443,162 @@ function ProductModal({
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
       onClick={handleDismiss}
     >
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50" />
 
-      {/* Modal content */}
+      {/* Modal shell — same structure as Edit */}
       <div
-        className="relative z-10 bg-white w-full h-full sm:h-auto sm:max-w-lg sm:mx-auto sm:rounded-xl sm:max-h-[calc(100vh-4rem)] overflow-y-auto"
+        className="relative z-10 bg-white w-full h-full flex flex-col sm:h-auto sm:max-w-[800px] sm:mx-auto sm:rounded-xl sm:max-h-[600px] sm:overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-3 flex items-center justify-between z-10">
-          <h2 className="text-[17px] font-semibold text-neutral-900">Add Product</h2>
+        {/* ── Mobile top nav bar ── */}
+        <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between z-10 sm:hidden">
+          <button type="button" onClick={handleDismiss} className="text-[15px] text-neutral-500 hover:text-neutral-800 transition-colors">
+            Cancel
+          </button>
+          <h2 className="text-[15px] font-semibold text-neutral-900">Add Product</h2>
           <button
             type="button"
-            onClick={handleDismiss}
-            aria-label="Close"
-            className="text-neutral-400 hover:text-neutral-600 transition-colors p-1"
+            onClick={handleSave}
+            disabled={saving || uploading}
+            className="text-[15px] font-semibold text-[#C0392B] hover:opacity-70 transition-opacity disabled:opacity-50"
           >
+            {saving ? "Saving..." : "Add"}
+          </button>
+        </div>
+
+        {/* ── Full-width desktop header ── */}
+        <div className="hidden sm:flex items-center justify-between px-5 py-3 border-b border-gray-100">
+          <h2 className="text-[17px] font-semibold text-neutral-900">Add Product</h2>
+          <button type="button" onClick={handleDismiss} aria-label="Close" className="text-neutral-400 hover:text-neutral-600 transition-colors p-1">
             <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-              <path
-                fillRule="evenodd"
-                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              />
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
           </button>
         </div>
 
-        <div className="px-5 py-3 space-y-3">
-          {photoUploadArea}
-          {nameInput}
-          {oneLinerInput}
+        {/* ── Content area ── */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {/* Desktop: 2-column */}
+          <div className="hidden sm:flex gap-8 px-6 py-5 items-start">
+            {/* Left ~40%: photo upload zone */}
+            <div className="w-[40%] flex-shrink-0">
+              <div
+                className={`relative aspect-[4/3] rounded-xl overflow-hidden cursor-pointer border ${
+                  photoUrl
+                    ? "border-gray-200 bg-neutral-100"
+                    : `border-dashed ${
+                        draggingOver
+                          ? "border-[#C0392B]/40 bg-[#C0392B]/5"
+                          : errors.photo
+                          ? "border-[#C0392B]/40 bg-red-50"
+                          : "border-gray-300 bg-neutral-50"
+                      }`
+                }`}
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                {uploading ? (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <div className="w-8 h-8 border-2 border-neutral-300 border-t-[#C0392B] rounded-full animate-spin" />
+                    <span className="text-[13px] text-neutral-400 mt-2">Uploading...</span>
+                  </div>
+                ) : photoUrl ? (
+                  <>
+                    <Image src={photoUrl} alt="" fill unoptimized className="object-cover" />
+                    <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center group">
+                      <span className="text-white text-[14px] font-medium opacity-0 group-hover:opacity-100 transition-opacity">Change photo</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <Camera size={28} className="text-neutral-300 mb-1" />
+                    <span className="text-[13px] font-medium text-neutral-500">Add photo</span>
+                    <span className="text-[11px] text-neutral-400 mt-0.5">Saved as draft without photo</span>
+                  </div>
+                )}
+              </div>
+              {errors.photo && <p className="text-[13px] text-[#C0392B] mt-1">{errors.photo}</p>}
+            </div>
 
-          {/* Collection */}
-          {collectionSection}
+            {/* Right ~60%: form inputs */}
+            <div className="flex-1 space-y-3">
+              {nameInput}
+              {oneLinerInput}
+              {collectionSection}
 
-          {/* Form-level error */}
-          {errors.form && (
-            <p className="text-[13px] text-[#C0392B]">{errors.form}</p>
-          )}
+              {errors.form && (
+                <p className="text-[13px] text-[#C0392B]">{errors.form}</p>
+              )}
+            </div>
+          </div>
 
-          {/* Add Product button */}
-          <div className="flex items-center gap-3 pt-2 pb-2">
+          {/* Mobile: single-column */}
+          <div className="sm:hidden px-5 py-3 space-y-3">
+            {/* Photo thumbnail + name on same row */}
+            <div className="flex items-start gap-3">
+              <div
+                className={`relative w-20 aspect-[4/3] rounded-lg overflow-hidden cursor-pointer flex-shrink-0 ${
+                  photoUrl
+                    ? "bg-neutral-200"
+                    : `border border-dashed ${
+                        draggingOver
+                          ? "border-[#C0392B]/40 bg-[#C0392B]/5"
+                          : errors.photo
+                          ? "border-[#C0392B]/40 bg-red-50"
+                          : "border-gray-300 bg-neutral-50"
+                      }`
+                }`}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {photoUrl ? (
+                  <>
+                    <Image src={photoUrl} alt="" fill unoptimized className="object-cover" />
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                      <span className="text-white text-[10px] font-medium">Tap to change</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <Camera size={16} className="text-neutral-300" />
+                    <span className="text-[9px] text-neutral-400 mt-0.5">Add photo</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                {nameInput}
+              </div>
+            </div>
+
+            {oneLinerInput}
+            {collectionSection}
+
+            {errors.form && (
+              <p className="text-[13px] text-[#C0392B]">{errors.form}</p>
+            )}
+          </div>
+        </div>
+
+        {/* ── Full-width footer ── */}
+        <div className="hidden sm:flex items-center justify-end border-t border-gray-200 px-6 py-3">
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={handleDismiss} className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors">
+              Cancel
+            </button>
             <button
               type="button"
               onClick={handleSave}
               disabled={saving || uploading}
-              className="bg-[#C0392B] text-white text-[14px] font-medium px-5 py-2.5 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="bg-[#C0392B] text-white text-[14px] font-medium px-5 py-2 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               {saving ? "Saving..." : "Add Product"}
             </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors"
-            >
-              Cancel
-            </button>
           </div>
         </div>
+
+        {/* Hidden file input */}
+        <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={handleFileChange} className="hidden" />
       </div>
 
       {cropModal}

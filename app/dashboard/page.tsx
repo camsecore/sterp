@@ -3233,8 +3233,8 @@ export default function DashboardPage() {
             {/* ─── Section 5: Archive ──────────────────────────── */}
             {archivedProducts.length > 0 && (
               <section>
-                <div className="flex items-center gap-2 mb-3 pt-4 border-t border-gray-200">
-                  <Clock size={16} className="text-neutral-400" />
+                <div className="flex items-baseline gap-2 mb-3 pt-4 border-t border-gray-200">
+                  <Clock size={16} className="text-neutral-400 relative top-[2px]" />
                   <h2 className="text-[20px] font-semibold text-neutral-900">
                     Archive
                   </h2>

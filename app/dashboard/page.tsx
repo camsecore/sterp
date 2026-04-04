@@ -36,6 +36,10 @@ import { ArchiveModal } from "./components/archive-modal";
 import { DeleteModal } from "./components/delete-modal";
 import { ProductModal } from "./components/product-modal";
 import { DragHandle, SortableObsession, SortableCollection, SortableProduct } from "./components/sortable-wrappers";
+import { DashboardHeader } from "./components/dashboard-header";
+import { GreenBanners } from "./components/green-banners";
+import { ArchiveSection } from "./components/archive-section";
+import { EditProfileModal } from "./components/edit-profile-modal";
 
 
 // ─── Main component ─────────────────────────────────────────────────
@@ -604,231 +608,35 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#EEF2F7]">
-      {/* ─── Top Header Bar ──────────────────────────────── */}
-      {/* Mobile: logo centered, then profile two-row block */}
-      {/* Desktop: logo left, profile right, single row */}
-      <div className="mx-auto max-w-2xl px-4 pt-6 sm:pt-10 pb-4">
-        {/* Desktop: single row */}
-        <div className="hidden md:flex items-center justify-between">
-          <div className="mt-1">
-            <Image
-              src="/logo-charcoal.png"
-              alt="Sterp"
-              width={150}
-              height={50}
-              className="h-[50px] w-auto"
-            />
-          </div>
-          {profile && (
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full overflow-hidden bg-neutral-200 flex-shrink-0">
-                {profile.avatar_url ? (
-                  <Image
-                    src={profile.avatar_url}
-                    alt={profile.name || profile.username}
-                    width={40}
-                    height={40}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center text-neutral-400 text-xs">—</div>
-                )}
-              </div>
-              <div className="min-w-0 max-w-[300px]">
-                <span className="text-[14px] font-medium text-neutral-900 truncate block leading-none max-w-[300px]">
-                  {profile.name || profile.username}
-                </span>
-                <a
-                  href={`/${profile.username}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`text-[11px] leading-none mt-1 block p-0 text-left ml-[1px] truncate max-w-[300px] transition-colors ${copied ? "text-emerald-600" : "text-neutral-400 hover:text-neutral-600 hover:underline"}`}
-                >
-                  {copied ? "Copied!" : `sterp.com/${profile.username}`}
-                </a>
-              </div>
-              {currentProducts.length >= 3 ? (
-                <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5 flex-shrink-0">Live</span>
-              ) : (
-                <span className="text-[10px] font-medium text-white bg-[#555] rounded-full px-2 py-0.5 flex-shrink-0">Draft</span>
-              )}
-              <button onClick={() => openProfileModal()} className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0 cursor-pointer">Edit</button>
-              <a href={`/${profile.username}`} target="_blank" rel="noopener noreferrer" className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0 cursor-pointer">View</a>
-              <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); }} className="text-[13px] text-neutral-300 hover:text-neutral-500 transition-colors flex-shrink-0 cursor-pointer">Log out</button>
-            </div>
-          )}
-        </div>
-
-        {/* Mobile: logo centered + two-row profile */}
-        <div className="md:hidden space-y-3">
-          <div className="text-center">
-            <Image
-              src="/logo-charcoal.png"
-              alt="Sterp"
-              width={120}
-              height={40}
-              className="h-[40px] w-auto inline-block"
-            />
-          </div>
-          {profile && (
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full overflow-hidden bg-neutral-200 flex-shrink-0">
-                {profile.avatar_url ? (
-                  <Image
-                    src={profile.avatar_url}
-                    alt={profile.name || profile.username}
-                    width={40}
-                    height={40}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center text-neutral-400 text-[10px]">—</div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[14px] font-medium text-neutral-900 truncate leading-none">
-                    {profile.name || profile.username}
-                  </span>
-                  {currentProducts.length >= 3 ? (
-                    <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5 flex-shrink-0">Live</span>
-                  ) : (
-                    <span className="text-[10px] font-medium text-white bg-[#555] rounded-full px-2 py-0.5 flex-shrink-0">Draft</span>
-                  )}
-                </div>
-                <a
-                  href={`/${profile.username}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`text-[11px] leading-none mt-1 block transition-colors ${copied ? "text-emerald-600" : "text-neutral-400 hover:text-neutral-600 hover:underline"}`}
-                >
-                  {copied ? "Copied!" : `sterp.com/${profile.username}`}
-                </a>
-              </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <button onClick={() => openProfileModal()} className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors cursor-pointer">Edit</button>
-                <a href={`/${profile.username}`} target="_blank" rel="noopener noreferrer" className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors cursor-pointer">View</a>
-                <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); }} className="text-[12px] text-neutral-300 hover:text-neutral-500 transition-colors cursor-pointer">Log out</button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      <DashboardHeader
+        profile={profile}
+        currentProducts={currentProducts}
+        copied={copied}
+        onEditProfile={openProfileModal}
+        onCopyLink={handleCopyLink}
+        onLogout={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); }}
+      />
 
       <div className="mx-auto max-w-2xl px-4 pb-16">
         {loading ? (
           <p className="text-neutral-400 text-[15px]">Loading data...</p>
         ) : (
           <div className="space-y-6">
-            {/* ─── Green Banner System (one banner at a time, priority-ordered) ──── */}
-            {profile?.username && (() => {
-              // Priority 1: Celebration card (page just went live, 3+ products, not dismissed)
-              if (currentProducts.length >= 3 && liveBannerDismissed === false) {
-                return (
-                  <div className="relative rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-5 mx-auto w-full sm:max-w-[600px] text-center animate-[celebrationIn_0.4s_ease-out]">
-                    <button
-                      onClick={() => { localStorage.setItem("sterp_live_banner_dismissed", "true"); setLiveBannerDismissed(true); }}
-                      className="absolute top-3 right-3 text-neutral-300 hover:text-neutral-500 transition-colors text-[18px] leading-none p-1 cursor-pointer"
-                      aria-label="Dismiss"
-                    >
-                      ×
-                    </button>
-                    <a
-                      href={`/${profile.username}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-[17px] font-medium text-neutral-900 hover:opacity-70 transition-opacity"
-                    >
-                      sterp.com/{profile.username}
-                      <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h7v7" /><path d="M13 3L6 10" /></svg>
-                    </a>
-                    <p className="text-[13px] text-neutral-500 mt-1.5">
-                      Send your link to the group chat. Add it to your bio.
-                    </p>
-                    <div className="flex gap-2 mt-4">
-                      <button
-                        onClick={handleCopyLink}
-                        className={`flex-1 flex items-center justify-center gap-1.5 text-[13px] font-medium py-2 rounded-md transition-colors ${
-                          copied
-                            ? "bg-emerald-600 text-white"
-                            : "bg-[#1D9E75] text-white hover:opacity-90"
-                        }`}
-                      >
-                        {copied ? "Copied!" : (<>
-                          <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5" /><path d="M10.5 5.5V3.5a1.5 1.5 0 00-1.5-1.5H3.5A1.5 1.5 0 002 3.5V9a1.5 1.5 0 001.5 1.5h2" /></svg>
-                          Copy link
-                        </>)}
-                      </button>
-                      <a
-                        href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out my Sterp — the stuff I actually own and use: sterp.com/${profile.username}`)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-1.5 text-[13px] font-medium py-2 rounded-md bg-white border border-gray-200 text-neutral-700 hover:bg-neutral-50 transition-colors"
-                      >
-                        Share on
-                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
-                      </a>
-                    </div>
-                    <a
-                      href="https://sterp.com/cam"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block mt-3 text-[13px] text-neutral-500 hover:text-neutral-700 transition-colors"
-                    >
-                      See a fully built Sterp →
-                    </a>
-                  </div>
-                );
-              }
-              // Priority 2: Phase-specific green banner messages
-              if (phase === 1 && productCount >= 1 && productCount < 3) {
-                return (
-                  <div className="relative rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-3">
-                    <p className="text-[14px] text-emerald-800">
-                      {productCount} down, {3 - productCount} to go to make your page live.
-                    </p>
-                  </div>
-                );
-              }
-              if (phase === 2) {
-                return (
-                  <div className="relative rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-3">
-                    <p className="text-[14px] text-emerald-800">
-                      Your Obsessions are set. Keep adding products — you&apos;ll be able to organize them into collections.
-                    </p>
-                  </div>
-                );
-              }
-              if (phase === 3 && nudgeDismissed === false) {
-                return (
-                  <div className="relative rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-4">
-                    <button
-                      onClick={dismissNudge}
-                      className="absolute top-3 right-3 text-emerald-400 hover:text-emerald-600 transition-colors text-[16px] leading-none cursor-pointer"
-                      aria-label="Dismiss"
-                    >
-                      ×
-                    </button>
-                    <p className="text-[14px] font-medium text-emerald-800 pr-6">
-                      You&apos;ve got {productCount} products — group similar ones into a collection.
-                    </p>
-                    <p className="text-[13px] text-emerald-700 mt-1">
-                      Try something like &ldquo;Home Office&rdquo; or &ldquo;Gym Setup.&rdquo;
-                    </p>
-                    <button
-                      onClick={() => {
-                        setShowAddCollection(true);
-                        setAddCollectionError("");
-                      }}
-                      className="mt-3 text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
-                    >
-                      + Create Collection
-                    </button>
-                  </div>
-                );
-              }
-              return null;
-            })()}
+            {profile?.username && (
+              <GreenBanners
+                username={profile.username}
+                currentProducts={currentProducts}
+                productCount={productCount}
+                phase={phase}
+                copied={copied}
+                nudgeDismissed={nudgeDismissed}
+                liveBannerDismissed={liveBannerDismissed}
+                onCopyLink={handleCopyLink}
+                onDismissLiveBanner={() => { localStorage.setItem("sterp_live_banner_dismissed", "true"); setLiveBannerDismissed(true); }}
+                onDismissNudge={dismissNudge}
+                onCreateCollection={() => { setShowAddCollection(true); setAddCollectionError(""); }}
+              />
+            )}
 
             {/* ─── First-run composition (zero products) ── */}
             {products.length === 0 && (
@@ -1599,152 +1407,26 @@ export default function DashboardPage() {
               )}
             </section>}
 
-            {/* ─── Section 5: Archive ──────────────────────────── */}
-            {archivedProducts.length > 0 && (
-              <section>
-                <div className="flex items-baseline gap-2 mb-3 pt-4 border-t border-gray-200">
-                  <Clock size={16} className="text-neutral-400 relative top-[2px]" />
-                  <h2 className="text-[20px] font-semibold text-neutral-900">
-                    Archive
-                  </h2>
-                  <span className="text-[13px] text-neutral-400 font-medium">
-                    {archivedProducts.length}
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  {archivedProducts.map((p) => (
-                    <div key={p.id} className="bg-white rounded-lg border border-gray-200">
-                      {editingNoteId === p.id ? (
-                        <div className="p-4 space-y-3">
-                          <div className="flex items-center gap-3">
-                            <Thumbnail src={p.photo_url} alt={p.name} />
-                            <span className="text-[15px] font-medium text-neutral-900">{p.name}</span>
-                          </div>
-
-                          {/* Archive note with character counter */}
-                          <div>
-                            <textarea
-                              value={editNoteValue}
-                              onChange={(e) => {
-                                if (e.target.value.length <= 160) setEditNoteValue(e.target.value);
-                              }}
-                              rows={2}
-                              className={`w-full rounded-md border border-gray-200 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40 resize-none`}
-                              placeholder="Any memories with this one?"
-                              autoFocus
-                            />
-                            <p className={`text-[12px] mt-1 ${editNoteValue.length >= 140 ? "text-[#C0392B]" : "text-neutral-400"}`}>
-                              {editNoteValue.length}/160
-                            </p>
-                          </div>
-
-                          {/* Date fields — matching Edit Product condensed metadata style */}
-                          <div className="flex flex-col gap-2 text-[13px]">
-                            <div className="flex items-center gap-2">
-                              <span className="text-neutral-400 w-20 flex-shrink-0">Acquired</span>
-                              <CustomDropdown
-                                value={editAcquiredMonth}
-                                options={[
-                                  { value: "", label: "Month" },
-                                  ...["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => ({ value: String(i + 1), label: m })),
-                                ]}
-                                onChange={setEditAcquiredMonth}
-                              />
-                              <CustomDropdown
-                                value={editAcquiredYear}
-                                options={[
-                                  { value: "", label: "Year" },
-                                  ...Array.from({ length: new Date().getFullYear() - 2009 }, (_, i) => new Date().getFullYear() - i).map((y) => ({ value: String(y), label: String(y) })),
-                                ]}
-                                onChange={setEditAcquiredYear}
-                              />
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-neutral-400 w-20 flex-shrink-0">Archived</span>
-                              <CustomDropdown
-                                value={editArchivedMonth}
-                                options={[
-                                  { value: "", label: "Month" },
-                                  ...["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => ({ value: String(i + 1), label: m })),
-                                ]}
-                                onChange={setEditArchivedMonth}
-                              />
-                              <CustomDropdown
-                                value={editArchivedYear}
-                                options={[
-                                  { value: "", label: "Year" },
-                                  ...Array.from({ length: new Date().getFullYear() - 2009 }, (_, i) => new Date().getFullYear() - i).map((y) => ({ value: String(y), label: String(y) })),
-                                ]}
-                                onChange={setEditArchivedYear}
-                              />
-                            </div>
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex items-center justify-between pt-1 border-t border-gray-100">
-                            <div className="flex items-center gap-3">
-                              <button
-                                onClick={() => { setEditingNoteId(null); handleRestoreProduct(p.id); }}
-                                className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors"
-                              >
-                                Restore
-                              </button>
-                              <button
-                                onClick={() => { setEditingNoteId(null); setDeleteTarget({ id: p.id, name: p.name, type: "archived" }); }}
-                                className="text-[13px] text-[#C0392B] hover:opacity-70 transition-opacity"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <button
-                                onClick={() => setEditingNoteId(null)}
-                                className="text-[13px] text-neutral-500 hover:text-neutral-800"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                onClick={() => handleSaveArchiveNote(p.id)}
-                                className="text-[13px] font-medium text-white px-4 py-1.5 rounded-md hover:opacity-90 bg-[#C0392B]"
-                              >
-                                Save
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-3 px-4 py-3">
-                          <Thumbnail src={p.photo_url} alt={p.name} />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[15px] font-medium text-neutral-900 truncate">
-                                {p.name}
-                              </span>
-                              {p.created_at && p.archived_at && (
-                                <span className="text-[11px] font-medium text-amber-700 bg-amber-100 rounded-full px-2 py-0.5 flex-shrink-0">
-                                  {formatDuration(p.acquired_at ?? p.created_at, p.archived_at)}
-                                </span>
-                              )}
-                            </div>
-                            {p.archive_note && (
-                              <span className="text-[13px] text-neutral-400 truncate block">
-                                {p.archive_note}
-                              </span>
-                            )}
-                          </div>
-                          <button
-                            onClick={() => openArchiveEdit(p)}
-                            className="text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0"
-                          >
-                            Edit
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
+            <ArchiveSection
+              archivedProducts={archivedProducts}
+              editingNoteId={editingNoteId}
+              editNoteValue={editNoteValue}
+              setEditNoteValue={setEditNoteValue}
+              editAcquiredMonth={editAcquiredMonth}
+              setEditAcquiredMonth={setEditAcquiredMonth}
+              editAcquiredYear={editAcquiredYear}
+              setEditAcquiredYear={setEditAcquiredYear}
+              editArchivedMonth={editArchivedMonth}
+              setEditArchivedMonth={setEditArchivedMonth}
+              editArchivedYear={editArchivedYear}
+              setEditArchivedYear={setEditArchivedYear}
+              onOpenEdit={openArchiveEdit}
+              onSaveNote={handleSaveArchiveNote}
+              onRestore={handleRestoreProduct}
+              onDelete={(p) => setDeleteTarget({ id: p.id, name: p.name, type: "archived" })}
+              onCancelEdit={() => setEditingNoteId(null)}
+              formatDuration={formatDuration}
+            />
             {/* All nudges now live in the Green Banner System at the top */}
           </div>
         )}
@@ -1803,166 +1485,28 @@ export default function DashboardPage() {
 
       {/* Edit Profile Modal */}
       {profileModalOpen && profile && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Edit profile"
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-          onClick={() => setProfileModalOpen(false)}
-        >
-          <div className="absolute inset-0 bg-black/50" />
-          <div
-            className="relative z-10 bg-white w-full h-full sm:h-auto sm:max-w-lg sm:mx-auto sm:mt-20 sm:rounded-xl sm:max-h-[calc(100vh-10rem)] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-3 flex items-center justify-between z-10">
-              <h2 className="text-[17px] font-semibold text-neutral-900">Edit Profile</h2>
-              <button
-                type="button"
-                onClick={() => setProfileModalOpen(false)}
-                aria-label="Close"
-                className="text-neutral-400 hover:text-neutral-600 transition-colors p-1 cursor-pointer"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="px-5 py-3 space-y-3">
-              {/* Avatar */}
-              <div className="flex flex-col items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => avatarInputRef.current?.click()}
-                  disabled={avatarUploading}
-                  className="relative h-16 w-16 rounded-full overflow-hidden bg-neutral-200 group cursor-pointer"
-                >
-                  {profile.avatar_url ? (
-                    <Image
-                      src={profile.avatar_url}
-                      alt={profile.name || profile.username}
-                      width={64}
-                      height={64}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center text-neutral-400 text-sm">
-                      Add
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <span className="text-white text-[11px] font-medium">
-                      {avatarUploading ? "..." : "Edit"}
-                    </span>
-                  </div>
-                </button>
-                <input
-                  ref={avatarInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/heic"
-                  onChange={handleAvatarFileSelect}
-                  className="hidden"
-                />
-                {avatarError && (
-                  <p className="text-[12px] text-[#C0392B]">{avatarError}</p>
-                )}
-              </div>
-
-              {/* Name */}
-              <div>
-                <input
-                  type="text"
-                  value={profileName}
-                  onChange={(e) => setProfileName(e.target.value)}
-                  onBlur={() => saveProfileField("name", profileName)}
-                  className={inputClass}
-                  placeholder="Your name"
-                />
-                <p className="text-[12px] text-neutral-400 mt-1">sterp.com/{profile.username}</p>
-              </div>
-
-              {/* Bio */}
-              <div>
-                <textarea
-                  value={profileBio}
-                  onChange={(e) => {
-                    if (e.target.value.length <= 160) {
-                      setProfileBio(e.target.value);
-                    }
-                  }}
-                  onBlur={() => saveProfileField("bio", profileBio)}
-                  rows={3}
-                  className={`${inputClass} resize-none`}
-                  placeholder="A short bio"
-                />
-                <p
-                  className={`text-[12px] mt-0.5 ${
-                    profileBio.length >= 140 ? "text-[#C0392B]" : "text-neutral-400"
-                  }`}
-                >
-                  {profileBio.length}/160
-                </p>
-              </div>
-
-              {/* Social handles */}
-              <div className="space-y-2">
-                {socialOrder.map((platform) => {
-                  const config = {
-                    twitter: {
-                      icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-neutral-400 flex-shrink-0"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.742l7.727-8.835L1.254 2.25H8.08l4.254 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z" /></svg>,
-                      value: profileTwitter, set: setProfileTwitter, field: "twitter_url" as const,
-                    },
-                    instagram: {
-                      icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-neutral-400 flex-shrink-0"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" /></svg>,
-                      value: profileInstagram, set: setProfileInstagram, field: "instagram_url" as const,
-                    },
-                    youtube: {
-                      icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-neutral-400 flex-shrink-0"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>,
-                      value: profileYoutube, set: setProfileYoutube, field: "youtube_url" as const,
-                    },
-                  }[platform];
-                  return (
-                    <div key={platform} className="flex items-center gap-2">
-                      {config.icon}
-                      <div className="flex-1 relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-[14px]">@</span>
-                        <input
-                          type="text"
-                          value={config.value}
-                          onChange={(e) => config.set(e.target.value)}
-                          onBlur={() => saveProfileField(config.field, config.value)}
-                          className={`${inputClass} w-full pl-7`}
-                          placeholder="handle"
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Save */}
-              <div className="flex items-center gap-3 pt-1">
-                <button
-                  onClick={() => { saveAllProfileFields(); setProfileModalOpen(false); }}
-                  className="text-[14px] font-medium text-white px-5 py-2 rounded-md hover:opacity-90 transition-opacity"
-                  style={{ backgroundColor: "#C0392B" }}
-                >
-                  Save
-                </button>
-                <button
-                  onClick={() => setProfileModalOpen(false)}
-                  className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors"
-                >
-                  Cancel
-                </button>
-                {profileSaved && (
-                  <span className="text-[13px] text-emerald-600 font-medium">Saved</span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        <EditProfileModal
+          profile={profile}
+          profileName={profileName}
+          setProfileName={setProfileName}
+          profileBio={profileBio}
+          setProfileBio={setProfileBio}
+          profileTwitter={profileTwitter}
+          setProfileTwitter={setProfileTwitter}
+          profileInstagram={profileInstagram}
+          setProfileInstagram={setProfileInstagram}
+          profileYoutube={profileYoutube}
+          setProfileYoutube={setProfileYoutube}
+          socialOrder={socialOrder}
+          avatarUploading={avatarUploading}
+          avatarError={avatarError}
+          avatarInputRef={avatarInputRef}
+          profileSaved={profileSaved}
+          onAvatarFileSelect={handleAvatarFileSelect}
+          onSaveField={saveProfileField}
+          onSaveAll={saveAllProfileFields}
+          onClose={() => setProfileModalOpen(false)}
+        />
       )}
     </div>
   );

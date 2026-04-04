@@ -1085,9 +1085,9 @@ function ProductModal({
               setObsessionPending(false);
             }
           }}
-          className="flex items-center gap-1.5 text-[12px] text-[#C0392B] hover:opacity-70 transition-opacity"
+          className="inline-flex items-center gap-1.5 text-[12px] text-gray-700 border border-gray-200 rounded-full px-3 py-1 hover:bg-gray-50 transition-colors"
         >
-          <Star size={13} className="text-neutral-300" />
+          <Star size={13} className="text-gray-400" />
           {obsessionPending ? "Adding..." : "Add to Obsessions"}
         </button>
       )}
@@ -1262,7 +1262,7 @@ function ProductModal({
                     <span className="flex items-center gap-1 text-neutral-500">
                       <span className="text-neutral-400">Acquired:</span>
                       <span className="text-neutral-700">{acquiredLabel || "—"}</span>
-                      <button type="button" onClick={() => setEditingDate(true)} className="text-[12px] text-[#C0392B]/70 hover:text-[#C0392B] transition-colors ml-0.5">Change</button>
+                      <button type="button" onClick={() => setEditingDate(true)} className="text-[12px] text-gray-400 hover:text-gray-600 hover:underline transition-colors ml-0.5">Change</button>
                     </span>
                   )}
 
@@ -1276,7 +1276,7 @@ function ProductModal({
                       <span className="text-neutral-400">Collection:</span>
                       <span className="text-neutral-700">{selectedCollectionName || "—"}</span>
                       {collections.length >= 2 && (
-                        <button type="button" onClick={() => setEditingCollection(true)} className="text-[12px] text-[#C0392B]/70 hover:text-[#C0392B] transition-colors ml-0.5">Change</button>
+                        <button type="button" onClick={() => setEditingCollection(true)} className="text-[12px] text-gray-400 hover:text-gray-600 hover:underline transition-colors ml-0.5">Change</button>
                       )}
                     </span>
                   )}
@@ -1349,7 +1349,7 @@ function ProductModal({
                   <span className="flex items-center gap-1 text-neutral-500">
                     <span className="text-neutral-400">Acquired:</span>
                     <span className="text-neutral-700">{acquiredLabel || "—"}</span>
-                    <button type="button" onClick={() => setEditingDate(true)} className="text-[12px] text-[#C0392B]/70 hover:text-[#C0392B] transition-colors ml-0.5">Change</button>
+                    <button type="button" onClick={() => setEditingDate(true)} className="text-[12px] text-gray-400 hover:text-gray-600 hover:underline transition-colors ml-0.5">Change</button>
                   </span>
                 )}
 
@@ -1363,7 +1363,7 @@ function ProductModal({
                     <span className="text-neutral-400">Collection:</span>
                     <span className="text-neutral-700">{selectedCollectionName || "—"}</span>
                     {collections.length >= 2 && (
-                      <button type="button" onClick={() => setEditingCollection(true)} className="text-[12px] text-[#C0392B]/70 hover:text-[#C0392B] transition-colors ml-0.5">Change</button>
+                      <button type="button" onClick={() => setEditingCollection(true)} className="text-[12px] text-gray-400 hover:text-gray-600 hover:underline transition-colors ml-0.5">Change</button>
                     )}
                   </span>
                 )}

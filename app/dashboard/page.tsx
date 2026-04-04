@@ -2595,7 +2595,7 @@ export default function DashboardPage() {
             {/* ─── Section 3: Obsessions (Phase 2+) ──────────────────────── */}
             {products.length > 0 && phase >= 2 && <section>
               <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
+                <div className="flex items-baseline gap-2">
                   <h2 className="text-[20px] font-semibold text-neutral-900">
                     Obsessions
                   </h2>
@@ -2831,28 +2831,30 @@ export default function DashboardPage() {
 
             {/* ─── Section 4: Collections (Phase 4 — first named collection created) ── */}
             {products.length > 0 && phase >= 4 && <section>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-[20px] font-semibold text-neutral-900">
-                  Collections
-                </h2>
-                <button
-                  onClick={() => {
-                    setShowAddCollection(!showAddCollection);
-                    setAddCollectionError("");
-                  }}
-                  className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity cursor-pointer"
-                >
-                  {showAddCollection ? "Cancel" : "+ Add Collection"}
-                </button>
+              <div className="flex flex-col gap-1 mb-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-[20px] font-semibold text-neutral-900">
+                    Collections
+                  </h2>
+                  <button
+                    onClick={() => {
+                      setShowAddCollection(!showAddCollection);
+                      setAddCollectionError("");
+                    }}
+                    className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity cursor-pointer"
+                  >
+                    {showAddCollection ? "Cancel" : "+ Add Collection"}
+                  </button>
+                </div>
+                {(() => {
+                  const draftCount = products.filter((p) => p.status === "draft").length;
+                  return draftCount > 0 ? (
+                    <p className="text-[13px] text-neutral-400">
+                      {draftCount} product{draftCount === 1 ? "" : "s"} need{draftCount === 1 ? "s a photo" : " photos"}
+                    </p>
+                  ) : null;
+                })()}
               </div>
-              {(() => {
-                const draftCount = products.filter((p) => p.status === "draft").length;
-                return draftCount > 0 ? (
-                  <p className="text-[13px] text-neutral-400 mb-3">
-                    {draftCount} product{draftCount === 1 ? "" : "s"} need{draftCount === 1 ? "s a photo" : " photos"}
-                  </p>
-                ) : null;
-              })()}
 
               {/* Add collection form */}
               {showAddCollection && (

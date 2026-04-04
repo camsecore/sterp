@@ -23,6 +23,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
   sortableKeyboardCoordinates,
+  arrayMove,
 } from "@dnd-kit/sortable";
 
 import type { Product, Collection, Obsession, Profile } from "./lib/types";
@@ -356,12 +357,8 @@ export default function DashboardPage() {
 
   async function handleReorderObsessions(fromIdx: number, toIdx: number) {
     const sorted = [...obsessions].sort((a, b) => a.sort_order - b.sort_order);
-    const [moved] = sorted.splice(fromIdx, 1);
-    sorted.splice(toIdx, 0, moved);
-    // Optimistic update
-    const reordered = sorted.map((tp, i) => ({ ...tp, sort_order: i + 1 }));
+    const reordered = arrayMove(sorted, fromIdx, toIdx).map((tp, i) => ({ ...tp, sort_order: i + 1 }));
     setObsessions(reordered);
-    // Persist
     const res = await fetch("/api/obsessions/reorder", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -386,9 +383,7 @@ export default function DashboardPage() {
 
   async function handleReorderCollections(fromIdx: number, toIdx: number) {
     const sorted = [...collections].sort((a, b) => a.sort_order - b.sort_order);
-    const [moved] = sorted.splice(fromIdx, 1);
-    sorted.splice(toIdx, 0, moved);
-    const reordered = sorted.map((c, i) => ({ ...c, sort_order: i }));
+    const reordered = arrayMove(sorted, fromIdx, toIdx).map((c, i) => ({ ...c, sort_order: i }));
     setCollections(reordered);
     const res = await fetch("/api/collections/reorder", {
       method: "PUT",
@@ -402,20 +397,17 @@ export default function DashboardPage() {
     const colProducts = products
       .filter((p) => p.collection_id === collectionId && p.status === "current")
       .sort((a, b) => a.sort_order - b.sort_order);
-    const [moved] = colProducts.splice(fromIdx, 1);
-    colProducts.splice(toIdx, 0, moved);
-    // Optimistic: update sort_order in local state
-    const updatedIds = new Set(colProducts.map((p) => p.id));
+    const reordered = arrayMove(colProducts, fromIdx, toIdx);
+    const updatedIds = new Set(reordered.map((p) => p.id));
     const newProducts = products.map((p) => {
       if (!updatedIds.has(p.id)) return p;
-      const newIdx = colProducts.findIndex((cp) => cp.id === p.id);
-      return { ...p, sort_order: newIdx };
+      return { ...p, sort_order: reordered.findIndex((cp) => cp.id === p.id) };
     });
     setProducts(newProducts);
     const res = await fetch("/api/products/reorder", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ collection_id: collectionId, order: colProducts.map((p) => p.id) }),
+      body: JSON.stringify({ collection_id: collectionId, order: reordered.map((p) => p.id) }),
     });
     if (!res.ok) await fetchProducts();
   }

@@ -1208,7 +1208,7 @@ function ProductModal({
           {/* ── 1. Full-width desktop header ── */}
           <div className="hidden sm:flex items-center justify-between px-5 py-3 border-b border-gray-100">
             <h2 className="text-[17px] font-semibold text-neutral-900">Edit Product</h2>
-            <button type="button" onClick={handleDismiss} aria-label="Close" className="text-neutral-400 hover:text-neutral-600 transition-colors p-1">
+            <button type="button" onClick={handleDismiss} aria-label="Close" className="text-neutral-400 hover:text-neutral-600 transition-colors p-1 cursor-pointer">
               <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
@@ -1500,7 +1500,7 @@ function ProductModal({
         {/* ── Full-width desktop header ── */}
         <div className="hidden sm:flex items-center justify-between px-5 py-3 border-b border-gray-100">
           <h2 className="text-[17px] font-semibold text-neutral-900">Add Product</h2>
-          <button type="button" onClick={handleDismiss} aria-label="Close" className="text-neutral-400 hover:text-neutral-600 transition-colors p-1">
+          <button type="button" onClick={handleDismiss} aria-label="Close" className="text-neutral-400 hover:text-neutral-600 transition-colors p-1 cursor-pointer">
             <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
@@ -2283,9 +2283,9 @@ export default function DashboardPage() {
               ) : (
                 <span className="text-[10px] font-medium text-white bg-[#555] rounded-full px-2 py-0.5 flex-shrink-0">Draft</span>
               )}
-              <button onClick={() => openProfileModal()} className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0">Edit</button>
-              <a href={`/${profile.username}`} target="_blank" rel="noopener noreferrer" className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0">View</a>
-              <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); }} className="text-[13px] text-neutral-300 hover:text-neutral-500 transition-colors flex-shrink-0">Log out</button>
+              <button onClick={() => openProfileModal()} className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0 cursor-pointer">Edit</button>
+              <a href={`/${profile.username}`} target="_blank" rel="noopener noreferrer" className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0 cursor-pointer">View</a>
+              <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); }} className="text-[13px] text-neutral-300 hover:text-neutral-500 transition-colors flex-shrink-0 cursor-pointer">Log out</button>
             </div>
           )}
         </div>
@@ -2337,9 +2337,9 @@ export default function DashboardPage() {
                 </a>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
-                <button onClick={() => openProfileModal()} className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors">Edit</button>
-                <a href={`/${profile.username}`} target="_blank" rel="noopener noreferrer" className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors">View</a>
-                <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); }} className="text-[12px] text-neutral-300 hover:text-neutral-500 transition-colors">Log out</button>
+                <button onClick={() => openProfileModal()} className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors cursor-pointer">Edit</button>
+                <a href={`/${profile.username}`} target="_blank" rel="noopener noreferrer" className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors cursor-pointer">View</a>
+                <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); router.push("/"); }} className="text-[12px] text-neutral-300 hover:text-neutral-500 transition-colors cursor-pointer">Log out</button>
               </div>
             </div>
           )}
@@ -2359,7 +2359,7 @@ export default function DashboardPage() {
                   <div className="relative rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-5 mx-auto w-full sm:max-w-[600px] text-center animate-[celebrationIn_0.4s_ease-out]">
                     <button
                       onClick={() => { localStorage.setItem("sterp_live_banner_dismissed", "true"); setLiveBannerDismissed(true); }}
-                      className="absolute top-3 right-3 text-neutral-300 hover:text-neutral-500 transition-colors text-[18px] leading-none p-1"
+                      className="absolute top-3 right-3 text-neutral-300 hover:text-neutral-500 transition-colors text-[18px] leading-none p-1 cursor-pointer"
                       aria-label="Dismiss"
                     >
                       ×
@@ -2435,7 +2435,7 @@ export default function DashboardPage() {
                   <div className="relative rounded-lg border border-emerald-100 bg-emerald-50 px-5 py-4">
                     <button
                       onClick={dismissNudge}
-                      className="absolute top-3 right-3 text-emerald-400 hover:text-emerald-600 transition-colors text-[16px] leading-none"
+                      className="absolute top-3 right-3 text-emerald-400 hover:text-emerald-600 transition-colors text-[16px] leading-none cursor-pointer"
                       aria-label="Dismiss"
                     >
                       ×
@@ -2558,7 +2558,7 @@ export default function DashboardPage() {
                             type="button"
                             onClick={() => setProductMenuOpen(productMenuOpen === p.id ? null : p.id)}
                             aria-label={`${p.name} options`}
-                            className="p-1 hover:bg-neutral-100 rounded transition-colors"
+                            className="p-1 hover:bg-neutral-100 rounded transition-colors cursor-pointer"
                           >
                             <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
                               <circle cx="8" cy="3" r="1.5" />
@@ -2572,13 +2572,13 @@ export default function DashboardPage() {
                               <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-40">
                                 <button
                                   onClick={() => { setProductMenuOpen(null); setProductModal({ mode: "edit", product: p }); }}
-                                  className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                  className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
                                 >
                                   Edit
                                 </button>
                                 <button
                                   onClick={() => { setProductMenuOpen(null); setArchiveTarget(p); }}
-                                  className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                  className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
                                 >
                                   Archive
                                 </button>
@@ -2613,7 +2613,7 @@ export default function DashboardPage() {
                       }
                     }}
                     disabled={obsessions.length >= 5}
-                    className="text-[13px] font-medium transition-opacity disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="text-[13px] font-medium transition-opacity disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                     style={{ color: "#C0392B" }}
                     title={obsessions.length >= 5 ? "Maximum 5 obsessions" : undefined}
                   >
@@ -2717,7 +2717,7 @@ export default function DashboardPage() {
                                     type="button"
                                     onClick={() => setProductMenuOpen(productMenuOpen === `tp-${tp.product_id}` ? null : `tp-${tp.product_id}`)}
                                     aria-label={`${tp.products?.name ?? "Product"} options`}
-                                    className="p-1 hover:bg-neutral-100 rounded transition-colors"
+                                    className="p-1 hover:bg-neutral-100 rounded transition-colors cursor-pointer"
                                   >
                                     <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
                                       <circle cx="8" cy="3" r="1.5" />
@@ -2731,13 +2731,13 @@ export default function DashboardPage() {
                                       <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-56">
                                         <button
                                           onClick={() => { setProductMenuOpen(null); if (tpProduct) setProductModal({ mode: "edit", product: tpProduct }); }}
-                                          className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                          className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
                                         >
                                           Edit
                                         </button>
                                         <button
                                           onClick={() => { setProductMenuOpen(null); handleRemoveObsession(tp.product_id); }}
-                                          className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                          className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
                                         >
                                           Remove from Obsessions
                                         </button>
@@ -2794,7 +2794,7 @@ export default function DashboardPage() {
                             type="button"
                             onClick={() => setProductMenuOpen(productMenuOpen === p.id ? null : p.id)}
                             aria-label={`${p.name} options`}
-                            className="p-1 hover:bg-neutral-100 rounded transition-colors"
+                            className="p-1 hover:bg-neutral-100 rounded transition-colors cursor-pointer"
                           >
                             <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
                               <circle cx="8" cy="3" r="1.5" />
@@ -2808,13 +2808,13 @@ export default function DashboardPage() {
                               <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-40">
                                 <button
                                   onClick={() => { setProductMenuOpen(null); setProductModal({ mode: "edit", product: p }); }}
-                                  className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                  className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
                                 >
                                   Edit
                                 </button>
                                 <button
                                   onClick={() => { setProductMenuOpen(null); setArchiveTarget(p); }}
-                                  className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                  className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
                                 >
                                   Archive
                                 </button>
@@ -2840,7 +2840,7 @@ export default function DashboardPage() {
                     setShowAddCollection(!showAddCollection);
                     setAddCollectionError("");
                   }}
-                  className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
+                  className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity cursor-pointer"
                 >
                   {showAddCollection ? "Cancel" : "+ Add Collection"}
                 </button>
@@ -2939,7 +2939,7 @@ export default function DashboardPage() {
                               type="button"
                               onClick={() => setProductMenuOpen(productMenuOpen === p.id ? null : p.id)}
                               aria-label={`${p.name} options`}
-                              className="p-1 hover:bg-neutral-100 rounded transition-colors"
+                              className="p-1 hover:bg-neutral-100 rounded transition-colors cursor-pointer"
                             >
                               <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
                                 <circle cx="8" cy="3" r="1.5" />
@@ -2953,13 +2953,13 @@ export default function DashboardPage() {
                                 <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-40">
                                   <button
                                     onClick={() => { setProductMenuOpen(null); setProductModal({ mode: "edit", product: p }); }}
-                                    className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                    className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
                                   >
                                     Edit
                                   </button>
                                   <button
                                     onClick={() => { setProductMenuOpen(null); setArchiveTarget(p); }}
-                                    className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                    className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
                                   >
                                     Archive
                                   </button>
@@ -3055,7 +3055,7 @@ export default function DashboardPage() {
                                           type="button"
                                           onClick={() => setCollectionMenuOpen(collectionMenuOpen === c.id ? null : c.id)}
                                           aria-label={`${c.name} options`}
-                                          className="p-1 hover:bg-neutral-100 rounded transition-colors"
+                                          className="p-1 hover:bg-neutral-100 rounded transition-colors cursor-pointer"
                                         >
                                           <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
                                             <circle cx="8" cy="3" r="1.5" />
@@ -3080,7 +3080,7 @@ export default function DashboardPage() {
                                                     } catch {}
                                                   }
                                                 }}
-                                                className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                                className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
                                               >
                                                 Copy link
                                               </button>
@@ -3091,7 +3091,7 @@ export default function DashboardPage() {
                                                   setRenameError("");
                                                   setCollectionMenuOpen(null);
                                                 }}
-                                                className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                                className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
                                               >
                                                 Rename
                                               </button>
@@ -3129,7 +3129,7 @@ export default function DashboardPage() {
                                         onClick={() =>
                                           setProductModal({ mode: "add", collectionId: c.id })
                                         }
-                                        className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
+                                        className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity cursor-pointer"
                                       >
                                         + Add Product
                                       </button>
@@ -3181,7 +3181,7 @@ export default function DashboardPage() {
                                                       type="button"
                                                       onClick={(e) => { e.stopPropagation(); setProductMenuOpen(productMenuOpen === `col-${p.id}` ? null : `col-${p.id}`); }}
                                                       aria-label={`${p.name} options`}
-                                                      className="p-1 hover:bg-neutral-100 rounded transition-colors"
+                                                      className="p-1 hover:bg-neutral-100 rounded transition-colors cursor-pointer"
                                                     >
                                                       <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
                                                         <circle cx="8" cy="3" r="1.5" />
@@ -3195,13 +3195,13 @@ export default function DashboardPage() {
                                                         <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-40">
                                                           <button
                                                             onClick={() => { setProductMenuOpen(null); setProductModal({ mode: "edit", product: p }); }}
-                                                            className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                                            className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
                                                           >
                                                             Edit
                                                           </button>
                                                           <button
                                                             onClick={() => { setProductMenuOpen(null); setArchiveTarget(p); }}
-                                                            className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"
+                                                            className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
                                                           >
                                                             Archive
                                                           </button>
@@ -3401,7 +3401,7 @@ export default function DashboardPage() {
                 type="button"
                 onClick={() => setProfileModalOpen(false)}
                 aria-label="Close"
-                className="text-neutral-400 hover:text-neutral-600 transition-colors p-1"
+                className="text-neutral-400 hover:text-neutral-600 transition-colors p-1 cursor-pointer"
               >
                 <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />

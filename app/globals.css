@@ -11,6 +11,10 @@ body {
   color: var(--color-foreground);
 }
 
+button, [role="button"] {
+  cursor: pointer;
+}
+
 /* Thin visible scrollbar on tab bar */
 .tab-scrollbar {
   scrollbar-width: thin;

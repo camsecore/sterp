@@ -2712,7 +2712,7 @@ export default function DashboardPage() {
                                   {productMenuOpen === `tp-${tp.product_id}` && (
                                     <>
                                       <div className="fixed inset-0 z-10" onClick={() => setProductMenuOpen(null)} />
-                                      <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-48">
+                                      <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 whitespace-nowrap">
                                         <button
                                           onClick={() => { setProductMenuOpen(null); if (tpProduct) setProductModal({ mode: "edit", product: tpProduct }); }}
                                           className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors"

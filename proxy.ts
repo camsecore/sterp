@@ -26,9 +26,16 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // Refresh the auth token on every request — this keeps the session alive
-  // so Cam never has to deal with expired tokens on the frontend
-  await supabase.auth.getUser();
+  // Only refresh auth for routes that actually need a session.
+  // Public pages, API routes (handle their own auth), and static pages skip this.
+  const path = request.nextUrl.pathname;
+  const needsAuth =
+    path.startsWith("/dashboard") ||
+    path.startsWith("/onboarding");
+
+  if (needsAuth) {
+    await supabase.auth.getUser();
+  }
 
   return supabaseResponse;
 }

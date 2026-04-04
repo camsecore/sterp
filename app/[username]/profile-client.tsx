@@ -112,7 +112,7 @@ function ProductCard({
   };
 
   return (
-    <div className="group flex flex-col rounded-md overflow-hidden border border-gray-200 bg-[#F0F4F8] transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+    <div className={`group flex flex-col rounded-md overflow-hidden border bg-[#F0F4F8] transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${rank != null ? "border-[#C0392B]/25" : "border-gray-200"}`}>
       <div className="relative aspect-[4/3] overflow-hidden bg-neutral-100">
         <Image
           src={photo}

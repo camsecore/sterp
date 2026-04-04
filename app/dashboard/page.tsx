@@ -1133,13 +1133,18 @@ function ProductModal({
                     onClick={async () => {
                       if (obsessionsFull) {
                         setShowReplacePicker(true);
+                        setTimeout(() => document.getElementById("replace-picker")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
                       } else {
                         setObsessionPending(true);
-                        await fetch("/api/obsessions", {
+                        const res = await fetch("/api/obsessions", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ product_id: product.id }),
                         });
+                        if (!res.ok) {
+                          const data = await res.json();
+                          setErrors({ form: data.error || "Failed to add to Obsessions" });
+                        }
                         await onSave();
                         setObsessionPending(false);
                       }
@@ -1156,7 +1161,7 @@ function ProductModal({
 
           {/* Replace picker — separate row when active */}
           {mode === "edit" && product && showReplacePicker && !obsessionEntry && (
-            <div className="space-y-2 rounded-md border border-gray-200 px-3 py-2.5">
+            <div id="replace-picker" className="space-y-2 rounded-md border border-gray-200 px-3 py-2.5">
               <p className="text-[13px] text-neutral-600">Replace which Obsession?</p>
               {obsessions
                 .sort((a, b) => a.sort_order - b.sort_order)

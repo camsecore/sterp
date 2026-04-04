@@ -1164,7 +1164,7 @@ function ProductModal({
 
         {/* Modal shell — always flex-col so header/footer span full width */}
         <div
-          className="relative z-10 bg-white w-full h-full flex flex-col sm:h-auto sm:max-w-[800px] sm:mx-auto sm:rounded-xl sm:max-h-[600px] sm:overflow-hidden"
+          className="relative z-10 bg-white w-full h-full flex flex-col sm:h-auto sm:max-w-[800px] sm:mx-auto sm:rounded-xl sm:max-h-[600px]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* ── Mobile top nav bar ── */}
@@ -1447,7 +1447,7 @@ function ProductModal({
 
       {/* Modal shell — same structure as Edit */}
       <div
-        className="relative z-10 bg-white w-full h-full flex flex-col sm:h-auto sm:max-w-[800px] sm:mx-auto sm:rounded-xl sm:max-h-[600px] sm:overflow-hidden"
+        className="relative z-10 bg-white w-full h-full flex flex-col sm:h-auto sm:max-w-[800px] sm:mx-auto sm:rounded-xl sm:max-h-[600px]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Mobile top nav bar ── */}

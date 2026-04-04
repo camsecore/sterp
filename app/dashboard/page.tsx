@@ -629,6 +629,8 @@ function ProductModal({
   const [creatingCollection, setCreatingCollection] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
   const [newCollectionError, setNewCollectionError] = useState("");
+  const [editingDate, setEditingDate] = useState(false);
+  const [editingCollection, setEditingCollection] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const newCollectionInputRef = useRef<HTMLInputElement>(null);
@@ -860,11 +862,526 @@ function ProductModal({
     }
   }
 
+  // ── Shared pieces used by both Add and Edit layouts ──
+
+  const photoUploadArea = (
+    <div>
+      <div
+        className={`relative w-full rounded-lg overflow-hidden cursor-pointer transition-colors ${
+          photoUrl
+            ? "aspect-[4/3] bg-neutral-200"
+            : `aspect-[3/1] border-2 border-dashed ${
+                draggingOver
+                  ? "border-[#C0392B]/40 bg-[#C0392B]/5"
+                  : errors.photo
+                  ? "border-[#C0392B]/40 bg-red-50"
+                  : "border-gray-200 bg-neutral-50"
+              }`
+        }`}
+        onClick={() => fileInputRef.current?.click()}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {uploading ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <div className="w-8 h-8 border-2 border-neutral-300 border-t-[#C0392B] rounded-full animate-spin" />
+            <span className="text-[13px] text-neutral-400 mt-2">Uploading...</span>
+          </div>
+        ) : photoUrl ? (
+          <>
+            <Image
+              src={photoUrl}
+              alt=""
+              fill
+              unoptimized
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center group">
+              <span className="text-white text-[14px] font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                Change photo
+              </span>
+            </div>
+          </>
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <Camera size={24} className="text-neutral-300 mb-1" />
+            <span className="text-[13px] font-medium text-neutral-500">Add photo</span>
+            <span className="text-[11px] text-neutral-400 mt-0.5">Products without a photo are saved as drafts.</span>
+          </div>
+        )}
+      </div>
+      {errors.photo && (
+        <p className="text-[13px] text-[#C0392B] mt-1">{errors.photo}</p>
+      )}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/heic"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+    </div>
+  );
+
+  const nameInput = (
+    <div>
+      <input
+        ref={nameInputRef}
+        type="text"
+        value={name}
+        onChange={(e) => {
+          setName(e.target.value);
+          if (errors.name) setErrors((prev) => { const next = { ...prev }; delete next.name; return next; });
+        }}
+        className={`${inputClass}${errors.name ? " border-[#C0392B]" : ""}`}
+        placeholder="Product name"
+      />
+      {errors.name && (
+        <p className="text-[13px] text-[#C0392B] mt-1">{errors.name}</p>
+      )}
+    </div>
+  );
+
+  const oneLinerInput = (
+    <div>
+      <textarea
+        ref={oneLinerRef}
+        value={oneLiner}
+        onChange={(e) => {
+          if (e.target.value.length <= 160) {
+            setOneLiner(e.target.value);
+            if (errors.one_liner) setErrors((prev) => { const next = { ...prev }; delete next.one_liner; return next; });
+          }
+        }}
+        rows={4}
+        className={`${inputClass} resize-none${errors.one_liner ? " border-[#C0392B]" : ""}`}
+        placeholder="What would you tell a friend about this?"
+      />
+      <p
+        className={`text-[12px] mt-1 ${
+          oneLiner.length >= 140 ? "text-[#C0392B]" : "text-neutral-400"
+        }`}
+      >
+        {oneLiner.length}/160
+      </p>
+      {errors.one_liner && (
+        <p className="text-[13px] text-[#C0392B] mt-0.5">{errors.one_liner}</p>
+      )}
+    </div>
+  );
+
+  const collectionSection = (
+    <div>
+      {(collections.length >= 2 || (phase >= 4 && mode === "add")) && (
+        creatingCollection ? (
+        <div className="flex items-center gap-2">
+          <input
+            ref={newCollectionInputRef}
+            type="text"
+            value={newCollectionName}
+            onChange={(e) => setNewCollectionName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleCreateCollection();
+              }
+              if (e.key === "Escape") {
+                setCreatingCollection(false);
+                setNewCollectionName("");
+                setNewCollectionError("");
+              }
+            }}
+            className={inputClass}
+            placeholder="Collection name"
+          />
+          <button
+            type="button"
+            onClick={handleCreateCollection}
+            className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity flex-shrink-0"
+          >
+            Add
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setCreatingCollection(false);
+              setNewCollectionName("");
+              setNewCollectionError("");
+            }}
+            className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0"
+          >
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <CustomDropdown
+          value={collectionId}
+          options={[
+            { value: "", label: "Select a collection" },
+            ...collections.map((col) => ({ value: col.id, label: col.name })),
+            { value: "__create__", label: "＋ Create new collection" },
+          ]}
+          onChange={(v) => {
+            if (v === "__create__") {
+              setCreatingCollection(true);
+            } else {
+              setCollectionId(v);
+            }
+          }}
+        />
+      ))}
+      {newCollectionError && (
+        <p className="text-[13px] text-[#C0392B] mt-1">{newCollectionError}</p>
+      )}
+      {errors.collection && (
+        <p className="text-[13px] text-[#C0392B] mt-1">{errors.collection}</p>
+      )}
+    </div>
+  );
+
+  const obsessionSection = mode === "edit" && product && product.status === "current" && !creatingCollection && (
+    <div>
+      {obsessionEntry ? (
+        <div className="flex items-center justify-between rounded-md px-2.5 py-1.5 bg-[#C0392B]/[0.07]">
+          <div className="flex items-center gap-1.5">
+            <Star size={13} className="text-[#C0392B]/70" fill="currentColor" />
+            <span className="text-[12px] font-medium text-[#C0392B]/80">Obsession #{obsessionRank}</span>
+          </div>
+          <button
+            type="button"
+            disabled={obsessionPending}
+            onClick={async () => {
+              setObsessionPending(true);
+              await fetch(`/api/obsessions/${product.id}`, { method: "DELETE" });
+              await onSave();
+              setObsessionPending(false);
+            }}
+            className="text-[11px] text-neutral-400 hover:text-neutral-600 transition-colors"
+          >
+            {obsessionPending ? "Removing..." : "Remove"}
+          </button>
+        </div>
+      ) : !showReplacePicker && (
+        <button
+          type="button"
+          disabled={obsessionPending}
+          onClick={async () => {
+            if (obsessionsFull) {
+              setShowReplacePicker(true);
+              setTimeout(() => document.getElementById("replace-picker")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+            } else {
+              setObsessionPending(true);
+              const res = await fetch("/api/obsessions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ product_id: product.id }),
+              });
+              if (!res.ok) {
+                const data = await res.json();
+                setErrors({ form: data.error || "Failed to add to Obsessions" });
+              }
+              await onSave();
+              setObsessionPending(false);
+            }
+          }}
+          className="flex items-center gap-1.5 text-[12px] text-[#C0392B] hover:opacity-70 transition-opacity"
+        >
+          <Star size={13} className="text-neutral-300" />
+          {obsessionPending ? "Adding..." : "Add to Obsessions"}
+        </button>
+      )}
+    </div>
+  );
+
+  const replacePickerSection = mode === "edit" && product && showReplacePicker && !obsessionEntry && (
+    <div id="replace-picker" className="space-y-2 rounded-md border border-gray-200 px-3 py-2.5">
+      <p className="text-[13px] text-neutral-600">Replace which Obsession?</p>
+      {obsessions
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .map((tp, i) => (
+          <button
+            key={tp.id}
+            type="button"
+            disabled={obsessionPending}
+            onClick={async () => {
+              setObsessionPending(true);
+              await fetch(`/api/obsessions/${tp.product_id}`, { method: "DELETE" });
+              await fetch("/api/obsessions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ product_id: product.id }),
+              });
+              await onSave();
+              setObsessionPending(false);
+              setShowReplacePicker(false);
+            }}
+            className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded hover:bg-neutral-50 transition-colors"
+          >
+            <span className="text-[12px] text-neutral-400 w-4">#{i + 1}</span>
+            <Thumbnail src={tp.products.photo_url} alt={tp.products.name} />
+            <span className="text-[14px] text-neutral-700 truncate">{tp.products.name}</span>
+          </button>
+        ))}
+      <button
+        type="button"
+        onClick={() => setShowReplacePicker(false)}
+        className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors"
+      >
+        Cancel
+      </button>
+    </div>
+  );
+
+  const cropModal = cropSrc && (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+    <div onClick={(e) => e.stopPropagation()}>
+      <CropModal
+        imageSrc={cropSrc}
+        aspect={4 / 3}
+        onDone={handleCropDone}
+        onCancel={() => { if (cropSrc) URL.revokeObjectURL(cropSrc); setCropSrc(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+      />
+    </div>
+  );
+
+  // ── Edit mode layout ──
+  if (mode === "edit") {
+    const selectedCollectionName = collections.find((c) => c.id === collectionId)?.name;
+    const acquiredLabel = acquiredMonth && acquiredYear
+      ? `${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][parseInt(acquiredMonth) - 1]} ${acquiredYear}`
+      : null;
+
+    return (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Edit product"
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+        onClick={handleDismiss}
+      >
+        <div className="absolute inset-0 bg-black/50" />
+
+        {/* Mobile: full-screen with flex column | Desktop: 2-col fixed-height modal */}
+        <div
+          className="relative z-10 bg-white w-full h-full flex flex-col sm:h-auto sm:max-w-[800px] sm:mx-auto sm:rounded-xl sm:max-h-[600px] sm:flex-row sm:overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* ── Mobile top nav bar ── */}
+          <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between z-10 sm:hidden">
+            <button type="button" onClick={handleDismiss} className="text-[15px] text-neutral-500 hover:text-neutral-800 transition-colors">
+              Cancel
+            </button>
+            <h2 className="text-[15px] font-semibold text-neutral-900">Edit Product</h2>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || uploading}
+              className="text-[15px] font-semibold text-[#C0392B] hover:opacity-70 transition-opacity disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Save"}
+            </button>
+          </div>
+
+          {/* ── Desktop left column: photo ── */}
+          <div className="hidden sm:flex sm:flex-col sm:w-[40%] sm:border-r sm:border-gray-100">
+            <div
+              className="relative w-full aspect-[4/3] bg-neutral-200 cursor-pointer overflow-hidden"
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              {uploading ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="w-8 h-8 border-2 border-neutral-300 border-t-[#C0392B] rounded-full animate-spin" />
+                  <span className="text-[13px] text-neutral-400 mt-2">Uploading...</span>
+                </div>
+              ) : photoUrl ? (
+                <>
+                  <Image src={photoUrl} alt="" fill unoptimized className="object-cover" />
+                  <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center group">
+                    <span className="text-white text-[14px] font-medium opacity-0 group-hover:opacity-100 transition-opacity">Change photo</span>
+                  </div>
+                </>
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-50">
+                  <Camera size={28} className="text-neutral-300 mb-1" />
+                  <span className="text-[13px] font-medium text-neutral-500">Add photo</span>
+                </div>
+              )}
+            </div>
+            {errors.photo && <p className="text-[13px] text-[#C0392B] px-4 pt-1">{errors.photo}</p>}
+            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={handleFileChange} className="hidden" />
+          </div>
+
+          {/* ── Desktop right column / Mobile body ── */}
+          <div className="flex-1 flex flex-col min-h-0 sm:w-[60%]">
+            {/* Desktop header */}
+            <div className="hidden sm:flex items-center justify-between px-5 py-3 border-b border-gray-100">
+              <h2 className="text-[17px] font-semibold text-neutral-900">Edit Product</h2>
+              <button type="button" onClick={handleDismiss} aria-label="Close" className="text-neutral-400 hover:text-neutral-600 transition-colors p-1">
+                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
+              {/* ── Mobile: photo thumbnail + name on same row ── */}
+              <div className="flex items-start gap-3 sm:hidden">
+                <div
+                  className="relative w-20 aspect-[4/3] rounded-lg overflow-hidden cursor-pointer flex-shrink-0 bg-neutral-200"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {photoUrl ? (
+                    <>
+                      <Image src={photoUrl} alt="" fill unoptimized className="object-cover" />
+                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                        <span className="text-white text-[10px] font-medium">Tap to change</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-neutral-50">
+                      <Camera size={18} className="text-neutral-300" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  {nameInput}
+                </div>
+              </div>
+
+              {/* ── Desktop: name input (photo is in left column) ── */}
+              <div className="hidden sm:block">
+                {nameInput}
+              </div>
+
+              {/* One-liner — fixed 4-line height */}
+              {oneLinerInput}
+
+              {/* ── Condensed metadata row ── */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
+                {/* Date */}
+                {editingDate ? (
+                  <div className="flex items-center gap-2">
+                    <CustomDropdown
+                      value={acquiredMonth}
+                      options={[
+                        { value: "", label: "Month" },
+                        ...["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => ({ value: String(i + 1), label: m })),
+                      ]}
+                      onChange={setAcquiredMonth}
+                    />
+                    <CustomDropdown
+                      value={acquiredYear}
+                      options={[
+                        { value: "", label: "Year" },
+                        ...Array.from({ length: new Date().getFullYear() - 2009 }, (_, i) => new Date().getFullYear() - i).map((y) => ({ value: String(y), label: String(y) })),
+                      ]}
+                      onChange={setAcquiredYear}
+                    />
+                    {(acquiredMonth || acquiredYear) && (
+                      <button type="button" onClick={() => { setAcquiredMonth(""); setAcquiredYear(""); }} className="text-[12px] text-neutral-400 hover:text-neutral-600 transition-colors">Clear</button>
+                    )}
+                    <button type="button" onClick={() => setEditingDate(false)} className="text-[12px] text-neutral-400 hover:text-neutral-600 transition-colors">Done</button>
+                  </div>
+                ) : (
+                  <span className="flex items-center gap-1 text-neutral-500">
+                    <span className="text-neutral-400">Acquired:</span>
+                    <span className="text-neutral-700">{acquiredLabel || "—"}</span>
+                    <button type="button" onClick={() => setEditingDate(true)} className="text-[12px] text-[#C0392B]/70 hover:text-[#C0392B] transition-colors ml-0.5">Change</button>
+                  </span>
+                )}
+
+                {/* Collection */}
+                {editingCollection ? (
+                  <div className="flex items-center gap-2">
+                    {collectionSection}
+                    <button type="button" onClick={() => setEditingCollection(false)} className="text-[12px] text-neutral-400 hover:text-neutral-600 transition-colors flex-shrink-0">Done</button>
+                  </div>
+                ) : (
+                  <span className="flex items-center gap-1 text-neutral-500">
+                    <span className="text-neutral-400">Collection:</span>
+                    <span className="text-neutral-700">{selectedCollectionName || "—"}</span>
+                    {collections.length >= 2 && (
+                      <button type="button" onClick={() => setEditingCollection(true)} className="text-[12px] text-[#C0392B]/70 hover:text-[#C0392B] transition-colors ml-0.5">Change</button>
+                    )}
+                  </span>
+                )}
+
+                {/* Obsessions inline */}
+                {obsessionSection}
+              </div>
+
+              {/* Replace picker */}
+              {replacePickerSection}
+
+              {/* Form-level error */}
+              {errors.form && (
+                <p className="text-[13px] text-[#C0392B]">{errors.form}</p>
+              )}
+            </div>
+
+            {/* ── Footer ── */}
+            {/* Mobile: pinned danger zone at bottom */}
+            {product && (onArchive || onDelete) && (
+              <div className="mt-auto border-t border-gray-200 px-5 py-3 flex items-center gap-4 sm:hidden">
+                {onArchive && (
+                  <button type="button" onClick={() => { onClose(); onArchive(product); }} className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors">
+                    Archive
+                  </button>
+                )}
+                {onDelete && (
+                  <button type="button" onClick={() => { onClose(); onDelete(product); }} className="text-[13px] text-[#C0392B] hover:opacity-70 transition-opacity">
+                    Delete
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Desktop footer: danger left, actions right */}
+            <div className="hidden sm:flex items-center justify-between border-t border-gray-200 px-5 py-3">
+              <div className="flex items-center gap-4">
+                {product && onArchive && (
+                  <button type="button" onClick={() => { onClose(); onArchive(product); }} className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors">
+                    Archive
+                  </button>
+                )}
+                {product && onDelete && (
+                  <button type="button" onClick={() => { onClose(); onDelete(product); }} className="text-[13px] text-[#C0392B] hover:opacity-70 transition-opacity">
+                    Delete
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={handleDismiss} className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors">
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving || uploading}
+                  className="bg-[#C0392B] text-white text-[14px] font-medium px-5 py-2 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {saving ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {cropModal}
+      </div>
+    );
+  }
+
+  // ── Add mode layout (unchanged) ──
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={mode === "edit" ? "Edit product" : "Add product"}
+      aria-label="Add product"
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
       onClick={handleDismiss}
     >
@@ -878,9 +1395,7 @@ function ProductModal({
       >
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-3 flex items-center justify-between z-10">
-          <h2 className="text-[17px] font-semibold text-neutral-900">
-            {mode === "edit" ? "Edit Product" : "Add Product"}
-          </h2>
+          <h2 className="text-[17px] font-semibold text-neutral-900">Add Product</h2>
           <button
             type="button"
             onClick={handleDismiss}
@@ -898,313 +1413,19 @@ function ProductModal({
         </div>
 
         <div className="px-5 py-3 space-y-3">
-          {/* Photo upload area */}
-          <div>
-            <div
-              className={`relative w-full rounded-lg overflow-hidden cursor-pointer transition-colors ${
-                photoUrl
-                  ? "aspect-[4/3] bg-neutral-200"
-                  : `aspect-[3/1] border-2 border-dashed ${
-                      draggingOver
-                        ? "border-[#C0392B]/40 bg-[#C0392B]/5"
-                        : errors.photo
-                        ? "border-[#C0392B]/40 bg-red-50"
-                        : "border-gray-200 bg-neutral-50"
-                    }`
-              }`}
-              onClick={() => fileInputRef.current?.click()}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            >
-              {uploading ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <div className="w-8 h-8 border-2 border-neutral-300 border-t-[#C0392B] rounded-full animate-spin" />
-                  <span className="text-[13px] text-neutral-400 mt-2">Uploading...</span>
-                </div>
-              ) : photoUrl ? (
-                <>
-                  <Image
-                    src={photoUrl}
-                    alt=""
-                    fill
-                    unoptimized
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center group">
-                    <span className="text-white text-[14px] font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                      Change photo
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <Camera size={24} className="text-neutral-300 mb-1" />
-                  <span className="text-[13px] font-medium text-neutral-500">Add photo</span>
-                  <span className="text-[11px] text-neutral-400 mt-0.5">Products without a photo are saved as drafts.</span>
-                </div>
-              )}
-            </div>
-            {errors.photo && (
-              <p className="text-[13px] text-[#C0392B] mt-1">{errors.photo}</p>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/heic"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-          </div>
+          {photoUploadArea}
+          {nameInput}
+          {oneLinerInput}
 
-          {/* Product name */}
-          <div>
-            <input
-              ref={nameInputRef}
-              type="text"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                if (errors.name) setErrors((prev) => { const next = { ...prev }; delete next.name; return next; });
-              }}
-              className={`${inputClass}${errors.name ? " border-[#C0392B]" : ""}`}
-              placeholder="Product name"
-            />
-            {errors.name && (
-              <p className="text-[13px] text-[#C0392B] mt-1">{errors.name}</p>
-            )}
-          </div>
-
-          {/* One-liner */}
-          <div>
-            <textarea
-              ref={oneLinerRef}
-              value={oneLiner}
-              onChange={(e) => {
-                if (e.target.value.length <= 160) {
-                  setOneLiner(e.target.value);
-                  if (errors.one_liner) setErrors((prev) => { const next = { ...prev }; delete next.one_liner; return next; });
-                }
-              }}
-              rows={4}
-              className={`${inputClass} resize-none${errors.one_liner ? " border-[#C0392B]" : ""}`}
-              placeholder="What would you tell a friend about this?"
-            />
-            <p
-              className={`text-[12px] mt-1 ${
-                oneLiner.length >= 140 ? "text-[#C0392B]" : "text-neutral-400"
-              }`}
-            >
-              {oneLiner.length}/160
-            </p>
-            {errors.one_liner && (
-              <p className="text-[13px] text-[#C0392B] mt-0.5">{errors.one_liner}</p>
-            )}
-          </div>
-
-          {/* Acquired date — edit mode only */}
-          {mode === "edit" && (
-            <div>
-              <label className="block text-[13px] text-neutral-400 mb-1">When did you get this?</label>
-              <div className="flex items-center gap-2">
-                <CustomDropdown
-                  value={acquiredMonth}
-                  options={[
-                    { value: "", label: "Month" },
-                    ...["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => ({ value: String(i + 1), label: m })),
-                  ]}
-                  onChange={setAcquiredMonth}
-                />
-                <CustomDropdown
-                  value={acquiredYear}
-                  options={[
-                    { value: "", label: "Year" },
-                    ...Array.from({ length: new Date().getFullYear() - 2009 }, (_, i) => new Date().getFullYear() - i).map((y) => ({ value: String(y), label: String(y) })),
-                  ]}
-                  onChange={setAcquiredYear}
-                />
-                {(acquiredMonth || acquiredYear) && (
-                  <button
-                    type="button"
-                    onClick={() => { setAcquiredMonth(""); setAcquiredYear(""); }}
-                    className="text-[12px] text-neutral-400 hover:text-neutral-600 transition-colors flex-shrink-0"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Collection — shown when 2+ collections, or Phase 3 add mode to prompt organization */}
-          <div>
-            {(collections.length >= 2 || (phase >= 4 && mode === "add")) && (
-              creatingCollection ? (
-              <div className="flex items-center gap-2">
-                <input
-                  ref={newCollectionInputRef}
-                  type="text"
-                  value={newCollectionName}
-                  onChange={(e) => setNewCollectionName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleCreateCollection();
-                    }
-                    if (e.key === "Escape") {
-                      setCreatingCollection(false);
-                      setNewCollectionName("");
-                      setNewCollectionError("");
-                    }
-                  }}
-                  className={inputClass}
-                  placeholder="Collection name"
-                />
-                <button
-                  type="button"
-                  onClick={handleCreateCollection}
-                  className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity flex-shrink-0"
-                >
-                  Add
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCreatingCollection(false);
-                    setNewCollectionName("");
-                    setNewCollectionError("");
-                  }}
-                  className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <CustomDropdown
-                value={collectionId}
-                options={[
-                  { value: "", label: "Select a collection" },
-                  ...collections.map((col) => ({ value: col.id, label: col.name })),
-                  { value: "__create__", label: "＋ Create new collection" },
-                ]}
-                onChange={(v) => {
-                  if (v === "__create__") {
-                    setCreatingCollection(true);
-                  } else {
-                    setCollectionId(v);
-                  }
-                }}
-              />
-            ))}
-            {newCollectionError && (
-              <p className="text-[13px] text-[#C0392B] mt-1">{newCollectionError}</p>
-            )}
-            {errors.collection && (
-              <p className="text-[13px] text-[#C0392B] mt-1">{errors.collection}</p>
-            )}
-
-            {/* Obsession — inline with collection row */}
-            {mode === "edit" && product && product.status === "current" && !creatingCollection && (
-              <div className="mt-2">
-                {obsessionEntry ? (
-                  <div className="flex items-center justify-between rounded-md px-2.5 py-1.5 bg-[#C0392B]/[0.07]">
-                    <div className="flex items-center gap-1.5">
-                      <Star size={13} className="text-[#C0392B]/70" fill="currentColor" />
-                      <span className="text-[12px] font-medium text-[#C0392B]/80">Obsession #{obsessionRank}</span>
-                    </div>
-                    <button
-                      type="button"
-                      disabled={obsessionPending}
-                      onClick={async () => {
-                        setObsessionPending(true);
-                        await fetch(`/api/obsessions/${product.id}`, { method: "DELETE" });
-                        await onSave();
-                        setObsessionPending(false);
-                      }}
-                      className="text-[11px] text-neutral-400 hover:text-neutral-600 transition-colors"
-                    >
-                      {obsessionPending ? "Removing..." : "Remove"}
-                    </button>
-                  </div>
-                ) : !showReplacePicker && (
-                  <button
-                    type="button"
-                    disabled={obsessionPending}
-                    onClick={async () => {
-                      if (obsessionsFull) {
-                        setShowReplacePicker(true);
-                        setTimeout(() => document.getElementById("replace-picker")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
-                      } else {
-                        setObsessionPending(true);
-                        const res = await fetch("/api/obsessions", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ product_id: product.id }),
-                        });
-                        if (!res.ok) {
-                          const data = await res.json();
-                          setErrors({ form: data.error || "Failed to add to Obsessions" });
-                        }
-                        await onSave();
-                        setObsessionPending(false);
-                      }
-                    }}
-                    className="flex items-center gap-1.5 text-[12px] text-[#C0392B] hover:opacity-70 transition-opacity"
-                  >
-                    <Star size={13} className="text-neutral-300" />
-                    {obsessionPending ? "Adding..." : "Add to Obsessions"}
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Replace picker — separate row when active */}
-          {mode === "edit" && product && showReplacePicker && !obsessionEntry && (
-            <div id="replace-picker" className="space-y-2 rounded-md border border-gray-200 px-3 py-2.5">
-              <p className="text-[13px] text-neutral-600">Replace which Obsession?</p>
-              {obsessions
-                .sort((a, b) => a.sort_order - b.sort_order)
-                .map((tp, i) => (
-                  <button
-                    key={tp.id}
-                    type="button"
-                    disabled={obsessionPending}
-                    onClick={async () => {
-                      setObsessionPending(true);
-                      await fetch(`/api/obsessions/${tp.product_id}`, { method: "DELETE" });
-                      await fetch("/api/obsessions", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ product_id: product.id }),
-                      });
-                      await onSave();
-                      setObsessionPending(false);
-                      setShowReplacePicker(false);
-                    }}
-                    className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded hover:bg-neutral-50 transition-colors"
-                  >
-                    <span className="text-[12px] text-neutral-400 w-4">#{i + 1}</span>
-                    <Thumbnail src={tp.products.photo_url} alt={tp.products.name} />
-                    <span className="text-[14px] text-neutral-700 truncate">{tp.products.name}</span>
-                  </button>
-                ))}
-              <button
-                type="button"
-                onClick={() => setShowReplacePicker(false)}
-                className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
+          {/* Collection */}
+          {collectionSection}
 
           {/* Form-level error */}
           {errors.form && (
             <p className="text-[13px] text-[#C0392B]">{errors.form}</p>
           )}
 
-          {/* Save / Cancel */}
+          {/* Add Product button */}
           <div className="flex items-center gap-3 pt-2 pb-2">
             <button
               type="button"
@@ -1212,7 +1433,7 @@ function ProductModal({
               disabled={saving || uploading}
               className="bg-[#C0392B] text-white text-[14px] font-medium px-5 py-2.5 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              {saving ? "Saving..." : mode === "edit" ? "Save" : "Add Product"}
+              {saving ? "Saving..." : "Add Product"}
             </button>
             <button
               type="button"
@@ -1222,42 +1443,10 @@ function ProductModal({
               Cancel
             </button>
           </div>
-          {mode === "edit" && product && (onArchive || onDelete) && (
-            <div className="flex items-center gap-4 pt-4 pb-2 border-t border-gray-200 mt-4">
-              {onArchive && (
-                <button
-                  type="button"
-                  onClick={() => { onClose(); onArchive(product); }}
-                  className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors"
-                >
-                  Archive
-                </button>
-              )}
-              {onDelete && (
-                <button
-                  type="button"
-                  onClick={() => { onClose(); onDelete(product); }}
-                  className="text-[13px] text-[#C0392B] hover:opacity-70 transition-opacity"
-                >
-                  Delete
-                </button>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
-      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
-      {cropSrc && (
-        <div onClick={(e) => e.stopPropagation()}>
-          <CropModal
-            imageSrc={cropSrc}
-            aspect={4 / 3}
-            onDone={handleCropDone}
-            onCancel={() => { if (cropSrc) URL.revokeObjectURL(cropSrc); setCropSrc(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
-          />
-        </div>
-      )}
+      {cropModal}
     </div>
   );
 }

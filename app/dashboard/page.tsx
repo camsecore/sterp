@@ -977,7 +977,7 @@ function ProductModal({
           }
         }}
         rows={4}
-        className={`${inputClass} resize-none${errors.one_liner ? " border-[#C0392B]" : ""}`}
+        className={`${inputClass} resize-none sm:min-h-0 min-h-[140px]${errors.one_liner ? " border-[#C0392B]" : ""}`}
         placeholder="What would you tell a friend about this?"
       />
       <p
@@ -1315,7 +1315,7 @@ function ProductModal({
             </div>
 
             {/* Mobile: single-column body */}
-            <div className="sm:hidden px-5 py-3 space-y-3">
+            <div className="sm:hidden px-5 pt-5 pb-3 space-y-5">
               {/* Photo thumbnail + name on same row */}
               <div className="flex items-start gap-3">
                 <div
@@ -1404,7 +1404,7 @@ function ProductModal({
           {/* ── 3. Full-width footer ── */}
           {/* Mobile: pinned danger zone */}
           {product && (onArchive || onDelete) && (
-            <div className="mt-auto border-t border-gray-200 px-5 py-3 flex items-center gap-4 sm:hidden">
+            <div className="mt-auto border-t border-gray-200 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center gap-4 sm:hidden">
               {onArchive && (
                 <button type="button" onClick={() => { onClose(); onArchive(product); }} className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors">
                   Archive
@@ -1557,7 +1557,7 @@ function ProductModal({
           </div>
 
           {/* Mobile: single-column */}
-          <div className="sm:hidden px-5 py-3 space-y-3">
+          <div className="sm:hidden px-5 pt-5 pb-3 space-y-5">
             {/* Photo thumbnail + name on same row */}
             <div className="flex items-start gap-3">
               <div

@@ -903,7 +903,7 @@ function ProductModal({
             <div
               className={`relative w-full rounded-lg overflow-hidden cursor-pointer transition-colors ${
                 photoUrl
-                  ? "aspect-[4/3] max-h-[28vh] bg-neutral-200"
+                  ? "aspect-[4/3] bg-neutral-200"
                   : `aspect-[3/1] border-2 border-dashed ${
                       draggingOver
                         ? "border-[#C0392B]/40 bg-[#C0392B]/5"

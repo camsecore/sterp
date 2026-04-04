@@ -1315,34 +1315,38 @@ function ProductModal({
             </div>
 
             {/* Mobile: single-column body */}
-            <div className="sm:hidden px-5 pt-5 pb-3 space-y-5">
-              {/* Photo thumbnail + name on same row */}
-              <div className="flex items-start gap-3">
-                <div
-                  className="relative w-20 aspect-[4/3] rounded-lg overflow-hidden cursor-pointer flex-shrink-0 bg-neutral-200"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  {photoUrl ? (
-                    <>
-                      <Image src={photoUrl} alt="" fill unoptimized className="object-cover" />
-                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                        <span className="text-white text-[10px] font-medium">Tap to change</span>
+            <div className="sm:hidden px-5 pt-5 pb-3">
+              {/* ── Group A: Text inputs (tight spacing) ── */}
+              <div className="space-y-3">
+                {/* Photo thumbnail + name on same row */}
+                <div className="flex items-start gap-3">
+                  <div
+                    className="relative w-20 aspect-[4/3] rounded-lg overflow-hidden cursor-pointer flex-shrink-0 bg-neutral-200"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {photoUrl ? (
+                      <>
+                        <Image src={photoUrl} alt="" fill unoptimized className="object-cover" />
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                          <Camera size={16} className="text-white" strokeWidth={2} />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center bg-neutral-50">
+                        <Camera size={18} className="text-neutral-300" />
                       </div>
-                    </>
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-neutral-50">
-                      <Camera size={18} className="text-neutral-300" />
-                    </div>
-                  )}
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    {nameInput}
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  {nameInput}
-                </div>
+
+                {oneLinerInput}
               </div>
 
-              {oneLinerInput}
-
-              {/* Condensed metadata */}
+              {/* ── Group B: Metadata (tight internal spacing, separated from Group A) ── */}
+              <div className="mt-6 space-y-2">
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
                 {!editingCollection && (editingDate ? (
                   <div className="flex items-center gap-2 relative z-30">
@@ -1398,6 +1402,7 @@ function ProductModal({
               {errors.form && (
                 <p className="text-[13px] text-[#C0392B]">{errors.form}</p>
               )}
+              </div>
             </div>
           </div>
 
@@ -1557,48 +1562,55 @@ function ProductModal({
           </div>
 
           {/* Mobile: single-column */}
-          <div className="sm:hidden px-5 pt-5 pb-3 space-y-5">
-            {/* Photo thumbnail + name on same row */}
-            <div className="flex items-start gap-3">
-              <div
-                className={`relative w-20 aspect-[4/3] rounded-lg overflow-hidden cursor-pointer flex-shrink-0 ${
-                  photoUrl
-                    ? "bg-neutral-200"
-                    : `border border-dashed ${
-                        draggingOver
-                          ? "border-[#C0392B]/40 bg-[#C0392B]/5"
-                          : errors.photo
-                          ? "border-[#C0392B]/40 bg-red-50"
-                          : "border-gray-300 bg-neutral-50"
-                      }`
-                }`}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {photoUrl ? (
-                  <>
-                    <Image src={photoUrl} alt="" fill unoptimized className="object-cover" />
-                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                      <span className="text-white text-[10px] font-medium">Tap to change</span>
+          <div className="sm:hidden px-5 pt-5 pb-3">
+            {/* ── Group A: Text inputs (tight spacing) ── */}
+            <div className="space-y-3">
+              {/* Photo thumbnail + name on same row */}
+              <div className="flex items-start gap-3">
+                <div
+                  className={`relative w-20 aspect-[4/3] rounded-lg overflow-hidden cursor-pointer flex-shrink-0 ${
+                    photoUrl
+                      ? "bg-neutral-200"
+                      : `border border-dashed ${
+                          draggingOver
+                            ? "border-[#C0392B]/40 bg-[#C0392B]/5"
+                            : errors.photo
+                            ? "border-[#C0392B]/40 bg-red-50"
+                            : "border-gray-300 bg-neutral-50"
+                        }`
+                  }`}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {photoUrl ? (
+                    <>
+                      <Image src={photoUrl} alt="" fill unoptimized className="object-cover" />
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <Camera size={16} className="text-white" strokeWidth={2} />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <Camera size={16} className="text-neutral-300" />
+                      <span className="text-[9px] text-neutral-400 mt-0.5">Add photo</span>
                     </div>
-                  </>
-                ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <Camera size={16} className="text-neutral-300" />
-                    <span className="text-[9px] text-neutral-400 mt-0.5">Add photo</span>
-                  </div>
-                )}
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  {nameInput}
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                {nameInput}
-              </div>
+
+              {oneLinerInput}
             </div>
 
-            {oneLinerInput}
-            {collectionSection}
+            {/* ── Group B: Metadata (separated from Group A) ── */}
+            <div className="mt-6 space-y-2">
+              {collectionSection}
 
-            {errors.form && (
-              <p className="text-[13px] text-[#C0392B]">{errors.form}</p>
-            )}
+              {errors.form && (
+                <p className="text-[13px] text-[#C0392B]">{errors.form}</p>
+              )}
+            </div>
           </div>
         </div>
 

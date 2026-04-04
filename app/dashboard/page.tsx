@@ -1234,7 +1234,7 @@ function ProductModal({
                 {oneLinerInput}
 
                 {/* Condensed metadata */}
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
+                <div className="flex flex-col gap-2 text-[13px]">
                   {editingDate ? (
                     <div className="flex items-center gap-2 relative z-30">
                       <CustomDropdown
@@ -1321,7 +1321,7 @@ function ProductModal({
               {oneLinerInput}
 
               {/* Condensed metadata */}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
+              <div className="flex flex-col gap-2 text-[13px]">
                 {editingDate ? (
                   <div className="flex items-center gap-2 relative z-30">
                     <CustomDropdown

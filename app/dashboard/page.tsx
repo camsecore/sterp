@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useUser } from "@/app/contexts/auth";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -344,12 +345,27 @@ function CustomDropdown({
 }) {
   const isTouch = useIsTouchDevice();
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; minWidth: number } | null>(null);
 
+  // Position the portal dropdown relative to the trigger
+  useEffect(() => {
+    if (!open || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    setPos({ top: rect.bottom + 4, left: rect.left, minWidth: rect.width });
+  }, [open]);
+
+  // Close on outside click
   useEffect(() => {
     if (!open) return;
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (
+        triggerRef.current && !triggerRef.current.contains(e.target as Node) &&
+        listRef.current && !listRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
@@ -358,9 +374,10 @@ function CustomDropdown({
   const selectedLabel = options.find((o) => o.value === value)?.label ?? value;
 
   return (
-    <div ref={ref} className="relative">
+    <div className="relative">
       {/* Shared trigger — always visible */}
       <button
+        ref={triggerRef}
         type="button"
         onClick={isTouch ? undefined : () => setOpen(!open)}
         className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5 text-[13px] text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-300 transition-colors hover:bg-gray-100"
@@ -393,9 +410,13 @@ function CustomDropdown({
         </select>
       )}
 
-      {/* Desktop: custom dropdown menu */}
-      {!isTouch && open && (
-        <ul className="absolute z-30 mt-1 left-0 min-w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+      {/* Desktop: portal dropdown that floats over everything */}
+      {!isTouch && open && pos && createPortal(
+        <ul
+          ref={listRef}
+          className="fixed z-[9999] bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto"
+          style={{ top: pos.top, left: pos.left, minWidth: pos.minWidth }}
+        >
           {options.map((opt) => (
             <li
               key={opt.value}
@@ -409,7 +430,8 @@ function CustomDropdown({
               {opt.label}
             </li>
           ))}
-        </ul>
+        </ul>,
+        document.body
       )}
     </div>
   );

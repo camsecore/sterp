@@ -2849,7 +2849,7 @@ export default function DashboardPage() {
                 const draftCount = products.filter((p) => p.status === "draft").length;
                 return draftCount > 0 ? (
                   <p className="text-[13px] text-neutral-400 mb-3">
-                    {draftCount} product{draftCount === 1 ? "" : "s"} need{draftCount === 1 ? "s" : ""} photos
+                    {draftCount} product{draftCount === 1 ? "" : "s"} need{draftCount === 1 ? "s a photo" : " photos"}
                   </p>
                 ) : null;
               })()}

@@ -1234,8 +1234,8 @@ function ProductModal({
                 {oneLinerInput}
 
                 {/* Condensed metadata */}
-                <div className="flex flex-col gap-2 text-[13px]">
-                  {editingDate ? (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
+                  {!editingCollection && (editingDate ? (
                     <div className="flex items-center gap-2 relative z-30">
                       <CustomDropdown
                         value={acquiredMonth}
@@ -1264,9 +1264,9 @@ function ProductModal({
                       <span className="text-neutral-700">{acquiredLabel || "—"}</span>
                       <button type="button" onClick={() => setEditingDate(true)} className="text-[12px] text-gray-400 hover:text-gray-600 hover:underline transition-colors ml-0.5">Change</button>
                     </span>
-                  )}
+                  ))}
 
-                  {editingCollection ? (
+                  {!editingDate && (editingCollection ? (
                     <div className="flex items-center gap-2">
                       {collectionSection}
                       <button type="button" onClick={() => setEditingCollection(false)} className="text-[12px] text-neutral-400 hover:text-neutral-600 transition-colors flex-shrink-0">Done</button>
@@ -1279,9 +1279,9 @@ function ProductModal({
                         <button type="button" onClick={() => setEditingCollection(true)} className="text-[12px] text-gray-400 hover:text-gray-600 hover:underline transition-colors ml-0.5">Change</button>
                       )}
                     </span>
-                  )}
+                  ))}
 
-                  {obsessionSection}
+                  {!editingDate && !editingCollection && obsessionSection}
                 </div>
 
                 {replacePickerSection}
@@ -1321,8 +1321,8 @@ function ProductModal({
               {oneLinerInput}
 
               {/* Condensed metadata */}
-              <div className="flex flex-col gap-2 text-[13px]">
-                {editingDate ? (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
+                {!editingCollection && (editingDate ? (
                   <div className="flex items-center gap-2 relative z-30">
                     <CustomDropdown
                       value={acquiredMonth}
@@ -1351,9 +1351,9 @@ function ProductModal({
                     <span className="text-neutral-700">{acquiredLabel || "—"}</span>
                     <button type="button" onClick={() => setEditingDate(true)} className="text-[12px] text-gray-400 hover:text-gray-600 hover:underline transition-colors ml-0.5">Change</button>
                   </span>
-                )}
+                ))}
 
-                {editingCollection ? (
+                {!editingDate && (editingCollection ? (
                   <div className="flex items-center gap-2">
                     {collectionSection}
                     <button type="button" onClick={() => setEditingCollection(false)} className="text-[12px] text-neutral-400 hover:text-neutral-600 transition-colors flex-shrink-0">Done</button>
@@ -1366,9 +1366,9 @@ function ProductModal({
                       <button type="button" onClick={() => setEditingCollection(true)} className="text-[12px] text-gray-400 hover:text-gray-600 hover:underline transition-colors ml-0.5">Change</button>
                     )}
                   </span>
-                )}
+                ))}
 
-                {obsessionSection}
+                {!editingDate && !editingCollection && obsessionSection}
               </div>
 
               {replacePickerSection}

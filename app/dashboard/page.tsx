@@ -2183,14 +2183,17 @@ export default function DashboardPage() {
     }
   }
 
-  function formatDateRange(createdAt: string, archivedAt: string): string {
-    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  function formatDuration(createdAt: string, archivedAt: string): string {
     const start = new Date(createdAt);
     const end = new Date(archivedAt);
-    const startStr = `${monthNames[start.getUTCMonth()]} ${start.getUTCFullYear()}`;
-    const endStr = `${monthNames[end.getUTCMonth()]} ${end.getUTCFullYear()}`;
-    if (startStr === endStr) return startStr;
-    return `${startStr} – ${endStr}`;
+    const totalMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+    if (totalMonths < 1) return "Owned for < 1 month";
+    if (totalMonths < 12) return `Owned for ${totalMonths} month${totalMonths === 1 ? "" : "s"}`;
+    const years = totalMonths / 12;
+    const cleanHalf = totalMonths % 6 === 0;
+    if (cleanHalf && totalMonths % 12 !== 0) return `Owned for ${years} years`;
+    const wholeYears = Math.round(years);
+    return `Owned for ${wholeYears} year${wholeYears === 1 ? "" : "s"}`;
   }
 
   // ─── Lookups ────────────────────────────────────────────────────
@@ -3301,7 +3304,7 @@ export default function DashboardPage() {
                               </span>
                               {p.created_at && p.archived_at && (
                                 <span className="text-[11px] font-medium text-amber-700 bg-amber-100 rounded-full px-2 py-0.5 flex-shrink-0">
-                                  {formatDateRange(p.acquired_at ?? p.created_at, p.archived_at)}
+                                  {formatDuration(p.acquired_at ?? p.created_at, p.archived_at)}
                                 </span>
                               )}
                             </div>

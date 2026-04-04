@@ -1196,9 +1196,9 @@ function ProductModal({
           {/* ── 2. Content area ── */}
           <div className="flex-1 overflow-y-auto min-h-0">
             {/* Desktop: 2-column row */}
-            <div className="hidden sm:flex gap-8 px-6 py-5 items-start">
+            <div className="hidden sm:flex gap-6 px-6 py-4 items-start">
               {/* Left ~40%: constrained photo */}
-              <div className="w-[40%] flex-shrink-0">
+              <div className="w-[35%] flex-shrink-0">
                 <div
                   className="relative aspect-[4/3] rounded-xl overflow-hidden cursor-pointer border border-gray-200 bg-neutral-100"
                   onClick={() => fileInputRef.current?.click()}
@@ -1479,9 +1479,9 @@ function ProductModal({
         {/* ── Content area ── */}
         <div className="flex-1 overflow-y-auto min-h-0">
           {/* Desktop: 2-column */}
-          <div className="hidden sm:flex gap-8 px-6 py-5 items-start">
+          <div className="hidden sm:flex gap-6 px-6 py-4 items-start">
             {/* Left ~40%: photo upload zone */}
-            <div className="w-[40%] flex-shrink-0">
+            <div className="w-[35%] flex-shrink-0">
               <div
                 className={`relative aspect-[4/3] rounded-xl overflow-hidden cursor-pointer border ${
                   photoUrl

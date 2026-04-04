@@ -1127,30 +1127,28 @@ function ProductModal({
                     </button>
                   </div>
                 ) : !showReplacePicker && (
-                  <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={obsessionPending}
+                    onClick={async () => {
+                      if (obsessionsFull) {
+                        setShowReplacePicker(true);
+                      } else {
+                        setObsessionPending(true);
+                        await fetch("/api/obsessions", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ product_id: product.id }),
+                        });
+                        await onSave();
+                        setObsessionPending(false);
+                      }
+                    }}
+                    className="flex items-center gap-1.5 text-[12px] text-[#C0392B] hover:opacity-70 transition-opacity"
+                  >
                     <Star size={13} className="text-neutral-300" />
-                    <button
-                      type="button"
-                      disabled={obsessionPending}
-                      onClick={async () => {
-                        if (obsessionsFull) {
-                          setShowReplacePicker(true);
-                        } else {
-                          setObsessionPending(true);
-                          await fetch("/api/obsessions", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ product_id: product.id }),
-                          });
-                          await onSave();
-                          setObsessionPending(false);
-                        }
-                      }}
-                      className="text-[12px] text-[#C0392B] hover:opacity-70 transition-opacity"
-                    >
-                      {obsessionPending ? "Adding..." : "Add to Obsessions"}
-                    </button>
-                  </div>
+                    {obsessionPending ? "Adding..." : "Add to Obsessions"}
+                  </button>
                 )}
               </div>
             )}

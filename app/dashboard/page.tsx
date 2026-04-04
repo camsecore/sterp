@@ -2159,12 +2159,31 @@ export default function DashboardPage() {
 
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editNoteValue, setEditNoteValue] = useState("");
+  const [editAcquiredMonth, setEditAcquiredMonth] = useState("");
+  const [editAcquiredYear, setEditAcquiredYear] = useState("");
+  const [editArchivedMonth, setEditArchivedMonth] = useState("");
+  const [editArchivedYear, setEditArchivedYear] = useState("");
+
+  function openArchiveEdit(p: Product) {
+    setEditingNoteId(p.id);
+    setEditNoteValue(p.archive_note || "");
+    const acq = p.acquired_at ? new Date(p.acquired_at) : p.created_at ? new Date(p.created_at) : null;
+    setEditAcquiredMonth(acq ? String(acq.getUTCMonth() + 1) : "");
+    setEditAcquiredYear(acq ? String(acq.getUTCFullYear()) : "");
+    const arch = p.archived_at ? new Date(p.archived_at) : null;
+    setEditArchivedMonth(arch ? String(arch.getUTCMonth() + 1) : "");
+    setEditArchivedYear(arch ? String(arch.getUTCFullYear()) : "");
+  }
 
   async function handleSaveArchiveNote(id: string) {
     const res = await fetch(`/api/products/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ archive_note: editNoteValue.trim() || null }),
+      body: JSON.stringify({
+        archive_note: editNoteValue.trim() || null,
+        acquired_at: editAcquiredMonth && editAcquiredYear ? `${editAcquiredYear}-${editAcquiredMonth.padStart(2, "0")}-01` : null,
+        archived_at: editArchivedMonth && editArchivedYear ? `${editArchivedYear}-${editArchivedMonth.padStart(2, "0")}-01T00:00:00Z` : null,
+      }),
     });
     if (res.ok) {
       setEditingNoteId(null);
@@ -3254,30 +3273,68 @@ export default function DashboardPage() {
                             <Thumbnail src={p.photo_url} alt={p.name} />
                             <span className="text-[15px] font-medium text-neutral-900">{p.name}</span>
                           </div>
-                          <textarea
-                            value={editNoteValue}
-                            onChange={(e) => setEditNoteValue(e.target.value)}
-                            rows={4}
-                            className="w-full rounded-md border border-gray-200 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40 resize-none"
-                            placeholder="Archive note..."
-                            autoFocus
-                          />
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <button
-                                onClick={() => handleSaveArchiveNote(p.id)}
-                                className="text-[13px] font-medium text-white px-3 py-1.5 rounded-md hover:opacity-90"
-                                style={{ backgroundColor: "#C0392B" }}
-                              >
-                                Save
-                              </button>
-                              <button
-                                onClick={() => setEditingNoteId(null)}
-                                className="text-[13px] text-neutral-500 hover:text-neutral-800"
-                              >
-                                Cancel
-                              </button>
+
+                          {/* Archive note with character counter */}
+                          <div>
+                            <textarea
+                              value={editNoteValue}
+                              onChange={(e) => {
+                                if (e.target.value.length <= 160) setEditNoteValue(e.target.value);
+                              }}
+                              rows={4}
+                              className={`w-full rounded-md border border-gray-200 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40 resize-none`}
+                              placeholder="Any memories with this one?"
+                              autoFocus
+                            />
+                            <p className={`text-[12px] mt-1 ${editNoteValue.length >= 140 ? "text-[#C0392B]" : "text-neutral-400"}`}>
+                              {editNoteValue.length}/160
+                            </p>
+                          </div>
+
+                          {/* Date fields — matching Edit Product condensed metadata style */}
+                          <div className="flex flex-col gap-2 text-[13px]">
+                            <div className="flex items-center gap-2">
+                              <span className="text-neutral-400 w-20 flex-shrink-0">Acquired</span>
+                              <CustomDropdown
+                                value={editAcquiredMonth}
+                                options={[
+                                  { value: "", label: "Month" },
+                                  ...["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => ({ value: String(i + 1), label: m })),
+                                ]}
+                                onChange={setEditAcquiredMonth}
+                              />
+                              <CustomDropdown
+                                value={editAcquiredYear}
+                                options={[
+                                  { value: "", label: "Year" },
+                                  ...Array.from({ length: new Date().getFullYear() - 2009 }, (_, i) => new Date().getFullYear() - i).map((y) => ({ value: String(y), label: String(y) })),
+                                ]}
+                                onChange={setEditAcquiredYear}
+                              />
                             </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-neutral-400 w-20 flex-shrink-0">Archived</span>
+                              <CustomDropdown
+                                value={editArchivedMonth}
+                                options={[
+                                  { value: "", label: "Month" },
+                                  ...["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => ({ value: String(i + 1), label: m })),
+                                ]}
+                                onChange={setEditArchivedMonth}
+                              />
+                              <CustomDropdown
+                                value={editArchivedYear}
+                                options={[
+                                  { value: "", label: "Year" },
+                                  ...Array.from({ length: new Date().getFullYear() - 2009 }, (_, i) => new Date().getFullYear() - i).map((y) => ({ value: String(y), label: String(y) })),
+                                ]}
+                                onChange={setEditArchivedYear}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center justify-between pt-1 border-t border-gray-100">
                             <div className="flex items-center gap-3">
                               <button
                                 onClick={() => { setEditingNoteId(null); handleRestoreProduct(p.id); }}
@@ -3287,9 +3344,23 @@ export default function DashboardPage() {
                               </button>
                               <button
                                 onClick={() => { setEditingNoteId(null); setDeleteTarget({ id: p.id, name: p.name, type: "archived" }); }}
-                                className="text-[13px] text-neutral-400 hover:text-[#C0392B] transition-colors"
+                                className="text-[13px] text-[#C0392B] hover:opacity-70 transition-opacity"
                               >
                                 Delete
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => setEditingNoteId(null)}
+                                className="text-[13px] text-neutral-500 hover:text-neutral-800"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={() => handleSaveArchiveNote(p.id)}
+                                className="text-[13px] font-medium text-white px-4 py-1.5 rounded-md hover:opacity-90 bg-[#C0392B]"
+                              >
+                                Save
                               </button>
                             </div>
                           </div>
@@ -3315,10 +3386,7 @@ export default function DashboardPage() {
                             )}
                           </div>
                           <button
-                            onClick={() => {
-                              setEditingNoteId(p.id);
-                              setEditNoteValue(p.archive_note || "");
-                            }}
+                            onClick={() => openArchiveEdit(p)}
                             className="text-[12px] text-neutral-500 hover:text-neutral-800 transition-colors flex-shrink-0"
                           >
                             Edit

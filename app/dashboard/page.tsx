@@ -1220,7 +1220,7 @@ function ProductModal({
                     </>
                   ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <Camera size={28} className="text-neutral-300 mb-1" />
+                      <Camera className="w-12 h-12 text-neutral-300 mb-1" strokeWidth={1.5} />
                       <span className="text-[13px] font-medium text-neutral-500">Add photo</span>
                     </div>
                   )}
@@ -1513,7 +1513,7 @@ function ProductModal({
                   </>
                 ) : (
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <Camera size={28} className="text-neutral-300 mb-1" />
+                    <Camera className="w-12 h-12 text-neutral-300 mb-1" strokeWidth={1.5} />
                     <span className="text-[13px] font-medium text-neutral-500">Add photo</span>
                     <span className="text-[11px] text-neutral-400 mt-0.5">Saved as draft without photo</span>
                   </div>

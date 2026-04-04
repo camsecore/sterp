@@ -3281,7 +3281,7 @@ export default function DashboardPage() {
                               onChange={(e) => {
                                 if (e.target.value.length <= 160) setEditNoteValue(e.target.value);
                               }}
-                              rows={4}
+                              rows={2}
                               className={`w-full rounded-md border border-gray-200 px-3 py-2 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40 resize-none`}
                               placeholder="Any memories with this one?"
                               autoFocus

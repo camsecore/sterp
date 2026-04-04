@@ -1327,8 +1327,8 @@ function ProductModal({
                     {photoUrl ? (
                       <>
                         <Image src={photoUrl} alt="" fill unoptimized className="object-cover" />
-                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                          <Camera size={16} className="text-white" strokeWidth={2} />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <Camera className="w-5 h-5 text-white" strokeWidth={2} />
                         </div>
                       </>
                     ) : (
@@ -1345,63 +1345,67 @@ function ProductModal({
                 {oneLinerInput}
               </div>
 
-              {/* ── Group B: Metadata (tight internal spacing, separated from Group A) ── */}
-              <div className="mt-6 space-y-2">
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
-                {!editingCollection && (editingDate ? (
-                  <div className="flex items-center gap-2 relative z-30">
-                    <CustomDropdown
-                      value={acquiredMonth}
-                      options={[
-                        { value: "", label: "Month" },
-                        ...["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => ({ value: String(i + 1), label: m })),
-                      ]}
-                      onChange={setAcquiredMonth}
-                    />
-                    <CustomDropdown
-                      value={acquiredYear}
-                      options={[
-                        { value: "", label: "Year" },
-                        ...Array.from({ length: new Date().getFullYear() - 2009 }, (_, i) => new Date().getFullYear() - i).map((y) => ({ value: String(y), label: String(y) })),
-                      ]}
-                      onChange={setAcquiredYear}
-                    />
-                    {(acquiredMonth || acquiredYear) && (
-                      <button type="button" onClick={() => { setAcquiredMonth(""); setAcquiredYear(""); }} className="text-[12px] text-neutral-400 hover:text-neutral-600 transition-colors">Clear</button>
-                    )}
-                    <button type="button" onClick={() => setEditingDate(false)} className="text-[12px] text-neutral-400 hover:text-neutral-600 transition-colors">Done</button>
-                  </div>
-                ) : (
-                  <span className="flex items-center gap-1 text-neutral-500">
-                    <span className="text-neutral-400">Acquired:</span>
-                    <span className="text-neutral-700">{acquiredLabel || "—"}</span>
-                    <button type="button" onClick={() => setEditingDate(true)} className="text-[12px] text-gray-400 hover:text-gray-600 hover:underline transition-colors ml-0.5">Change</button>
-                  </span>
-                ))}
+              {/* ── Group B: Metadata (separated from Group A) ── */}
+              <div className="mt-6">
+                {/* Acquired / Collection row */}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
+                  {!editingCollection && (editingDate ? (
+                    <div className="flex items-center gap-2 relative z-30">
+                      <CustomDropdown
+                        value={acquiredMonth}
+                        options={[
+                          { value: "", label: "Month" },
+                          ...["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => ({ value: String(i + 1), label: m })),
+                        ]}
+                        onChange={setAcquiredMonth}
+                      />
+                      <CustomDropdown
+                        value={acquiredYear}
+                        options={[
+                          { value: "", label: "Year" },
+                          ...Array.from({ length: new Date().getFullYear() - 2009 }, (_, i) => new Date().getFullYear() - i).map((y) => ({ value: String(y), label: String(y) })),
+                        ]}
+                        onChange={setAcquiredYear}
+                      />
+                      {(acquiredMonth || acquiredYear) && (
+                        <button type="button" onClick={() => { setAcquiredMonth(""); setAcquiredYear(""); }} className="text-[12px] text-neutral-400 hover:text-neutral-600 transition-colors">Clear</button>
+                      )}
+                      <button type="button" onClick={() => setEditingDate(false)} className="text-[12px] text-neutral-400 hover:text-neutral-600 transition-colors">Done</button>
+                    </div>
+                  ) : (
+                    <span className="flex items-center gap-1 text-neutral-500">
+                      <span className="text-neutral-400">Acquired:</span>
+                      <span className="text-neutral-700">{acquiredLabel || "—"}</span>
+                      <button type="button" onClick={() => setEditingDate(true)} className="text-[12px] text-gray-400 hover:text-gray-600 hover:underline transition-colors ml-0.5">Change</button>
+                    </span>
+                  ))}
 
-                {!editingDate && (editingCollection ? (
-                  <div className="flex items-center gap-2">
-                    {collectionSection}
-                    <button type="button" onClick={() => setEditingCollection(false)} className="text-[12px] text-neutral-400 hover:text-neutral-600 transition-colors flex-shrink-0">Done</button>
-                  </div>
-                ) : (
-                  <span className="flex items-center gap-1 text-neutral-500">
-                    <span className="text-neutral-400">Collection:</span>
-                    <span className="text-neutral-700">{selectedCollectionName || "—"}</span>
-                    {collections.length >= 2 && (
-                      <button type="button" onClick={() => setEditingCollection(true)} className="text-[12px] text-gray-400 hover:text-gray-600 hover:underline transition-colors ml-0.5">Change</button>
-                    )}
-                  </span>
-                ))}
+                  {!editingDate && (editingCollection ? (
+                    <div className="flex items-center gap-2">
+                      {collectionSection}
+                      <button type="button" onClick={() => setEditingCollection(false)} className="text-[12px] text-neutral-400 hover:text-neutral-600 transition-colors flex-shrink-0">Done</button>
+                    </div>
+                  ) : (
+                    <span className="flex items-center gap-1 text-neutral-500">
+                      <span className="text-neutral-400">Collection:</span>
+                      <span className="text-neutral-700">{selectedCollectionName || "—"}</span>
+                      {collections.length >= 2 && (
+                        <button type="button" onClick={() => setEditingCollection(true)} className="text-[12px] text-gray-400 hover:text-gray-600 hover:underline transition-colors ml-0.5">Change</button>
+                      )}
+                    </span>
+                  ))}
+                </div>
 
-                {!editingDate && !editingCollection && obsessionSection}
-              </div>
+                {/* Obsessions — visually separated */}
+                {!editingDate && !editingCollection && (
+                  <div className="mt-5">{obsessionSection}</div>
+                )}
 
-              {replacePickerSection}
+                {replacePickerSection}
 
-              {errors.form && (
-                <p className="text-[13px] text-[#C0392B]">{errors.form}</p>
-              )}
+                {errors.form && (
+                  <p className="text-[13px] text-[#C0392B] mt-2">{errors.form}</p>
+                )}
               </div>
             </div>
           </div>

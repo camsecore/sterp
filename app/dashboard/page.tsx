@@ -40,6 +40,9 @@ import { DashboardHeader } from "./components/dashboard-header";
 import { GreenBanners } from "./components/green-banners";
 import { ArchiveSection } from "./components/archive-section";
 import { EditProfileModal } from "./components/edit-profile-modal";
+import { ProductRow } from "./components/product-row";
+import { ObsessionsSection } from "./components/obsessions-section";
+import { CollectionsSection } from "./components/collections-section";
 
 
 // ─── Main component ─────────────────────────────────────────────────
@@ -708,232 +711,49 @@ export default function DashboardPage() {
                     .filter((p) => p.status === "current" || p.status === "draft")
                     .sort((a, b) => a.sort_order - b.sort_order)
                     .map((p) => (
-                      <div
+                      <ProductRow
                         key={p.id}
-                        data-product-id={p.id}
-                        className={`flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-gray-200 transition-colors duration-700 ${highlightProductId === p.id ? "ring-2 ring-emerald-400 bg-emerald-50" : ""}`}
-                      >
-                        <Thumbnail src={p.photo_url} alt={p.name} />
-                        <div
-                          className="flex-1 min-w-0 cursor-pointer"
-                          onClick={() => setProductModal({ mode: "edit", product: p })}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-[15px] font-medium text-neutral-900 truncate">
-                              {p.name}
-                            </span>
-                            <span className="hidden sm:inline flex-shrink-0"><StatusBadge status={p.status} /></span>
-                          </div>
-                          {p.one_liner && (
-                            <span className="text-[13px] text-neutral-400 truncate block">
-                              {p.one_liner}
-                            </span>
-                          )}
-                        </div>
-                        <div className="relative flex-shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => setProductMenuOpen(productMenuOpen === p.id ? null : p.id)}
-                            aria-label={`${p.name} options`}
-                            className="p-1 hover:bg-neutral-100 rounded transition-colors cursor-pointer"
-                          >
-                            <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
-                              <circle cx="8" cy="3" r="1.5" />
-                              <circle cx="8" cy="8" r="1.5" />
-                              <circle cx="8" cy="13" r="1.5" />
-                            </svg>
-                          </button>
-                          {productMenuOpen === p.id && (
-                            <>
-                              <div className="fixed inset-0 z-10" onClick={() => setProductMenuOpen(null)} />
-                              <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-40">
-                                <button
-                                  onClick={() => { setProductMenuOpen(null); setProductModal({ mode: "edit", product: p }); }}
-                                  className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => { setProductMenuOpen(null); setArchiveTarget(p); }}
-                                  className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
-                                >
-                                  Archive
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
+                        product={p}
+                        highlighted={highlightProductId === p.id}
+                        menuOpen={productMenuOpen === p.id}
+                        onToggleMenu={() => setProductMenuOpen(productMenuOpen === p.id ? null : p.id)}
+                        onCloseMenu={() => setProductMenuOpen(null)}
+                        onEdit={() => setProductModal({ mode: "edit", product: p })}
+                        onArchive={() => setArchiveTarget(p)}
+                        className="bg-white rounded-lg px-4 py-3 border border-gray-200"
+                      />
                     ))}
                 </div>
               </section>
             )}
 
             {/* ─── Section 3: Obsessions (Phase 2+) ──────────────────────── */}
-            {products.length > 0 && phase >= 2 && <section>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-baseline gap-2">
-                  <h2 className="text-[20px] font-semibold text-neutral-900">
-                    Obsessions
-                  </h2>
-                  <span className="text-[13px] text-neutral-400 font-medium">
-                    {obsessions.length}/5
-                  </span>
-                </div>
-                {phase >= 3 && (
-                  <button
-                    onClick={() => {
-                      if (obsessions.length < 5) {
-                        setShowAddObsession(!showAddObsession);
-                        setObsessionSearch("");
-                        setObsessionFilter("");
-                      }
-                    }}
-                    disabled={obsessions.length >= 5}
-                    className="text-[13px] font-medium transition-opacity disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                    style={{ color: "#C0392B" }}
-                    title={obsessions.length >= 5 ? "Maximum 5 obsessions" : undefined}
-                  >
-                    {showAddObsession ? "Cancel" : "+ Add to Obsessions"}
-                  </button>
-                )}
-              </div>
+            {products.length > 0 && phase >= 2 && (
+              <ObsessionsSection
+                products={products}
+                collections={collections}
+                obsessions={obsessions}
+                currentProducts={currentProducts}
+                phase={phase}
+                highlightProductId={highlightProductId}
+                productMenuOpen={productMenuOpen}
+                showAddObsession={showAddObsession}
+                obsessionSearch={obsessionSearch}
+                obsessionFilter={obsessionFilter}
+                sensors={sensors}
+                collectionMap={collectionMap}
+                onSetProductMenuOpen={setProductMenuOpen}
+                onSetShowAddObsession={setShowAddObsession}
+                onSetObsessionSearch={setObsessionSearch}
+                onSetObsessionFilter={setObsessionFilter}
+                onEditProduct={(p) => setProductModal({ mode: "edit", product: p })}
+                onRemoveObsession={handleRemoveObsession}
+                onAddObsession={handleAddObsession}
+                onObsessionDragEnd={handleObsessionDragEnd}
+              />
+            )}
 
-              {/* Add to Obsessions dropdown */}
-              {showAddObsession && (
-                <div className="bg-white rounded-lg border border-gray-200 p-3 mb-3">
-                  <div className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      value={obsessionSearch}
-                      onChange={(e) => setObsessionSearch(e.target.value)}
-                      placeholder="Search products..."
-                      className="flex-1 rounded-md border border-gray-200 px-3 py-2 text-[14px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40"
-                    />
-                    <CustomDropdown
-                      value={obsessionFilter}
-                      options={[
-                        { value: "", label: "All collections" },
-                        ...collections.map((c) => ({ value: c.id, label: c.name })),
-                      ]}
-                      onChange={setObsessionFilter}
-                    />
-                  </div>
-                  <div className="max-h-48 overflow-y-auto space-y-1">
-                    {(() => {
-                      const obsessionProductIds = new Set(obsessions.map((tp) => tp.product_id));
-                      const eligible = currentProducts
-                        .filter((p) => !obsessionProductIds.has(p.id))
-                        .filter((p) => !obsessionSearch || p.name.toLowerCase().includes(obsessionSearch.toLowerCase()))
-                        .filter((p) => !obsessionFilter || p.collection_id === obsessionFilter);
-                      return eligible.length === 0 ? (
-                        <p className="text-[13px] text-neutral-400 py-2 text-center">No matching products</p>
-                      ) : (
-                        eligible.map((p) => (
-                          <button
-                            key={p.id}
-                            onClick={() => handleAddObsession(p.id)}
-                            className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-neutral-50 transition-colors text-left"
-                          >
-                            <Thumbnail src={p.photo_url} alt={p.name} />
-                            <span className="text-[14px] font-medium text-neutral-900 flex-1 min-w-0 truncate">{p.name}</span>
-                            <span className="text-[12px] text-neutral-400 flex-shrink-0">{collectionMap.get(p.collection_id)?.name}</span>
-                          </button>
-                        ))
-                      );
-                    })()}
-                  </div>
-                </div>
-              )}
-
-              {obsessions.length === 0 ? (
-                <div className="bg-white rounded-lg border border-gray-200 px-4 py-6 text-center">
-                  <p className="text-[15px] text-neutral-500">
-                    Add products to your Obsessions — these are the first thing visitors see.
-                  </p>
-                </div>
-              ) : (
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleObsessionDragEnd}>
-                  <SortableContext items={[...obsessions].sort((a, b) => a.sort_order - b.sort_order).slice(0, 5).map((tp) => tp.product_id)} strategy={verticalListSortingStrategy}>
-                    <div className="space-y-2">
-                      {[...obsessions]
-                        .sort((a, b) => a.sort_order - b.sort_order)
-                        .slice(0, 5)
-                        .map((tp, i) => (
-                          <SortableObsession key={tp.product_id} id={tp.product_id}>
-                            {({ handle }) => {
-                              const tpProduct = products.find((p) => p.id === tp.product_id);
-                              return (
-                              <div data-product-id={tp.product_id} className={`flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-gray-200 transition-all duration-700 ${highlightProductId === tp.product_id ? "ring-2 ring-emerald-400 bg-emerald-50" : ""}`}>
-                                {handle}
-                                <span className="text-[15px] font-semibold text-neutral-300 w-5 text-center flex-shrink-0">
-                                  {i + 1}
-                                </span>
-                                <Thumbnail
-                                  src={tp.products?.photo_url ?? null}
-                                  alt={tp.products?.name ?? ""}
-                                />
-                                <div
-                                  className="flex-1 min-w-0 cursor-pointer"
-                                  onClick={() => {
-                                    if (tpProduct) setProductModal({ mode: "edit", product: tpProduct });
-                                  }}
-                                >
-                                  <span className="text-[15px] font-medium text-neutral-900 truncate block">
-                                    {tp.products?.name ?? "Unknown product"}
-                                  </span>
-                                  {(() => {
-                                    const col = tpProduct ? collectionMap.get(tpProduct.collection_id) : null;
-                                    return col ? (
-                                      <span className="text-[12px] text-neutral-400">{col.name === "Products" && collections.length >= 2 ? "Uncategorized" : col.name}</span>
-                                    ) : null;
-                                  })()}
-                                </div>
-                                <div className="relative flex-shrink-0">
-                                  <button
-                                    type="button"
-                                    onClick={() => setProductMenuOpen(productMenuOpen === `tp-${tp.product_id}` ? null : `tp-${tp.product_id}`)}
-                                    aria-label={`${tp.products?.name ?? "Product"} options`}
-                                    className="p-1 hover:bg-neutral-100 rounded transition-colors cursor-pointer"
-                                  >
-                                    <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
-                                      <circle cx="8" cy="3" r="1.5" />
-                                      <circle cx="8" cy="8" r="1.5" />
-                                      <circle cx="8" cy="13" r="1.5" />
-                                    </svg>
-                                  </button>
-                                  {productMenuOpen === `tp-${tp.product_id}` && (
-                                    <>
-                                      <div className="fixed inset-0 z-10" onClick={() => setProductMenuOpen(null)} />
-                                      <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-56">
-                                        <button
-                                          onClick={() => { setProductMenuOpen(null); if (tpProduct) setProductModal({ mode: "edit", product: tpProduct }); }}
-                                          className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
-                                        >
-                                          Edit
-                                        </button>
-                                        <button
-                                          onClick={() => { setProductMenuOpen(null); handleRemoveObsession(tp.product_id); }}
-                                          className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
-                                        >
-                                          Remove from Obsessions
-                                        </button>
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                              );
-                            }}
-                          </SortableObsession>
-                        ))}
-                    </div>
-                  </SortableContext>
-                </DndContext>
-              )}
-            </section>}
-
-            {/* ─── Phase 3: Flat list for non-obsession products (no collections section yet) ── */}
+            {/* ─── Phase 3: Flat list for non-obsession products ── */}
             {products.length > 0 && phase === 3 && (() => {
               const obsessionIds = new Set(obsessions.map((tp) => tp.product_id));
               const nonObsessionProducts = products
@@ -944,468 +764,62 @@ export default function DashboardPage() {
                 <section>
                   <div className="space-y-2">
                     {nonObsessionProducts.map((p) => (
-                      <div
+                      <ProductRow
                         key={p.id}
-                        data-product-id={p.id}
-                        className={`flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-gray-200 transition-colors duration-700 ${highlightProductId === p.id ? "ring-2 ring-emerald-400 bg-emerald-50" : ""}`}
-                      >
-                        <Thumbnail src={p.photo_url} alt={p.name} />
-                        <div
-                          className="flex-1 min-w-0 cursor-pointer"
-                          onClick={() => setProductModal({ mode: "edit", product: p })}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-[15px] font-medium text-neutral-900 truncate">
-                              {p.name}
-                            </span>
-                            <span className="hidden sm:inline flex-shrink-0"><StatusBadge status={p.status} /></span>
-                          </div>
-                          {p.one_liner && (
-                            <span className="text-[13px] text-neutral-400 truncate block">
-                              {p.one_liner}
-                            </span>
-                          )}
-                        </div>
-                        <div className="relative flex-shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => setProductMenuOpen(productMenuOpen === p.id ? null : p.id)}
-                            aria-label={`${p.name} options`}
-                            className="p-1 hover:bg-neutral-100 rounded transition-colors cursor-pointer"
-                          >
-                            <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
-                              <circle cx="8" cy="3" r="1.5" />
-                              <circle cx="8" cy="8" r="1.5" />
-                              <circle cx="8" cy="13" r="1.5" />
-                            </svg>
-                          </button>
-                          {productMenuOpen === p.id && (
-                            <>
-                              <div className="fixed inset-0 z-10" onClick={() => setProductMenuOpen(null)} />
-                              <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-40">
-                                <button
-                                  onClick={() => { setProductMenuOpen(null); setProductModal({ mode: "edit", product: p }); }}
-                                  className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => { setProductMenuOpen(null); setArchiveTarget(p); }}
-                                  className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
-                                >
-                                  Archive
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
+                        product={p}
+                        highlighted={highlightProductId === p.id}
+                        menuOpen={productMenuOpen === p.id}
+                        onToggleMenu={() => setProductMenuOpen(productMenuOpen === p.id ? null : p.id)}
+                        onCloseMenu={() => setProductMenuOpen(null)}
+                        onEdit={() => setProductModal({ mode: "edit", product: p })}
+                        onArchive={() => setArchiveTarget(p)}
+                        className="bg-white rounded-lg px-4 py-3 border border-gray-200"
+                      />
                     ))}
                   </div>
                 </section>
               );
             })()}
 
-            {/* ─── Section 4: Collections (Phase 4 — first named collection created) ── */}
-            {products.length > 0 && phase >= 4 && <section>
-              <div className="flex flex-col gap-1 mb-3">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-[20px] font-semibold text-neutral-900">
-                    Collections
-                  </h2>
-                  <button
-                    onClick={() => {
-                      setShowAddCollection(!showAddCollection);
-                      setAddCollectionError("");
-                    }}
-                    className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity cursor-pointer"
-                  >
-                    {showAddCollection ? "Cancel" : "+ Add Collection"}
-                  </button>
-                </div>
-                {(() => {
-                  const draftCount = products.filter((p) => p.status === "draft").length;
-                  return draftCount > 0 ? (
-                    <p className="text-[13px] text-neutral-400">
-                      {draftCount} product{draftCount === 1 ? "" : "s"} need{draftCount === 1 ? "s a photo" : " photos"}
-                    </p>
-                  ) : null;
-                })()}
-              </div>
-
-              {/* Add collection form */}
-              {showAddCollection && (
-                <form
-                  onSubmit={handleAddCollection}
-                  className="bg-white rounded-lg border border-gray-200 p-4 mb-4 flex items-end gap-3"
-                >
-                  <div className="flex-1">
-                    <label className="block text-[13px] font-medium text-neutral-600 mb-1">
-                      Collection name
-                    </label>
-                    <input
-                      type="text"
-                      value={newCollectionName}
-                      onChange={(e) => setNewCollectionName(e.target.value)}
-                      className={inputClass}
-                      placeholder="e.g. Kitchen, Tech, Travel"
-                    />
-                    {addCollectionError && (
-                      <p className="text-[13px] text-[#C0392B] mt-1">{addCollectionError}</p>
-                    )}
-                  </div>
-                  <button
-                    type="submit"
-                    className="bg-[#C0392B] text-white text-[14px] font-medium px-4 py-2 rounded-md hover:opacity-90 transition-opacity flex-shrink-0"
-                  >
-                    Add
-                  </button>
-                </form>
-              )}
-
-              {collectionError && (
-                <p className="text-[13px] text-[#C0392B] mb-3">{collectionError}</p>
-              )}
-
-              {collections.length === 0 && !showAddCollection ? (
-                <div className="bg-white rounded-lg border border-gray-200 px-6 py-8 text-center space-y-3">
-                  <h3 className="text-[18px] font-semibold text-neutral-900">
-                    No collections yet
-                  </h3>
-                  <p className="text-[14px] text-neutral-500 max-w-sm mx-auto leading-relaxed">
-                    Group your products however you want — &ldquo;Desk Setup,&rdquo; &ldquo;Gym Bag,&rdquo; &ldquo;Kitchen Essentials,&rdquo; whatever fits.
-                  </p>
-                  <button
-                    onClick={() => { setShowAddCollection(true); setAddCollectionError(""); }}
-                    className="text-[14px] font-medium text-white px-5 py-2.5 rounded-md hover:opacity-90"
-                    style={{ backgroundColor: "#C0392B" }}
-                  >
-                    + Add Collection
-                  </button>
-                </div>
-              ) : collections.length === 1 && collections[0].name === "Products" ? (
-                /* Default collection only — show products in a flat list, hide the collection chrome */
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                  <div className="px-4 py-3 space-y-2">
-                    {products
-                      .filter((p) => p.status === "current" || p.status === "draft")
-                      .sort((a, b) => a.sort_order - b.sort_order)
-                      .map((p) => (
-                        <div
-                          key={p.id}
-                          data-product-id={p.id}
-                          className={`flex items-center gap-3 rounded-md px-3 py-2 hover:bg-neutral-50 transition-colors duration-700 ${highlightProductId === p.id ? "ring-2 ring-emerald-400 bg-emerald-50" : ""}`}
-                        >
-                          <Thumbnail src={p.photo_url} alt={p.name} />
-                          <div
-                            className="flex-1 min-w-0 cursor-pointer"
-                            onClick={() => setProductModal({ mode: "edit", product: p })}
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="text-[15px] font-medium text-neutral-900 truncate">
-                                {p.name}
-                              </span>
-                              <span className="hidden sm:inline flex-shrink-0"><StatusBadge status={p.status} /></span>
-                            </div>
-                            {p.one_liner && (
-                              <span className="text-[13px] text-neutral-400 truncate block">
-                                {p.one_liner}
-                              </span>
-                            )}
-                          </div>
-                          <div className="relative flex-shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => setProductMenuOpen(productMenuOpen === p.id ? null : p.id)}
-                              aria-label={`${p.name} options`}
-                              className="p-1 hover:bg-neutral-100 rounded transition-colors cursor-pointer"
-                            >
-                              <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
-                                <circle cx="8" cy="3" r="1.5" />
-                                <circle cx="8" cy="8" r="1.5" />
-                                <circle cx="8" cy="13" r="1.5" />
-                              </svg>
-                            </button>
-                            {productMenuOpen === p.id && (
-                              <>
-                                <div className="fixed inset-0 z-10" onClick={() => setProductMenuOpen(null)} />
-                                <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-40">
-                                  <button
-                                    onClick={() => { setProductMenuOpen(null); setProductModal({ mode: "edit", product: p }); }}
-                                    className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    onClick={() => { setProductMenuOpen(null); setArchiveTarget(p); }}
-                                    className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
-                                  >
-                                    Archive
-                                  </button>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              ) : (
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCollectionDragEnd}>
-                  <SortableContext items={[...collections].sort((a, b) => a.sort_order - b.sort_order).map((c) => c.id)} strategy={verticalListSortingStrategy}>
-                    <div className="space-y-3">
-                      {[...collections]
-                        .sort((a, b) => a.sort_order - b.sort_order)
-                        .map((c) => {
-                          const isCollapsed = collapsedCollections.has(c.id);
-                          const colProducts = products
-                            .filter((p) => p.collection_id === c.id && (p.status === "current" || p.status === "draft"))
-                            .sort((a, b) => a.sort_order - b.sort_order);
-                          const productCount = productCountByCollection.get(c.id) || 0;
-
-                          return (
-                            <SortableCollection key={c.id} id={c.id}>
-                              {({ handle }) => (
-                                <div className="bg-white rounded-lg border border-gray-200 transition-all">
-                                  {/* ── Collection header row ── */}
-                                  <div className="flex items-center gap-2 px-4 py-3">
-                                    {handle}
-
-                                    {/* Collapse chevron */}
-                                    <button
-                                      type="button"
-                                      onClick={() => toggleCollapsed(c.id)}
-                                      aria-label={isCollapsed ? `Expand ${c.name}` : `Collapse ${c.name}`}
-                                      className="flex-shrink-0 p-0.5 hover:bg-neutral-100 rounded transition-colors"
-                                    >
-                                      <svg className={`w-4 h-4 transition-transform ${isCollapsed ? "" : "rotate-90"}`} viewBox="0 0 16 16" fill="currentColor">
-                                        <path d="M6 3l5 5-5 5V3z" />
-                                      </svg>
-                                    </button>
-
-                                    {/* Collection name or rename input */}
-                                    {renamingCollectionId === c.id ? (
-                                      <div className="flex-1 flex items-center gap-2 min-w-0">
-                                        <input
-                                          type="text"
-                                          value={renameValue}
-                                          onChange={(e) => setRenameValue(e.target.value)}
-                                          className="flex-1 rounded-md border border-gray-200 px-3 py-1.5 text-[15px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#C0392B]/20 focus:border-[#C0392B]/40"
-                                          autoFocus
-                                          onKeyDown={(e) => {
-                                            if (e.key === "Enter") {
-                                              e.preventDefault();
-                                              handleRenameCollection(c.id);
-                                            }
-                                            if (e.key === "Escape") setRenamingCollectionId(null);
-                                          }}
-                                        />
-                                        <button
-                                          onClick={() => handleRenameCollection(c.id)}
-                                          className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity"
-                                        >
-                                          Save
-                                        </button>
-                                        <button
-                                          onClick={() => setRenamingCollectionId(null)}
-                                          className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors"
-                                        >
-                                          Cancel
-                                        </button>
-                                        {renameError && (
-                                          <span className="text-[13px] text-[#C0392B]">{renameError}</span>
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <>
-                                        <span className="text-[15px] font-medium text-neutral-900 flex-1 min-w-0 truncate">
-                                          {c.name === "Products" && collections.length >= 2 ? "Uncategorized" : c.name}
-                                        </span>
-                                        <span className="text-[13px] text-neutral-400 flex-shrink-0">
-                                          {productCount} {productCount === 1 ? "product" : "products"}
-                                        </span>
-                                      </>
-                                    )}
-
-                                    {/* Three-dot menu */}
-                                    {renamingCollectionId !== c.id && (
-                                      <div className="relative flex-shrink-0">
-                                        <button
-                                          type="button"
-                                          onClick={() => setCollectionMenuOpen(collectionMenuOpen === c.id ? null : c.id)}
-                                          aria-label={`${c.name} options`}
-                                          className="p-1 hover:bg-neutral-100 rounded transition-colors cursor-pointer"
-                                        >
-                                          <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
-                                            <circle cx="8" cy="3" r="1.5" />
-                                            <circle cx="8" cy="8" r="1.5" />
-                                            <circle cx="8" cy="13" r="1.5" />
-                                          </svg>
-                                        </button>
-                                        {collectionMenuOpen === c.id && (
-                                          <>
-                                            {/* Backdrop to close menu */}
-                                            <div
-                                              className="fixed inset-0 z-10"
-                                              onClick={() => setCollectionMenuOpen(null)}
-                                            />
-                                            <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-52">
-                                              <button
-                                                onClick={async () => {
-                                                  setCollectionMenuOpen(null);
-                                                  if (profile?.username) {
-                                                    try {
-                                                      await navigator.clipboard.writeText(`https://sterp.com/${profile.username}#${slugify(c.name)}`);
-                                                    } catch {}
-                                                  }
-                                                }}
-                                                className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
-                                              >
-                                                Copy link
-                                              </button>
-                                              <button
-                                                onClick={() => {
-                                                  setRenamingCollectionId(c.id);
-                                                  setRenameValue(c.name);
-                                                  setRenameError("");
-                                                  setCollectionMenuOpen(null);
-                                                }}
-                                                className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
-                                              >
-                                                Rename
-                                              </button>
-                                              {productCount > 0 ? (
-                                                <div className="px-4 py-2 text-[14px] text-neutral-300 cursor-not-allowed">
-                                                  Delete collection
-                                                  <span className="block text-[12px] text-neutral-400 mt-0.5">
-                                                    Move or archive products first
-                                                  </span>
-                                                </div>
-                                              ) : (
-                                                <button
-                                                  onClick={() => {
-                                                    setCollectionMenuOpen(null);
-                                                    setDeleteTarget({ id: c.id, name: c.name, type: "collection" });
-                                                  }}
-                                                  className="w-full text-left px-4 py-2 text-[14px] text-[#C0392B] hover:bg-neutral-50 transition-colors"
-                                                >
-                                                  Delete collection
-                                                </button>
-                                              )}
-                                            </div>
-                                          </>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {/* ── Collapsible product list ── */}
-                                  {!isCollapsed && (
-                                    <div className="border-t border-gray-100 px-4 py-3 space-y-2">
-                                      {/* Add Product button */}
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          setProductModal({ mode: "add", collectionId: c.id })
-                                        }
-                                        className="text-[13px] font-medium text-[#C0392B] hover:opacity-70 transition-opacity cursor-pointer"
-                                      >
-                                        + Add Product
-                                      </button>
-
-                                      {/* Product rows */}
-                                      {colProducts.length === 0 && (
-                                        <div className="py-4 text-center space-y-2">
-                                          <p className="text-[14px] text-neutral-500">
-                                            Add your first product
-                                          </p>
-                                          <button
-                                            onClick={() => setProductModal({ mode: "add", collectionId: c.id })}
-                                            className="text-[13px] font-medium text-white px-4 py-1.5 rounded-md hover:opacity-90"
-                                            style={{ backgroundColor: "#C0392B" }}
-                                          >
-                                            Add Product
-                                          </button>
-                                        </div>
-                                      )}
-                                      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleProductDragEnd(c.id)}>
-                                        <SortableContext items={colProducts.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-                                          {colProducts.map((p) => (
-                                            <SortableProduct key={p.id} id={p.id}>
-                                              {({ handle }) => (
-                                                <div
-                                                  data-product-id={p.id}
-                                                  className={`flex items-center gap-3 rounded-md px-3 py-2 hover:bg-neutral-50 transition-colors duration-700 ${highlightProductId === p.id ? "ring-2 ring-emerald-400 bg-emerald-50" : ""}`}
-                                                >
-                                                  {handle}
-                                                  <Thumbnail src={p.photo_url} alt={p.name} />
-                                                  <div
-                                                    className="flex-1 min-w-0 cursor-pointer"
-                                                    onClick={() => setProductModal({ mode: "edit", product: p })}
-                                                  >
-                                                    <div className="flex items-center gap-2">
-                                                      <span className="text-[15px] font-medium text-neutral-900 truncate">
-                                                        {p.name}
-                                                      </span>
-                                                      <span className="hidden sm:inline flex-shrink-0"><StatusBadge status={p.status} /></span>
-                                                    </div>
-                                                    {p.one_liner && (
-                                                      <span className="text-[13px] text-neutral-400 truncate block">
-                                                        {p.one_liner}
-                                                      </span>
-                                                    )}
-                                                  </div>
-                                                  <div className="relative flex-shrink-0">
-                                                    <button
-                                                      type="button"
-                                                      onClick={(e) => { e.stopPropagation(); setProductMenuOpen(productMenuOpen === `col-${p.id}` ? null : `col-${p.id}`); }}
-                                                      aria-label={`${p.name} options`}
-                                                      className="p-1 hover:bg-neutral-100 rounded transition-colors cursor-pointer"
-                                                    >
-                                                      <svg className="w-4 h-4 text-neutral-400" viewBox="0 0 16 16" fill="currentColor">
-                                                        <circle cx="8" cy="3" r="1.5" />
-                                                        <circle cx="8" cy="8" r="1.5" />
-                                                        <circle cx="8" cy="13" r="1.5" />
-                                                      </svg>
-                                                    </button>
-                                                    {productMenuOpen === `col-${p.id}` && (
-                                                      <>
-                                                        <div className="fixed inset-0 z-10" onClick={() => setProductMenuOpen(null)} />
-                                                        <div className="absolute right-0 top-8 z-20 bg-white rounded-lg border border-gray-200 shadow-lg py-1 w-40">
-                                                          <button
-                                                            onClick={() => { setProductMenuOpen(null); setProductModal({ mode: "edit", product: p }); }}
-                                                            className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
-                                                          >
-                                                            Edit
-                                                          </button>
-                                                          <button
-                                                            onClick={() => { setProductMenuOpen(null); setArchiveTarget(p); }}
-                                                            className="w-full text-left px-4 py-2 text-[14px] text-neutral-700 hover:bg-neutral-50 transition-colors cursor-pointer"
-                                                          >
-                                                            Archive
-                                                          </button>
-                                                        </div>
-                                                      </>
-                                                    )}
-                                                  </div>
-                                                </div>
-                                              )}
-                                            </SortableProduct>
-                                          ))}
-                                        </SortableContext>
-                                      </DndContext>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </SortableCollection>
-                          );
-                        })}
-                    </div>
-                  </SortableContext>
-                </DndContext>
-              )}
-            </section>}
+            {/* ─── Section 4: Collections (Phase 4+) ── */}
+            {products.length > 0 && phase >= 4 && (
+              <CollectionsSection
+                products={products}
+                collections={collections}
+                profile={profile}
+                highlightProductId={highlightProductId}
+                productMenuOpen={productMenuOpen}
+                showAddCollection={showAddCollection}
+                newCollectionName={newCollectionName}
+                addCollectionError={addCollectionError}
+                collectionError={collectionError}
+                renamingCollectionId={renamingCollectionId}
+                renameValue={renameValue}
+                renameError={renameError}
+                collapsedCollections={collapsedCollections}
+                collectionMenuOpen={collectionMenuOpen}
+                productCountByCollection={productCountByCollection}
+                sensors={sensors}
+                onSetProductMenuOpen={setProductMenuOpen}
+                onSetShowAddCollection={setShowAddCollection}
+                onSetNewCollectionName={setNewCollectionName}
+                onSetAddCollectionError={setAddCollectionError}
+                onSetRenamingCollectionId={setRenamingCollectionId}
+                onSetRenameValue={setRenameValue}
+                onSetRenameError={setRenameError}
+                onSetCollectionMenuOpen={setCollectionMenuOpen}
+                onToggleCollapsed={toggleCollapsed}
+                onAddCollection={handleAddCollection}
+                onRenameCollection={handleRenameCollection}
+                onDeleteCollection={(c) => setDeleteTarget({ id: c.id, name: c.name, type: "collection" })}
+                onEditProduct={(p) => setProductModal({ mode: "edit", product: p })}
+                onArchiveProduct={(p) => setArchiveTarget(p)}
+                onAddProduct={(collectionId) => setProductModal({ mode: "add", collectionId })}
+                onCollectionDragEnd={handleCollectionDragEnd}
+                onProductDragEnd={handleProductDragEnd}
+                slugify={slugify}
+              />
+            )}
 
             <ArchiveSection
               archivedProducts={archivedProducts}

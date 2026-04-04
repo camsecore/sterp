@@ -2596,7 +2596,7 @@ export default function DashboardPage() {
             {products.length > 0 && phase >= 2 && <section>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-[17px] font-medium text-neutral-900">
+                  <h2 className="text-[20px] font-semibold text-neutral-900">
                     Obsessions
                   </h2>
                   <span className="text-[13px] text-neutral-400 font-medium">
@@ -2832,7 +2832,7 @@ export default function DashboardPage() {
             {/* ─── Section 4: Collections (Phase 4 — first named collection created) ── */}
             {products.length > 0 && phase >= 4 && <section>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-[17px] font-medium text-neutral-900">
+                <h2 className="text-[20px] font-semibold text-neutral-900">
                   Collections
                 </h2>
                 <button
@@ -3233,7 +3233,7 @@ export default function DashboardPage() {
               <section>
                 <div className="flex items-center gap-2 mb-3 pt-4 border-t border-gray-200">
                   <Clock size={16} className="text-neutral-400" />
-                  <h2 className="text-[17px] font-medium text-neutral-900">
+                  <h2 className="text-[20px] font-semibold text-neutral-900">
                     Archive
                   </h2>
                   <span className="text-[13px] text-neutral-400 font-medium">

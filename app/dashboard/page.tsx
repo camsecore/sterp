@@ -1162,9 +1162,9 @@ function ProductModal({
       >
         <div className="absolute inset-0 bg-black/50" />
 
-        {/* Mobile: full-screen with flex column | Desktop: 2-col fixed-height modal */}
+        {/* Modal shell — always flex-col so header/footer span full width */}
         <div
-          className="relative z-10 bg-white w-full h-full flex flex-col sm:h-auto sm:max-w-[800px] sm:mx-auto sm:rounded-xl sm:max-h-[600px] sm:flex-row sm:overflow-hidden"
+          className="relative z-10 bg-white w-full h-full flex flex-col sm:h-auto sm:max-w-[800px] sm:mx-auto sm:rounded-xl sm:max-h-[600px] sm:overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* ── Mobile top nav bar ── */}
@@ -1183,53 +1183,119 @@ function ProductModal({
             </button>
           </div>
 
-          {/* ── Desktop left column: photo ── */}
-          <div className="hidden sm:flex sm:flex-col sm:w-[40%] sm:border-r sm:border-gray-100">
-            <div
-              className="relative w-full aspect-[4/3] bg-neutral-200 cursor-pointer overflow-hidden"
-              onClick={() => fileInputRef.current?.click()}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            >
-              {uploading ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <div className="w-8 h-8 border-2 border-neutral-300 border-t-[#C0392B] rounded-full animate-spin" />
-                  <span className="text-[13px] text-neutral-400 mt-2">Uploading...</span>
-                </div>
-              ) : photoUrl ? (
-                <>
-                  <Image src={photoUrl} alt="" fill unoptimized className="object-cover" />
-                  <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center group">
-                    <span className="text-white text-[14px] font-medium opacity-0 group-hover:opacity-100 transition-opacity">Change photo</span>
-                  </div>
-                </>
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-50">
-                  <Camera size={28} className="text-neutral-300 mb-1" />
-                  <span className="text-[13px] font-medium text-neutral-500">Add photo</span>
-                </div>
-              )}
-            </div>
-            {errors.photo && <p className="text-[13px] text-[#C0392B] px-4 pt-1">{errors.photo}</p>}
-            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={handleFileChange} className="hidden" />
+          {/* ── 1. Full-width desktop header ── */}
+          <div className="hidden sm:flex items-center justify-between px-5 py-3 border-b border-gray-100">
+            <h2 className="text-[17px] font-semibold text-neutral-900">Edit Product</h2>
+            <button type="button" onClick={handleDismiss} aria-label="Close" className="text-neutral-400 hover:text-neutral-600 transition-colors p-1">
+              <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
           </div>
 
-          {/* ── Desktop right column / Mobile body ── */}
-          <div className="flex-1 flex flex-col min-h-0 sm:w-[60%]">
-            {/* Desktop header */}
-            <div className="hidden sm:flex items-center justify-between px-5 py-3 border-b border-gray-100">
-              <h2 className="text-[17px] font-semibold text-neutral-900">Edit Product</h2>
-              <button type="button" onClick={handleDismiss} aria-label="Close" className="text-neutral-400 hover:text-neutral-600 transition-colors p-1">
-                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </button>
+          {/* ── 2. Content area ── */}
+          <div className="flex-1 overflow-y-auto min-h-0">
+            {/* Desktop: 2-column row */}
+            <div className="hidden sm:flex gap-8 px-6 py-5 items-start">
+              {/* Left ~40%: constrained photo */}
+              <div className="w-[40%] flex-shrink-0">
+                <div
+                  className="relative aspect-[4/3] rounded-xl overflow-hidden cursor-pointer border border-gray-200 bg-neutral-100"
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  {uploading ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <div className="w-8 h-8 border-2 border-neutral-300 border-t-[#C0392B] rounded-full animate-spin" />
+                      <span className="text-[13px] text-neutral-400 mt-2">Uploading...</span>
+                    </div>
+                  ) : photoUrl ? (
+                    <>
+                      <Image src={photoUrl} alt="" fill unoptimized className="object-cover" />
+                      <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center group">
+                        <span className="text-white text-[14px] font-medium opacity-0 group-hover:opacity-100 transition-opacity">Change photo</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <Camera size={28} className="text-neutral-300 mb-1" />
+                      <span className="text-[13px] font-medium text-neutral-500">Add photo</span>
+                    </div>
+                  )}
+                </div>
+                {errors.photo && <p className="text-[13px] text-[#C0392B] mt-1">{errors.photo}</p>}
+              </div>
+
+              {/* Right ~60%: form inputs */}
+              <div className="flex-1 space-y-3">
+                {nameInput}
+                {oneLinerInput}
+
+                {/* Condensed metadata */}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
+                  {editingDate ? (
+                    <div className="flex items-center gap-2">
+                      <CustomDropdown
+                        value={acquiredMonth}
+                        options={[
+                          { value: "", label: "Month" },
+                          ...["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => ({ value: String(i + 1), label: m })),
+                        ]}
+                        onChange={setAcquiredMonth}
+                      />
+                      <CustomDropdown
+                        value={acquiredYear}
+                        options={[
+                          { value: "", label: "Year" },
+                          ...Array.from({ length: new Date().getFullYear() - 2009 }, (_, i) => new Date().getFullYear() - i).map((y) => ({ value: String(y), label: String(y) })),
+                        ]}
+                        onChange={setAcquiredYear}
+                      />
+                      {(acquiredMonth || acquiredYear) && (
+                        <button type="button" onClick={() => { setAcquiredMonth(""); setAcquiredYear(""); }} className="text-[12px] text-neutral-400 hover:text-neutral-600 transition-colors">Clear</button>
+                      )}
+                      <button type="button" onClick={() => setEditingDate(false)} className="text-[12px] text-neutral-400 hover:text-neutral-600 transition-colors">Done</button>
+                    </div>
+                  ) : (
+                    <span className="flex items-center gap-1 text-neutral-500">
+                      <span className="text-neutral-400">Acquired:</span>
+                      <span className="text-neutral-700">{acquiredLabel || "—"}</span>
+                      <button type="button" onClick={() => setEditingDate(true)} className="text-[12px] text-[#C0392B]/70 hover:text-[#C0392B] transition-colors ml-0.5">Change</button>
+                    </span>
+                  )}
+
+                  {editingCollection ? (
+                    <div className="flex items-center gap-2">
+                      {collectionSection}
+                      <button type="button" onClick={() => setEditingCollection(false)} className="text-[12px] text-neutral-400 hover:text-neutral-600 transition-colors flex-shrink-0">Done</button>
+                    </div>
+                  ) : (
+                    <span className="flex items-center gap-1 text-neutral-500">
+                      <span className="text-neutral-400">Collection:</span>
+                      <span className="text-neutral-700">{selectedCollectionName || "—"}</span>
+                      {collections.length >= 2 && (
+                        <button type="button" onClick={() => setEditingCollection(true)} className="text-[12px] text-[#C0392B]/70 hover:text-[#C0392B] transition-colors ml-0.5">Change</button>
+                      )}
+                    </span>
+                  )}
+
+                  {obsessionSection}
+                </div>
+
+                {replacePickerSection}
+
+                {errors.form && (
+                  <p className="text-[13px] text-[#C0392B]">{errors.form}</p>
+                )}
+              </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
-              {/* ── Mobile: photo thumbnail + name on same row ── */}
-              <div className="flex items-start gap-3 sm:hidden">
+            {/* Mobile: single-column body */}
+            <div className="sm:hidden px-5 py-3 space-y-3">
+              {/* Photo thumbnail + name on same row */}
+              <div className="flex items-start gap-3">
                 <div
                   className="relative w-20 aspect-[4/3] rounded-lg overflow-hidden cursor-pointer flex-shrink-0 bg-neutral-200"
                   onClick={() => fileInputRef.current?.click()}
@@ -1252,17 +1318,10 @@ function ProductModal({
                 </div>
               </div>
 
-              {/* ── Desktop: name input (photo is in left column) ── */}
-              <div className="hidden sm:block">
-                {nameInput}
-              </div>
-
-              {/* One-liner — fixed 4-line height */}
               {oneLinerInput}
 
-              {/* ── Condensed metadata row ── */}
+              {/* Condensed metadata */}
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
-                {/* Date */}
                 {editingDate ? (
                   <div className="flex items-center gap-2">
                     <CustomDropdown
@@ -1294,7 +1353,6 @@ function ProductModal({
                   </span>
                 )}
 
-                {/* Collection */}
                 {editingCollection ? (
                   <div className="flex items-center gap-2">
                     {collectionSection}
@@ -1310,65 +1368,65 @@ function ProductModal({
                   </span>
                 )}
 
-                {/* Obsessions inline */}
                 {obsessionSection}
               </div>
 
-              {/* Replace picker */}
               {replacePickerSection}
 
-              {/* Form-level error */}
               {errors.form && (
                 <p className="text-[13px] text-[#C0392B]">{errors.form}</p>
               )}
             </div>
+          </div>
 
-            {/* ── Footer ── */}
-            {/* Mobile: pinned danger zone at bottom */}
-            {product && (onArchive || onDelete) && (
-              <div className="mt-auto border-t border-gray-200 px-5 py-3 flex items-center gap-4 sm:hidden">
-                {onArchive && (
-                  <button type="button" onClick={() => { onClose(); onArchive(product); }} className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors">
-                    Archive
-                  </button>
-                )}
-                {onDelete && (
-                  <button type="button" onClick={() => { onClose(); onDelete(product); }} className="text-[13px] text-[#C0392B] hover:opacity-70 transition-opacity">
-                    Delete
-                  </button>
-                )}
-              </div>
-            )}
+          {/* ── 3. Full-width footer ── */}
+          {/* Mobile: pinned danger zone */}
+          {product && (onArchive || onDelete) && (
+            <div className="mt-auto border-t border-gray-200 px-5 py-3 flex items-center gap-4 sm:hidden">
+              {onArchive && (
+                <button type="button" onClick={() => { onClose(); onArchive(product); }} className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors">
+                  Archive
+                </button>
+              )}
+              {onDelete && (
+                <button type="button" onClick={() => { onClose(); onDelete(product); }} className="text-[13px] text-[#C0392B] hover:opacity-70 transition-opacity">
+                  Delete
+                </button>
+              )}
+            </div>
+          )}
 
-            {/* Desktop footer: danger left, actions right */}
-            <div className="hidden sm:flex items-center justify-between border-t border-gray-200 px-5 py-3">
-              <div className="flex items-center gap-4">
-                {product && onArchive && (
-                  <button type="button" onClick={() => { onClose(); onArchive(product); }} className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors">
-                    Archive
-                  </button>
-                )}
-                {product && onDelete && (
-                  <button type="button" onClick={() => { onClose(); onDelete(product); }} className="text-[13px] text-[#C0392B] hover:opacity-70 transition-opacity">
-                    Delete
-                  </button>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                <button type="button" onClick={handleDismiss} className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors">
-                  Cancel
+          {/* Desktop: full-width footer with divider */}
+          <div className="hidden sm:flex items-center justify-between border-t border-gray-200 px-6 py-3">
+            <div className="flex items-center gap-4">
+              {product && onArchive && (
+                <button type="button" onClick={() => { onClose(); onArchive(product); }} className="text-[13px] text-neutral-400 hover:text-neutral-600 transition-colors">
+                  Archive
                 </button>
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={saving || uploading}
-                  className="bg-[#C0392B] text-white text-[14px] font-medium px-5 py-2 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
-                >
-                  {saving ? "Saving..." : "Save"}
+              )}
+              {product && onDelete && (
+                <button type="button" onClick={() => { onClose(); onDelete(product); }} className="text-[13px] text-[#C0392B] hover:opacity-70 transition-opacity">
+                  Delete
                 </button>
-              </div>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={handleDismiss} className="text-[13px] text-neutral-500 hover:text-neutral-800 transition-colors">
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={saving || uploading}
+                className="bg-[#C0392B] text-white text-[14px] font-medium px-5 py-2 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {saving ? "Saving..." : "Save"}
+              </button>
             </div>
           </div>
+
+          {/* Hidden file input shared by both layouts */}
+          <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic" onChange={handleFileChange} className="hidden" />
         </div>
 
         {cropModal}

@@ -122,7 +122,7 @@ function ProductCard({
           className="object-cover"
         />
         {rank != null && (
-          <span className="absolute top-2 right-2 w-[26px] h-[26px] rounded-full bg-[#C0392B] text-white text-[13px] font-semibold flex items-center justify-center ring-2 ring-white [font-family:var(--font-space-grotesk)]">
+          <span className="absolute top-2 right-2 w-[26px] h-[26px] rounded-full text-white text-[13px] font-semibold flex items-center justify-center backdrop-blur-[4px] [font-family:var(--font-space-grotesk)]" style={{ backgroundColor: "rgba(0, 0, 0, 0.45)" }}>
             {rank}
           </span>
         )}

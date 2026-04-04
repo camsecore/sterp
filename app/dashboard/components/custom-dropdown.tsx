@@ -49,7 +49,7 @@ export function CustomDropdown({
       <button
         ref={triggerRef}
         type="button"
-        onClick={isTouch ? undefined : () => setOpen(!open)}
+        onClick={isTouch === true ? undefined : () => setOpen(!open)}
         className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5 text-[13px] text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-300 transition-colors hover:bg-gray-100"
       >
         {selectedLabel}
@@ -66,8 +66,11 @@ export function CustomDropdown({
         </svg>
       </button>
 
-      {/* Mobile: invisible native select overlaid on trigger for OS picker */}
-      {isTouch && (
+      {/* Native select overlay — always rendered (invisible via opacity-0).
+          On touch devices it intercepts taps to invoke the OS picker.
+          On desktop it's inert because the button click handler opens the portal dropdown instead.
+          Rendering it always avoids a flash when isTouch transitions from null → true. */}
+      {isTouch !== false && (
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -81,7 +84,7 @@ export function CustomDropdown({
       )}
 
       {/* Desktop: portal dropdown that floats over everything */}
-      {!isTouch && open && pos && createPortal(
+      {isTouch === false && open && pos && createPortal(
         <ul
           ref={listRef}
           className="fixed z-[9999] bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto"

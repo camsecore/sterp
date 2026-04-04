@@ -1041,7 +1041,7 @@ function ProductModal({
   );
 
   const obsessionSection = mode === "edit" && product && product.status === "current" && !creatingCollection && (
-    <div className="w-full">
+    <div className="w-full relative z-0">
       {obsessionEntry ? (
         <div className="w-full flex justify-between items-center px-4 py-2 rounded-lg bg-red-50/50 border border-red-100">
           <div className="flex items-center gap-2">
@@ -1236,7 +1236,7 @@ function ProductModal({
                 {/* Condensed metadata */}
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
                   {editingDate ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 relative z-30">
                       <CustomDropdown
                         value={acquiredMonth}
                         options={[
@@ -1323,7 +1323,7 @@ function ProductModal({
               {/* Condensed metadata */}
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
                 {editingDate ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 relative z-30">
                     <CustomDropdown
                       value={acquiredMonth}
                       options={[
